@@ -35,7 +35,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | C11 | Quality | C | B/F | L | 6 | C06, C07, C08, C09, C10 | 2026-11-22 | 2026-11-21 | Not Started |
 | C12 | Submission | C | B/F | M | 3 | C11 | 2026-11-25 | 2026-11-25 | Not Started |
 | F01 | Validation | F | B/C | M | 2 | Planning review | 2026-11-05 | 2026-11-03 | Not Started |
-| F02 | Design | F | B/C | M | 4 | B01 | 2026-11-06 | 2026-11-05 | Not Started |
+| F02 | Design | F | B/C | M | 4 | B01 | 2026-11-06 | 2026-11-05 | In Review |
 | F03 | P0-01 | F | B/C | M | 4 | F02, B03 | 2026-11-08 | 2026-11-07 | Not Started |
 | F04 | P0-02/P0-03 | F | B/C | L | 6 | F03, B04, B05 | 2026-11-09 | 2026-11-08 | Not Started |
 | F05 | P0-06 | F | B/C | L | 4 | F04, C05 | 2026-11-11 | 2026-11-09 | Not Started |
@@ -413,7 +413,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Acceptance criteria:** B/C/F agree combined case/goods/audit screens, loading/empty/error/403/409 states, accessibility, no beneficiary wallet.
 - **Required tests:** API design review; E2E07 specification.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Review (09/11/2026). Khoa/Codex bàn giao phần F02 được giao trong `9_11.pdf`: [three wireframes and handoff](../design/F02_WIREFRAMES_AND_STATES.md), shared mock/typed declarations/state map/checker tại `docs/fixtures/f02/`. Fixture arithmetic, ID/DTO-shape and 403/409 atomic-rejection checks PASS; backend HTTP/frontend render/keyboard E2E Not Run. Cần Minh review UI và Dũng review F02-A01..A05; chưa Done; Khoa cho phép commit/push/PR sau final QA ngày 10/11. Owner/estimate/date gốc giữ nguyên; actual effort chưa ghi nhận đủ tin cậy, ngày hoàn thành task chưa có.
 
 ### F03 - Next shell/session client
 
@@ -577,3 +577,9 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 ### C01 review handoff - 09/11/2026
 
 C01: Not Started -> In Progress -> In Review trong phiên làm việc C01; không thay trạng thái các task khác. Bản ghi All36 ngày 03/11 ở trên là baseline lịch sử, không phải tiến độ hiện tại. Bộ handoff đã chuẩn bị; chưa có human/cross-owner approval, contract implementation hoặc Fuji proof. Xem `docs/reviews/C01_BLOCKCHAIN_REVIEW.md` để biết checks, OPEN owners và bước tiếp theo.
+
+### F02 review handoff - 09/11/2026
+
+F02: Not Started -> In Progress -> In Review trong phiên F02. Chỉ hoàn thành design/mock handoff G01/R01/D01 được giao cho Khoa; không claim frontend/API đã chạy hoặc full F02 acceptance đã được nhóm duyệt. C01 đã lưu ở commit `2365378`; C01 còn In Review. Xem `docs/design/F02_WIREFRAMES_AND_STATES.md` và các F02-Axx về response items/read projections chưa freeze. Không sửa task khác, không tự đổi owner hoặc lịch sử estimate.
+
+Final QA 10/11/2026: C01 commit `2365378` giữ nguyên; F02 static checkers/negative cases và review contracts PASS, thêm idempotencyConflict UI state bị thiếu. Khoa chấp nhận handoff ở mức review và cho phép commit F02/push khoa/PR main, không merge. C01/F02 còn In Review chờ Dũng/Minh; application/contract/Java/TypeScript runtime checks Not Run. Chi tiết ở final quality review trong `docs/design/F02_WIREFRAMES_AND_STATES.md`.
