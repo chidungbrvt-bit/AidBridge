@@ -22,7 +22,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | B10 | P0-05 | B | C/F | L | 6 | B09 | 2026-11-22 | 2026-11-20 | Not Started |
 | B11 | Quality | B | C/F | L | 6 | B03, B04, B05, B06, B07, B08, B09, B10 | 2026-11-23 | 2026-11-21 | Not Started |
 | B12 | Submission | B | C/F | M | 3 | B11 | 2026-11-25 | 2026-11-25 | Not Started |
-| C01 | Design | C | B/F | L | 4 | B01 | 2026-11-05 | 2026-11-04 | Not Started |
+| C01 | Design | C | B/F | L | 4 | B01 | 2026-11-05 | 2026-11-04 | In Review |
 | C02 | Foundation | C | B/F | M | 3 | C01 | 2026-11-06 | 2026-11-06 | Not Started |
 | C03 | P0-03/P0-06 | C | B/F | L | 5 | C01, C02 | 2026-11-07 | 2026-11-07 | Not Started |
 | C04 | P0-06 | C | B/F | M | 2 | C03 | 2026-11-08 | 2026-11-08 | Not Started |
@@ -231,7 +231,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Acceptance criteria:** JIT learning, random refs, stable event IDs, salt/private manifest, sequence and custody boundary; B/F review.
 - **Required tests:** BR08-P/N design, BR11/12 design; Java/TS golden-vector expectations.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Review (09/11/2026). Khoa hoàn thành bộ tài liệu review được giao theo `9_11.pdf`: [C01 handoff](../reviews/C01_BLOCKCHAIN_REVIEW.md), ABI draft, reviewed sample, golden-vector input và test expectations tại `docs/fixtures/c01/`. Design-fixture checks PASS; contract/Java/TypeScript/Fuji checks Not Run. Chưa Done: cần Dũng xác nhận C01-O01..O05 và cross-owner review. Actual effort chưa ghi nhận đủ tin cậy; không sửa estimate/lịch gốc. Ngày hoàn thành task: chưa có.
 
 ### C02 - Hardhat local setup
 
@@ -573,3 +573,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | Task | Date | State | Actual hours | Evidence | Next action |
 |---|---|---|---|---|---|
 | All36 | 03/11/2026 | Not Started | Not recorded | Planning specification only | Await application task authorization |
+
+### C01 review handoff - 09/11/2026
+
+C01: Not Started -> In Progress -> In Review trong phiên làm việc C01; không thay trạng thái các task khác. Bản ghi All36 ngày 03/11 ở trên là baseline lịch sử, không phải tiến độ hiện tại. Bộ handoff đã chuẩn bị; chưa có human/cross-owner approval, contract implementation hoặc Fuji proof. Xem `docs/reviews/C01_BLOCKCHAIN_REVIEW.md` để biết checks, OPEN owners và bước tiếp theo.
