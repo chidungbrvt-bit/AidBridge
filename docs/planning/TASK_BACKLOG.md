@@ -34,13 +34,13 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | C10 | P0-05/P0-06 | C | B/F | L | 4 | B08, B09, C08 | 2026-11-20 | 2026-11-20 | Not Started |
 | C11 | Quality | C | B/F | L | 6 | C06, C07, C08, C09, C10 | 2026-11-22 | 2026-11-21 | Not Started |
 | C12 | Submission | C | B/F | M | 3 | C11 | 2026-11-25 | 2026-11-25 | Not Started |
-| F01 | Validation | F | B/C | M | 2 | Planning review | 2026-11-05 | 2026-11-03 | Not Started |
+| F01 | Validation | F | B/C | M | 2 | Planning review | 2026-11-05 | 2026-11-03 | In Review |
 | F02 | Design | F | B/C | M | 4 | B01 | 2026-11-06 | 2026-11-05 | In Review |
 | F03 | P0-01 | F | B/C | M | 4 | F02, B03 | 2026-11-08 | 2026-11-07 | Not Started |
 | F04 | P0-02/P0-03 | F | B/C | L | 6 | F03, B04, B05 | 2026-11-09 | 2026-11-08 | Not Started |
 | F05 | P0-06 | F | B/C | L | 4 | F04, C05 | 2026-11-11 | 2026-11-09 | Not Started |
 | F06 | P0-04 | F | B/C | M | 6 | F02, B06 | 2026-11-13 | 2026-11-12 | Not Started |
-| F07 | P0-04 | F | B/C | M | 5 | F06, B07 | 2026-11-15 | 2026-11-14 | Not Started |
+| F07 | P0-04 | F | B/C | M | 5 | F06, B07 | 2026-11-15 | 2026-11-14 | In Review |
 | F08 | P0-05 | F | B/C | M | 5 | F04, B08, B09 | 2026-11-20 | 2026-11-17 | Not Started |
 | F09 | P0-05/P0-06 | F | B/C | L | 5 | F08, B10, C09 | 2026-11-22 | 2026-11-20 | Not Started |
 | F10 | Deployment | F | B/C | L | 4 | F09, C10 | 2026-11-22 | 2026-11-21 | Not Started |
@@ -399,7 +399,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Acceptance criteria:** Identify2-3 charity-experienced candidates; actual consented notes or explicit no-contact; no invented partner/impact, no agent unsolicited messages.
 - **Required tests:** Workflow research review; R01/R02 status.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Review (10/11/2026). Khoa/Codex hoàn thành thiết kế F01 theo bảng phân công 10/11: [Product/Validation](../product/validation/F01_DEMO_AND_ASSUMPTIONS.md), checklist JSON và checker; full fictional lifecycle/multi-item/independent roles, 10 assumptions, explicit no-contact. Chưa có interview candidates/consented notes hoặc actual HTTP/demo/Fuji; không Done. Owner/estimate/lịch gốc giữ nguyên; actual effort chưa ghi nhận đủ tin cậy, completion date chưa có.
 
 ### F02 - Wireframes/mock API states
 
@@ -483,7 +483,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Acceptance criteria:** Atomic multi-line form, same-key network retry, overflow refresh, own history, unreceived cancel; no provenance claim.
 - **Required tests:** BR04-N, BR11-P/N; E2E03, donor privacy.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Review (10/11/2026). Khoa/Codex triển khai [F07 G01/G02](../design/F07_DONOR_IMPLEMENTATION.md) theo phân công ngày10: React module + developer preview mock, multi-item pledge/own history, 400/409/403, safe replay/recovery. Lint/typecheck/build PASS; 4 unit +8 browser E2E PASS (Edge headless desktop/mobile). Chưa có backend/Next integration, donorEnabled thật vẫn false; G03 cancellation/dependencies F06,B07 chưa đạt, không Done. Owner/estimate/lịch baseline giữ nguyên; actual effort chưa ghi nhận đủ tin cậy, completion date chưa có.
 
 ### F08 - Receipt/delivery UI
 
@@ -583,3 +583,17 @@ C01: Not Started -> In Progress -> In Review trong phiên làm việc C01; khôn
 F02: Not Started -> In Progress -> In Review trong phiên F02. Chỉ hoàn thành design/mock handoff G01/R01/D01 được giao cho Khoa; không claim frontend/API đã chạy hoặc full F02 acceptance đã được nhóm duyệt. C01 đã lưu ở commit `2365378`; C01 còn In Review. Xem `docs/design/F02_WIREFRAMES_AND_STATES.md` và các F02-Axx về response items/read projections chưa freeze. Không sửa task khác, không tự đổi owner hoặc lịch sử estimate.
 
 Final QA 10/11/2026: C01 commit `2365378` giữ nguyên; F02 static checkers/negative cases và review contracts PASS, thêm idempotencyConflict UI state bị thiếu. Khoa chấp nhận handoff ở mức review và cho phép commit F02/push khoa/PR main, không merge. C01/F02 còn In Review chờ Dũng/Minh; application/contract/Java/TypeScript runtime checks Not Run. Chi tiết ở final quality review trong `docs/design/F02_WIREFRAMES_AND_STATES.md`.
+
+### F01 - phạm vi theo phân công 10/11/2026
+
+Not Started -> In Progress -> In Review trong phiên F01. Khoa được giao product scenario/assumptions 2h theo ảnh phân công 10/11; không thay primary owner F hoặc estimate/lịch baseline 03/11. Chưa hoàn thành research ngoài đời của acceptance cũ; ghi no-contact/no evidence và R01/R02 chưa xác thực. Kết quả chỉ tài liệu, chưa chạy feature; không thay status task Dũng/Minh/F07, chưa commit/push/PR. Xem Product/Validation để có checklist, nguồn/API, role-name mismatch và hướng dẫn tiếp nhận.
+
+Nghiệm thu nội bộ F01 10/11: đạt đủ bộ tài liệu theo phân công ngày 10/11 (scenario multi-item, independent roles, checklist, assumptions, Product/Validation). Giữ In Review, cho phép commit local theo yêu cầu Khoa; chưa Done/cross-owner approved. Baseline tuyển 2-3 người chưa có evidence, dùng explicit no-contact và giữ research R01/R02 OPEN; không claim đã tuyển người. Role alias và donorEnabled=false hiện tại là điểm tích hợp cần phối hợp, không phải code đã sửa. Xem ma trận nghiệm thu cuối tài liệu F01; không push/PR/F07 trong lượt này.
+
+### F07 - nghiệm thu nội bộ G01/G02 ngày 10/11/2026
+
+Not Started -> In Progress -> In Review. User giao implementation mock G01/G02 ngày10 và commit local riêng sau QA; không push/PR. Bộ React feature ở frontend/features/donor và harness dev riêng frontend/dev/donor-preview, không sửa shell/client của Minh hay backend Dũng. G03 unreceived cancellation là acceptance baseline còn lại, chưa thuộc phạm vi lượt này; không ghi Done hoặc tự đổi dependencies/owner/estimate. Xem F07 implementation để biết lệnh chạy, test results, UI routes, mock labels và các OPEN integration. F01 commit cd5d88d được bảo toàn.
+
+### QA độc lập F01/F07 - 10/11/2026
+
+Giữ F01/F07 In Review và owner/estimate/dependencies cũ. Đối chiếu scope ngày10 đạt ở mức F01 tài liệu/F07 mock G01/G02. [QA report](../reviews/F01_F07_QA_REVIEW.md): đã tái hiện/sửa history/campaign races, optional ProblemDetail.fieldErrors, reset pending mock, single-line409; checker F01 exact enum. Lint/typecheck/build PASS; 7 unit +10 browser E2E PASS; real HTTP/Next/Fuji/NGO Not Run. Các sửa QA chỉ nằm working tree, chưa commit/push/PR. C01/F02 không đổi status.
