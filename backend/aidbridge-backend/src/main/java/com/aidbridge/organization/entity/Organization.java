@@ -35,6 +35,13 @@ public class Organization {
     @Column(nullable = false, length = 30)
     private Status status = Status.PENDING;
 
+    @Column(name = "public_ref", nullable = false, unique = true, updatable = false, columnDefinition = "bytea")
+    private byte[] publicRef = com.aidbridge.shared.util.ChainRefs.randomBytes32();
+
+    @Size(max = 42)
+    @Column(name = "relayer_address", length = 42)
+    private String relayerAddress;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

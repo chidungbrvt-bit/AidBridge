@@ -1,13 +1,13 @@
 # Test Strategy
 
-Ngày tạo: 03/11/2026. Owner: C, B/F review. Status: **test specification; tests chưa được chạy**, vì chưa có application source. Không có pass rate/coverage result giả lập.
+Ngày tạo: 03/11/2026. Cập nhật:04/11/2026. Owner: C, B/F review. Status: **P0 test specification**; một số focused user/auth tests đã chạy, evidence ở Task Backlog; chưa có full P0/E2E/contract acceptance. Không coi spec IDs dưới đây tự động Pass vì các focused tests pass.
 
 ## Levels, tools và entry/exit
 
 | Level | Tool proposal / scope | Owner | Entry -> exit |
 |---|---|---|---|
 | Unit | JUnit service/domain guards, canonical manifest vectors | B/C | Agreed rules -> success/failure boundary assertions |
-| API/DB integration | Spring tests + PostgreSQL17 (Testcontainers nếu Docker available; otherwise isolated Compose test DB) | B | Migrated schema -> auth/isolation/state/concurrency/rollback verified |
+| API/DB integration | Spring tests + PostgreSQL đúng version B02 xác nhận;18.6/instance tests trước chỉ là lịch sử, instance workspace đã gỡ. Testcontainers/Compose chỉ khi được chọn và khả dụng | B | Migrated schema -> auth/isolation/state/concurrency/rollback verified trên target DB mới; không chuyển kết quả instance đã gỡ thành P0/full-app acceptance |
 | Contract | Hardhat3 TypeScript, local isolated accounts, decoded event assertions | C | Frozen ABI -> all access/state/replay tests pass |
 | Adapter integration | Web3j -> local Hardhat node; controlled RPC stubs for faults | C | Compiled ABI -> receipt/restart/reconciliation verified |
 | E2E | Playwright core workflows, seeded fictional fixtures | F | Stable local/shared API -> UI totals/roles/statuses correct |
@@ -18,6 +18,8 @@ Use real PostgreSQL for locking/unique constraints, không H2 thay behavior conc
 ## Complete BR traceability matrix
 
 Mỗi test ID dưới đây là specification ID; task phải bổ sung test path/command/result khi implement.
+
+[B01 baseline](../architecture/B01_BASELINE.md) thống nhất OA=ORG_ADMIN, FV=VOLUNTEER, CV=VERIFIER, DC=DELIVERY_CONFIRMER, PA=PLATFORM_ADMIN; donor cần ACTIVE account + explicit donorEnabled grant (schema extension chưa triển khai). Role aliases chỉ để đọc matrix, không là enum khác trong fixtures. B01 đã viết các tình huống review BR01/BR02/BR03; runtime tests cho các BR này vẫn chờ implementation/integration. Test login/role revocation phải kiểm tra DISABLED user, non-ACTIVE membership, non-APPROVED org và donor grant bị thu hồi, kể cả replay idempotency.
 
 | Rule / failure consequence | Module / enforcement | Positive test / action -> expected | Negative test / action -> expected | Owner / tasks / priority |
 |---|---|---|---|---|
@@ -64,6 +66,14 @@ SC01 register/read org, zero refs, unauthorized admin call; SC02 correct/wrong/r
 E2E01 happy multi-item lifecycle with distinct FV/CV/DC/OA/donor accounts; E2E02 rejected/request-changes case and self-approval; E2E03 pledge retry/remaining capacity; E2E04 self-confirm/open dispute/close prevention; E2E05 pending/failed/confirmed badges and explorer URL network; E2E06 public campaign/audit privacy and cross-org access; E2E07 keyboard form validation/focus/loading/error/empty states. Owner F with B/C support; F11. Local chain/stub scenarios labeled simulated; one separate real Fuji smoke confirms actual integration.
 
 ## Test data and results discipline
+
+D42–D45 và B05 (09/11/2026) bổ sung kiểm thử cho V7, V8, outbox và các endpoints thẩm định độc lập:
+- `casefile/B04MigrationIT`: kiểm tra clean đến V8, upgrade V6 → V7 chuẩn hóa `NEEDS_INFO` sang `CHANGES_REQUESTED`, và upgrade V7 → V8 liên kết `verifications.reviewed_case_version` với `case_revisions` của đúng hồ sơ.
+- `casefile/VerificationOutboxIT` (4 tests): lưu 1 `CASE_VERIFIED` audit + 1 `PENDING` job cho mỗi approval, chống trùng `event_key`, rollback nguyên tử cùng quyết định, từ chối khác org / khác trạng thái `APPROVED` / thiếu `reviewed_case_version`, và bắt buộc có transaction hiện hành.
+- `casefile/VerificationApiIT` (10 tests): bao phủ `POST /api/cases/{id}/verify`, `/reject`, `/request-changes`; kiểm tra duyệt/từ chối/yêu cầu sửa đúng revision, bắt buộc và làm sạch `reason` cho `/reject` và `/request-changes`, idempotency replay (`200` + `Idempotent-Replayed: true`) và conflict (`409 IDEMPOTENCY_CONFLICT`), chặn tự thẩm định kể cả khi có đồng thời `VOLUNTEER` + `VERIFIER` (`403 FORBIDDEN`), chặn khác tổ chức (`404`), thu hồi membership trước replay (`404`), từ chối stale version (`409`) hoặc bộ bằng chứng thiếu/trùng/đã supersede (`400`), cạnh tranh đồng thời giữa 2 `VERIFIER` (duyệt-duyệt và duyệt-từ chối chỉ commit đúng 1 quyết định), rollback khi lỗi sau khi ghi outbox, và vòng đời tích hợp `request-changes → PATCH + thêm evidence version → resubmit → independent verify`.
+- `casefile/CaseRequestValidationTest` (5 tests): bổ sung kiểm thử chuẩn hóa và giới hạn của `DecisionRequest`.
+
+B04 tests07/11 (D41/A): `casefile/CaseApiIT`, `EvidenceAccessIT`, `B04MigrationIT` chạy production HTTP + installed PostgreSQL trong schemas riêng của aidbridge_test; guards từ chối dev URL hoặc account khác aidbridge_app. Không clean/drop/provision DB. Coverage BR01/08/09/11, IT09/15: two-line create/read, tenant/role/creator/revocation, consent/public consent/validation, session/CSRF, version/concurrent edit, idempotency same-key/payload/org conflicts, audit-failure rollback, evidence byte/hash/history/access audit/traversal, immutable overwrite rejection và private log markers. B04MigrationIT có clean V6, upgrade-preserve và legacy guard tests. Đây là tests đã viết và compile, chưa ghi Pass cho PostgreSQL khi thiếu env. `CaseRequestValidationTest`/`EvidenceFixtureCatalogTest` kiểm tra DTO constraints, actual resource hashes/bytes và property binding không dùng DB. Latest commands/results tại Task Backlog; [B04 runbook](../architecture/B04_CASE_WORKFLOW.md) chỉ cách chạy IntelliJ. B05 review states trong fixtures là SQL simulation, không B05 API implementation.
 
 Fictional household `Demo Household A`, org `AidBridge Demo Organization`, need food package2 and hygiene kit2; alternate second org; users each own identity plus dual-role negative account. Private evidence markers are synthetic strings used to assert no leak, not real people data. Each test creates isolated IDs; test transaction/snapshots must not obscure separate-thread locking tests.
 

@@ -1,4 +1,11 @@
 package com.aidbridge.campaign.dto.response;
 
-public record CampaignPage() {
+import java.util.List;
+
+public record CampaignPage(
+        List<CampaignResponse> items,
+        int page,
+        int size,
+        long totalElements
+) {
 }

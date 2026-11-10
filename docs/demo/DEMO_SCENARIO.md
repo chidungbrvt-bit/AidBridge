@@ -76,3 +76,7 @@ Closing: "AidBridge đặt công nghệ ở phía tổ chức có khả năng s�
 Slides: problem/persona -> organization-first workflow -> four distinct goods stages -> trust layers/limits -> architecture/Fuji evidence -> demo -> validation status/next pilot. Không fake social metrics, partner logos hoặc real delivery claims.
 
 Before demo: stable build, accounts, fixture data reset, CSRF/session, test AVAX, RPC health, projected cost, actual confirmed example, explorer tabs, local backup và video. Video captures actual application/testnet state, label recordings date/build; simulation labeled. If public hosting down use local workflow + actual historical Fuji evidence; if RPC down never mark current tx confirmed. Submission video length/format follows official rules once known.
+
+## Readiness dates (D26/D27)
+
+18/11 đủ P0 và public first smoke;19-20/11 full regression/hardening;20/11 stable demo.21-22/11 video/pitch/rehearsal ready.23-25/11 chỉ contingency/submission. Có thể hoàn thành/record/rehearse sớm hơn khi gates đã pass; không đợi đúng ngày và không nói application đã có vì script này tồn tại.
