@@ -1,0 +1,3 @@
+SIMULATED DATA ONLY
+Fictional consent fixture for the AidBridge demonstration.
+This document records no actual person's consent.
