@@ -1,0 +1,164 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useSession } from "@/components/session-provider";
+import { canCreateCases } from "@/lib/api-client";
+import type { CreateCaseRequest, EvidenceFixture, NeedInput } from "@/lib/types";
+import { describeError, ErrorNotice, FieldError, focusFirstError, LoadingCard, type ErrorInfo, type FieldIssue } from "./shared";
+
+type NeedRow = NeedInput & { rowKey: string };
+type Attempt = { key: string; body: CreateCaseRequest };
+
+export function CreateCase() {
+  const { user, organizationId } = useSession();
+  return <ScopedCreateCase key={`${user?.userId}:${organizationId}`} />;
+}
+
+function ScopedCreateCase() {
+  const { api, user, organizationId } = useSession();
+  const router = useRouter();
+  const form = useRef<HTMLFormElement>(null);
+  const mounted = useRef(true);
+  const pending = useRef<Attempt | null>(null);
+  const submitting = useRef(false);
+  const [fixtures, setFixtures] = useState<EvidenceFixture[]>([]);
+  const [fixtureLoading, setFixtureLoading] = useState(true);
+  const [fixtureError, setFixtureError] = useState<ErrorInfo | null>(null);
+  const [fixtureRefresh, setFixtureRefresh] = useState(0);
+  const [error, setError] = useState<ErrorInfo | null>(null);
+  const [issues, setIssues] = useState<FieldIssue[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [uncertain, setUncertain] = useState(false);
+  const [beneficiaryAlias, setAlias] = useState("");
+  const [internalTitle, setTitle] = useState("");
+  const [approximateArea, setArea] = useState("");
+  const [priority, setPriority] = useState<"NORMAL" | "URGENT">("NORMAL");
+  const [basis, setBasis] = useState<"CONSENT" | "REPRESENTATIVE">("CONSENT");
+  const [scope, setScope] = useState("Use fictional household data to coordinate essential goods.");
+  const [capturedAt, setCapturedAt] = useState(() => new Date().toISOString().slice(0, 16));
+  const [consentConfirmed, setConsentConfirmed] = useState(false);
+  const [publicSummaryAllowed, setPublicSummaryAllowed] = useState(false);
+  const [publicTitle, setPublicTitle] = useState("");
+  const [publicSummary, setPublicSummary] = useState("");
+  const [evidenceKeys, setEvidenceKeys] = useState<string[]>([]);
+  const [needs, setNeeds] = useState<NeedRow[]>([
+    { rowKey: "initial-food", name: "Rice", unit: "bag", quantity: 2 },
+    { rowKey: "initial-hygiene", name: "Hygiene kit", unit: "kit", quantity: 2 },
+  ]);
+
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  useEffect(() => {
+    let cancelled = false;
+    setFixtureLoading(true);
+    setFixtureError(null);
+    api.evidenceFixtures(organizationId)
+      .then(data => { if (!cancelled) { setFixtures(data); setEvidenceKeys(keys => keys.filter(key => data.some(item => item.key === key))); } })
+      .catch(reason => { if (!cancelled) setFixtureError(describeError(reason)); })
+      .finally(() => { if (!cancelled) setFixtureLoading(false); });
+    return () => { cancelled = true; };
+  }, [api, organizationId, fixtureRefresh]);
+  useEffect(() => {
+    if (!uncertain) return;
+    const protect = (event: BeforeUnloadEvent) => { event.preventDefault(); };
+    window.addEventListener("beforeunload", protect);
+    return () => window.removeEventListener("beforeunload", protect);
+  }, [uncertain]);
+
+  const updateNeed = (index: number, patch: Partial<NeedInput>) => setNeeds(current => current.map((need, position) => position === index ? { ...need, ...patch } : need));
+  const hasIssue = (name: string) => issues.some(issue => issue.field === name);
+  const describe = (name: string) => hasIssue(name) ? `error-${name}` : undefined;
+
+  async function send(attempt: Attempt) {
+    if (submitting.current) return;
+    submitting.current = true;
+    pending.current = attempt;
+    setBusy(true);
+    setError(null);
+    setIssues([]);
+    try {
+      const result = await api.createCase(attempt.body, attempt.key);
+      if (!mounted.current) return;
+      pending.current = null;
+      setUncertain(false);
+      router.push(`/cases/${result.id}`);
+    } catch (reason) {
+      if (!mounted.current) return;
+      const info = describeError(reason);
+      setError(info);
+      setIssues(info.fieldErrors);
+      setUncertain(info.unknownOutcome);
+      if (!info.unknownOutcome) pending.current = null;
+      focusFirstError(form, info.fieldErrors);
+    } finally {
+      submitting.current = false;
+      if (mounted.current) setBusy(false);
+    }
+  }
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (uncertain || submitting.current) return;
+    const localIssues: FieldIssue[] = [];
+    if (!consentConfirmed) localIssues.push({ field: "consentConfirmed", code: "CONFIRM_CONSENT" });
+    if (evidenceKeys.length < 1) localIssues.push({ field: "evidenceFixtureKeys", code: "SELECT_EVIDENCE" });
+    if (evidenceKeys.length > 10) localIssues.push({ field: "evidenceFixtureKeys", code: "MAXIMUM_10_FIXTURES" });
+    const timestamp = new Date(`${capturedAt}:00Z`);
+    if (!Number.isFinite(timestamp.getTime())) localIssues.push({ field: "consent.capturedAt", code: "INVALID_DATE" });
+    if (localIssues.length) { setIssues(localIssues); setError({ code: "VALIDATION_ERROR", message: "Check the highlighted fields and try again.", fieldErrors: localIssues, unknownOutcome: false }); focusFirstError(form, localIssues); return; }
+    const body: CreateCaseRequest = {
+      organizationId, beneficiaryAlias: beneficiaryAlias.trim(), approximateArea: approximateArea.trim(), internalTitle: internalTitle.trim(), priority,
+      consent: { basis, scope: scope.trim(), capturedAt: timestamp.toISOString(), publicSummaryAllowed },
+      needs: needs.map(({ name, unit, quantity }) => ({ name: name.trim(), unit: unit.trim(), quantity })),
+      evidenceFixtureKeys: [...evidenceKeys],
+      ...(publicSummaryAllowed && publicTitle.trim() ? { publicTitle: publicTitle.trim() } : {}),
+      ...(publicSummaryAllowed && publicSummary.trim() ? { publicSummary: publicSummary.trim() } : {}),
+    };
+    void send({ key: crypto.randomUUID(), body });
+  }
+
+  if (!canCreateCases(user, organizationId)) return <div className="card"><h1>Creation unavailable</h1><p className="muted">An active VOLUNTEER membership is required to create a case.</p><Link href="/cases" className="button secondary">Back to cases</Link></div>;
+
+  return <div className="stack">
+    <header className="page-header"><div><Link href="/cases" className="back-link">← All cases</Link><p className="eyebrow">NEW AID REQUEST</p><h1>Create a case</h1><p className="muted">Start with a fictional household, its needs, and the evidence to review.</p></div><span className="badge">Private organization record</span></header>
+    <form ref={form} onSubmit={submit} className="stack">
+      <ErrorNotice error={error} />
+      {uncertain && <div className="notice" role="status"><strong>The outcome is unknown.</strong><p>Your exact request and Idempotency-Key are kept in memory. Retry safely before leaving this page; the form stays locked to prevent a different submission.</p><button type="button" className="button" disabled={busy} onClick={() => { if (pending.current) void send(pending.current); }}>{busy ? "Resolving request…" : "Retry same request"}</button></div>}
+      <fieldset disabled={busy || uncertain} className="form-fieldset stack">
+        <section className="card stack"><div><p className="eyebrow">01 · HOUSEHOLD</p><h2>The request</h2><p className="muted">Use aliases only. Do not enter real names, contact details, or precise addresses.</p></div>
+          <div className="grid-2"><label className="field"><span>Fictional beneficiary alias</span><input name="beneficiaryAlias" value={beneficiaryAlias} onChange={event => setAlias(event.target.value)} placeholder="Demo household 18" required maxLength={120} aria-invalid={hasIssue("beneficiaryAlias")} aria-describedby={describe("beneficiaryAlias")} /><FieldError name="beneficiaryAlias" issues={issues} /></label>
+          <label className="field"><span>Approximate area</span><input name="approximateArea" value={approximateArea} onChange={event => setArea(event.target.value)} placeholder="Sample North District" required maxLength={160} aria-invalid={hasIssue("approximateArea")} aria-describedby={describe("approximateArea")} /><FieldError name="approximateArea" issues={issues} /></label></div>
+          <div className="field-grid"><label className="field"><span>Internal title</span><input name="internalTitle" value={internalTitle} onChange={event => setTitle(event.target.value)} placeholder="Essential goods for a demo household" required maxLength={160} aria-invalid={hasIssue("internalTitle")} aria-describedby={describe("internalTitle")} /><FieldError name="internalTitle" issues={issues} /></label>
+          <label className="field"><span>Priority</span><select name="priority" value={priority} onChange={event => setPriority(event.target.value as "NORMAL" | "URGENT")}><option value="NORMAL">Normal</option><option value="URGENT">Urgent</option></select><FieldError name="priority" issues={issues} /></label></div>
+        </section>
+
+        <section className="card stack"><div className="toolbar"><div><p className="eyebrow">02 · ESSENTIAL GOODS</p><h2>What is needed?</h2><p className="muted">Use fixed units and whole quantities. Every item is tracked separately.</p></div><button type="button" className="button secondary" disabled={needs.length >= 20} onClick={() => setNeeds(current => [...current, { rowKey: crypto.randomUUID(), name: "", unit: "", quantity: 1 }])}>+ Add item</button></div>
+          <FieldError name="needs" issues={issues} />
+          {needs.map((need, index) => <div className="need-row" key={need.rowKey}><span className="item-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+            <label className="field"><span>Item {index + 1} name</span><input name={`needs[${index}].name`} aria-label={`Item ${index + 1} name`} value={need.name} onChange={event => updateNeed(index, { name: event.target.value })} required maxLength={120} aria-invalid={hasIssue(`needs[${index}].name`)} aria-describedby={describe(`needs[${index}].name`)} /><FieldError name={`needs[${index}].name`} issues={issues} /></label>
+            <label className="field"><span>Unit</span><input name={`needs[${index}].unit`} value={need.unit} onChange={event => updateNeed(index, { unit: event.target.value })} required maxLength={40} aria-label={`Item ${index + 1} unit`} aria-invalid={hasIssue(`needs[${index}].unit`)} aria-describedby={describe(`needs[${index}].unit`)} /><FieldError name={`needs[${index}].unit`} issues={issues} /></label>
+            <label className="field"><span>Quantity</span><input type="number" name={`needs[${index}].quantity`} value={Number.isNaN(need.quantity) ? "" : need.quantity} onChange={event => updateNeed(index, { quantity: event.target.valueAsNumber })} required min={1} max={1000000} step={1} aria-label={`Item ${index + 1} quantity`} aria-invalid={hasIssue(`needs[${index}].quantity`)} aria-describedby={describe(`needs[${index}].quantity`)} /><FieldError name={`needs[${index}].quantity`} issues={issues} /></label>
+            <button type="button" className="button secondary remove-item" disabled={needs.length === 1} aria-label={`Remove item ${index + 1}`} onClick={() => { setNeeds(current => current.filter((_, position) => position !== index)); setIssues([]); }}>Remove</button>
+          </div>)}
+        </section>
+
+        <section className="card stack"><div><p className="eyebrow">03 · CONSENT</p><h2>A clear basis for coordination</h2></div>
+          <div className="grid-2"><label className="field"><span>Consent basis</span><select name="consent.basis" value={basis} onChange={event => setBasis(event.target.value as "CONSENT" | "REPRESENTATIVE")}><option value="CONSENT">Consent</option><option value="REPRESENTATIVE">Representative</option></select><FieldError name="consent.basis" issues={issues} /></label>
+          <label className="field"><span>Captured at (UTC)</span><input type="datetime-local" name="consent.capturedAt" required value={capturedAt} onChange={event => setCapturedAt(event.target.value)} aria-invalid={hasIssue("consent.capturedAt")} aria-describedby={describe("consent.capturedAt")} /><FieldError name="consent.capturedAt" issues={issues} /></label></div>
+          <label className="field"><span>Consent scope</span><textarea name="consent.scope" value={scope} onChange={event => setScope(event.target.value)} required maxLength={200} rows={2} aria-invalid={hasIssue("consent.scope")} aria-describedby={describe("consent.scope")} /><FieldError name="consent.scope" issues={issues} /></label>
+          <label className="checkbox"><input type="checkbox" name="consentConfirmed" checked={consentConfirmed} onChange={event => setConsentConfirmed(event.target.checked)} required aria-describedby={describe("consentConfirmed")} /><span>I confirm this is a simulated consent record for fictional data.</span></label><FieldError name="consentConfirmed" issues={issues} />
+          <label className="checkbox"><input type="checkbox" name="consent.publicSummaryAllowed" checked={publicSummaryAllowed} onChange={event => setPublicSummaryAllowed(event.target.checked)} /><span>A sanitized public summary is allowed.</span></label><FieldError name="consent.publicSummaryAllowed" issues={issues} />
+          {publicSummaryAllowed && <div className="stack"><label className="field"><span>Public title (optional)</span><input name="publicTitle" value={publicTitle} onChange={event => setPublicTitle(event.target.value)} maxLength={160} /><FieldError name="publicTitle" issues={issues} /></label><label className="field"><span>Public summary (optional)</span><textarea name="publicSummary" value={publicSummary} onChange={event => setPublicSummary(event.target.value)} maxLength={2000} rows={3} /><FieldError name="publicSummary" issues={issues} /></label></div>}
+        </section>
+
+        <section className="card stack"><div><p className="eyebrow">04 · EVIDENCE</p><h2>Select organization fixtures</h2><p className="muted">Choose 1–10 allowlisted fixtures. This workflow does not upload files.</p></div>
+          {fixtureLoading ? <LoadingCard label="Loading allowed fixtures…" /> : fixtureError ? <><ErrorNotice error={fixtureError} /><button type="button" className="button secondary" onClick={() => setFixtureRefresh(value => value + 1)}>Reload fixtures</button></> : fixtures.length === 0 ? <p className="muted">No evidence fixtures are available. Ask the backend owner to provision fixtures for this organization.</p> : <div className="evidence-options">{fixtures.map(fixture => <label className="checkbox evidence-option" key={fixture.key}><input type="checkbox" name="evidenceFixtureKeys" value={fixture.key} checked={evidenceKeys.includes(fixture.key)} onChange={event => setEvidenceKeys(current => event.target.checked ? [...current, fixture.key] : current.filter(key => key !== fixture.key))} aria-describedby={describe("evidenceFixtureKeys")} /><span><strong>{fixture.label}</strong><span className="muted">{fixture.mimeType} · {fixture.byteSize.toLocaleString()} bytes</span></span></label>)}</div>}
+          <FieldError name="evidenceFixtureKeys" issues={issues} />
+          {issues.filter(issue => issue.field.startsWith("evidenceFixtureKeys[")).map(issue => <p className="field-error" key={issue.field}>{issue.field}: {issue.code.replaceAll("_", " ").toLowerCase()}</p>)}
+        </section>
+        <div className="form-footer actions"><Link href="/cases" className="button secondary">Cancel</Link><button type="submit" className="button" disabled={fixtureLoading || !!fixtureError || fixtures.length === 0}>{busy ? "Submitting…" : "Submit case"}</button></div>
+      </fieldset>
+    </form>
+  </div>;
+}
