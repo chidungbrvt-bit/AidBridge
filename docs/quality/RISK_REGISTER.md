@@ -55,3 +55,7 @@ Distinct creator/verifier và delivery recorder/confirmer; case verified trướ
 ## Escalation và monitoring
 
 Daily standup ghi blocked task/reason/next action. Critical dependency blocked>1 ngày hoặc buffer consumption>50% trước18/11 -> checkpoint cả nhóm, assign helper và scope cut. Authentication/privacy/false-confirmation bug -> release blocker ngay, không chờ threshold. Forecast budget>$20 -> dừng purchase/scale và review; không có authorization tự tăng budget. Ngoài nhóm không tự gửi messages khi chưa được user yêu cầu.
+
+## F01 - bằng chứng validation ngày 10/11/2026
+
+R01 vẫn OPEN: chưa có danh sách ứng viên thật/lịch hẹn/ghi chú consent được cung cấp trong repo; không có liên hệ bên ngoài trong phiên F01. Owner thực hiện research: Khoa/nhóm; next action: xác định 2-3 người có kinh nghiệm và xin consent trước ghi notes. R02 vẫn UNVALIDATED: scenario/assumptions không phải phản hồi người dùng; chưa claim adoption, partner hoặc impact. [F01 Product/Validation](../product/validation/F01_DEMO_AND_ASSUMPTIONS.md) ghi 10 giả định, tác động và cách kiểm chứng. Không thay probability/impact, owner lịch sử hoặc đóng risk vì hoàn thành tài liệu.

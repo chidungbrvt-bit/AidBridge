@@ -1,0 +1,540 @@
+{
+  "label": "PRODUCT_DEMO_EXPECTATIONS_NOT_RUNTIME",
+  "baselineCommit": "f676e41c3363f1908b7050e30cfbee5b98a24f06",
+  "household": "Demo Household A",
+  "area": "Demo Commune A",
+  "organization": "AidBridge Demo Organization",
+  "identities": {
+    "volunteer": {
+      "userId": "demo-user-volunteer",
+      "role": "VOLUNTEER"
+    },
+    "verifier": {
+      "userId": "demo-user-verifier",
+      "role": "VERIFIER"
+    },
+    "confirmer": {
+      "userId": "demo-user-confirmer",
+      "role": "DELIVERY_CONFIRMER"
+    },
+    "admin": {
+      "userId": "demo-user-org-admin",
+      "role": "ORG_ADMIN"
+    },
+    "donor": {
+      "userId": "demo-user-donor",
+      "role": "DONOR_CAPABILITY"
+    }
+  },
+  "openDisputes": 0,
+  "states": {
+    "created": {
+      "caseStatus": "SUBMITTED",
+      "campaignStatus": null,
+      "totals": [
+        {
+          "item": "Food package",
+          "unit": "package",
+          "target": 2,
+          "pledged": 0,
+          "received": 0,
+          "delivered": 0,
+          "confirmed": 0
+        },
+        {
+          "item": "Hygiene kit",
+          "unit": "kit",
+          "target": 2,
+          "pledged": 0,
+          "received": 0,
+          "delivered": 0,
+          "confirmed": 0
+        }
+      ]
+    },
+    "verified": {
+      "caseStatus": "VERIFIED",
+      "campaignStatus": null,
+      "totals": [
+        {
+          "item": "Food package",
+          "unit": "package",
+          "target": 2,
+          "pledged": 0,
+          "received": 0,
+          "delivered": 0,
+          "confirmed": 0
+        },
+        {
+          "item": "Hygiene kit",
+          "unit": "kit",
+          "target": 2,
+          "pledged": 0,
+          "received": 0,
+          "delivered": 0,
+          "confirmed": 0
+        }
+      ]
+    },
+    "published": {
+      "caseStatus": "IN_PROGRESS",
+      "campaignStatus": "PUBLISHED",
+      "totals": [
+        {
+          "item": "Food package",
+          "unit": "package",
+          "target": 2,
+          "pledged": 0,
+          "received": 0,
+          "delivered": 0,
+          "confirmed": 0
+        },
+        {
+          "item": "Hygiene kit",
+          "unit": "kit",
+          "target": 2,
+          "pledged": 0,
+          "received": 0,
+          "delivered": 0,
+          "confirmed": 0
+        }
+      ]
+    },
+    "pledged": {
+      "caseStatus": "IN_PROGRESS",
+      "campaignStatus": "PUBLISHED",
+      "totals": [
+        {
+          "item": "Food package",
+          "unit": "package",
+          "target": 2,
+          "pledged": 2,
+          "received": 0,
+          "delivered": 0,
+          "confirmed": 0
+        },
+        {
+          "item": "Hygiene kit",
+          "unit": "kit",
+          "target": 2,
+          "pledged": 2,
+          "received": 0,
+          "delivered": 0,
+          "confirmed": 0
+        }
+      ]
+    },
+    "partialReceipt": {
+      "caseStatus": "IN_PROGRESS",
+      "campaignStatus": "PUBLISHED",
+      "totals": [
+        {
+          "item": "Food package",
+          "unit": "package",
+          "target": 2,
+          "pledged": 2,
+          "received": 2,
+          "delivered": 0,
+          "confirmed": 0
+        },
+        {
+          "item": "Hygiene kit",
+          "unit": "kit",
+          "target": 2,
+          "pledged": 2,
+          "received": 1,
+          "delivered": 0,
+          "confirmed": 0
+        }
+      ]
+    },
+    "received": {
+      "caseStatus": "IN_PROGRESS",
+      "campaignStatus": "PUBLISHED",
+      "totals": [
+        {
+          "item": "Food package",
+          "unit": "package",
+          "target": 2,
+          "pledged": 2,
+          "received": 2,
+          "delivered": 0,
+          "confirmed": 0
+        },
+        {
+          "item": "Hygiene kit",
+          "unit": "kit",
+          "target": 2,
+          "pledged": 2,
+          "received": 2,
+          "delivered": 0,
+          "confirmed": 0
+        }
+      ]
+    },
+    "delivered": {
+      "caseStatus": "IN_PROGRESS",
+      "campaignStatus": "PUBLISHED",
+      "totals": [
+        {
+          "item": "Food package",
+          "unit": "package",
+          "target": 2,
+          "pledged": 2,
+          "received": 2,
+          "delivered": 2,
+          "confirmed": 0
+        },
+        {
+          "item": "Hygiene kit",
+          "unit": "kit",
+          "target": 2,
+          "pledged": 2,
+          "received": 2,
+          "delivered": 2,
+          "confirmed": 0
+        }
+      ]
+    },
+    "confirmed": {
+      "caseStatus": "IN_PROGRESS",
+      "campaignStatus": "FULFILLED",
+      "totals": [
+        {
+          "item": "Food package",
+          "unit": "package",
+          "target": 2,
+          "pledged": 2,
+          "received": 2,
+          "delivered": 2,
+          "confirmed": 2
+        },
+        {
+          "item": "Hygiene kit",
+          "unit": "kit",
+          "target": 2,
+          "pledged": 2,
+          "received": 2,
+          "delivered": 2,
+          "confirmed": 2
+        }
+      ]
+    },
+    "closed": {
+      "caseStatus": "COMPLETED",
+      "campaignStatus": "CLOSED",
+      "totals": [
+        {
+          "item": "Food package",
+          "unit": "package",
+          "target": 2,
+          "pledged": 2,
+          "received": 2,
+          "delivered": 2,
+          "confirmed": 2
+        },
+        {
+          "item": "Hygiene kit",
+          "unit": "kit",
+          "target": 2,
+          "pledged": 2,
+          "received": 2,
+          "delivered": 2,
+          "confirmed": 2
+        }
+      ]
+    }
+  },
+  "positiveChecklist": [
+    {
+      "id": "F01-P01",
+      "apiId": "C01",
+      "actor": "volunteer",
+      "endpoint": "POST /api/cases",
+      "expectedHttp": 201,
+      "before": null,
+      "after": "created",
+      "expected": "Consent + two needs + allowlisted evidence; SUBMITTED, creator recorded; beneficiary has no login/wallet.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-P02",
+      "apiId": "V01",
+      "actor": "verifier",
+      "endpoint": "POST /api/cases/{id}/verify",
+      "expectedHttp": 200,
+      "before": "created",
+      "after": "verified",
+      "expected": "Reviewer differs from creator; exact expectedVersion and reviewed evidence versions; VERIFIED and PENDING_ON_CHAIN are separate.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-P03",
+      "apiId": "P01",
+      "actor": "admin",
+      "endpoint": "POST /api/campaigns",
+      "expectedHttp": 201,
+      "before": "verified",
+      "after": "verified",
+      "expected": "Create DRAFT campaign copied from approved needs; draft remains private. This intermediate draft is not a goods snapshot.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-P04",
+      "apiId": "P02",
+      "actor": "admin",
+      "endpoint": "POST /api/campaigns/{id}/publish",
+      "expectedHttp": 200,
+      "before": "verified",
+      "after": "published",
+      "expected": "Publish the previously created draft; targets/units fixed and public summary sanitized.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-P05",
+      "apiId": "G01",
+      "actor": "donor",
+      "endpoint": "POST /api/campaigns/{id}/commitments",
+      "expectedHttp": 201,
+      "before": "published",
+      "after": "pledged",
+      "expected": "Pledge both lines 2/2 with campaignItemId; capture returned contribution item IDs.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-P06",
+      "apiId": "R01",
+      "actor": "admin",
+      "endpoint": "POST /api/commitments/{id}/receipts",
+      "expectedHttp": 201,
+      "before": "pledged",
+      "after": "partialReceipt",
+      "expected": "Receive food2/hygiene1 with contributionItemId; outstanding hygiene1.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-P07",
+      "apiId": "R01",
+      "actor": "admin",
+      "endpoint": "POST /api/commitments/{id}/receipts",
+      "expectedHttp": 201,
+      "before": "partialReceipt",
+      "after": "received",
+      "expected": "Receive remaining hygiene1 only; new request key, different receipt record.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-P08",
+      "apiId": "D01",
+      "actor": "volunteer",
+      "endpoint": "POST /api/cases/{id}/deliveries",
+      "expectedHttp": 201,
+      "before": "received",
+      "after": "delivered",
+      "expected": "Record DELIVERED 2/2 with campaignItemId and authorized evidence versions. Confirmation still pending.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-P09",
+      "apiId": "D02",
+      "actor": "confirmer",
+      "endpoint": "POST /api/deliveries/{id}/confirm",
+      "expectedHttp": 200,
+      "before": "delivered",
+      "after": "confirmed",
+      "expected": "Different identity from recorder; exact delivery evidence snapshot; decision CONFIRMED, no open dispute.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-P10",
+      "apiId": "P05",
+      "actor": "admin",
+      "endpoint": "POST /api/campaigns/{id}/close",
+      "expectedHttp": 200,
+      "before": "confirmed",
+      "after": "closed",
+      "expected": "All item targets confirmed; no dispute/review requirement; explicit close, not automatic case completion.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-P11",
+      "apiId": "T02",
+      "actor": "donor",
+      "endpoint": "GET /api/campaigns/{id}/audit-trail",
+      "expectedHttp": 200,
+      "before": "closed",
+      "after": "closed",
+      "expected": "Public sanitized audit. Confirm on-chain only after actual successful receipt and matching event; no fake hashes.",
+      "executionStatus": "NOT_RUN"
+    }
+  ],
+  "alternativeChecklist": [
+    {
+      "id": "F01-N01",
+      "apiId": "V01",
+      "resetToState": "created",
+      "expectedHttp": 403,
+      "expectedCodeOrLabel": "SELF_APPROVAL",
+      "action": "Creator also has VERIFIER; verify own case",
+      "expected": "Case stays SUBMITTED; no successful verification/audit/job.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-N02",
+      "apiId": "D02",
+      "resetToState": "delivered",
+      "expectedHttp": 403,
+      "expectedCodeOrLabel": "SELF_CONFIRMATION",
+      "action": "Recorder also has DELIVERY_CONFIRMER; confirm own delivery",
+      "expected": "Confirmed totals remain 0; no confirmation/job.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-N03",
+      "apiId": "D02",
+      "resetToState": "delivered",
+      "expectedHttp": 403,
+      "expectedCodeOrLabel": "FORBIDDEN",
+      "action": "Same-org readable case, actor lacks DELIVERY_CONFIRMER",
+      "expected": "No confirmation or quantity effect.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-N04",
+      "apiId": "C03",
+      "resetToState": "created",
+      "expectedHttp": 404,
+      "expectedCodeOrLabel": "RESOURCE_NOT_FOUND",
+      "action": "Other organization reads private case",
+      "expected": "No private payload or evidence disclosure.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-N05",
+      "apiId": "P01",
+      "resetToState": "created",
+      "expectedHttp": 409,
+      "expectedCodeOrLabel": "INVALID_STATE",
+      "action": "Try campaign creation for unverified case",
+      "expected": "No draft/public campaign.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-N06",
+      "apiId": "G01",
+      "resetToState": "published",
+      "expectedHttp": 409,
+      "expectedCodeOrLabel": "QUANTITY_EXCEEDED",
+      "action": "Request food2/hygiene3 when remaining2/2",
+      "expected": "Both lines rejected, no quantity/business-audit/job effect.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-N07",
+      "apiId": "R01",
+      "resetToState": "partialReceipt",
+      "expectedHttp": 409,
+      "expectedCodeOrLabel": "QUANTITY_EXCEEDED",
+      "action": "Try food1/hygiene1 when food outstanding0",
+      "expected": "Entire receipt rejected; hygiene still received1.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-N08",
+      "apiId": "D01",
+      "resetToState": "partialReceipt",
+      "expectedHttp": 409,
+      "expectedCodeOrLabel": "QUANTITY_EXCEEDED",
+      "action": "Try delivery food2/hygiene2 when received2/1",
+      "expected": "Entire delivery rejected; all delivered totals remain0.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-N09",
+      "apiId": "P05",
+      "resetToState": "delivered",
+      "expectedHttp": 409,
+      "expectedCodeOrLabel": "INVALID_STATE",
+      "action": "Close after delivery but before independent confirmation",
+      "expected": "No COMPLETED case.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-N10",
+      "apiId": "P05",
+      "resetToState": "confirmed",
+      "expectedHttp": 409,
+      "expectedCodeOrLabel": "DISPUTE_OPEN",
+      "action": "Open dispute before close; isolated alternative branch",
+      "expected": "Case not completed while dispute remains OPEN; quantities not silently changed.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-N11",
+      "apiId": "V01",
+      "resetToState": "created",
+      "expectedHttp": 409,
+      "expectedCodeOrLabel": "VERSION_CONFLICT",
+      "action": "Another actor changed the case before decision",
+      "expected": "Refresh; original review not accepted against stale version.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-N12",
+      "apiId": "D02",
+      "resetToState": "delivered",
+      "expectedHttp": 400,
+      "expectedCodeOrLabel": "VALIDATION_ERROR",
+      "action": "Missing/incorrect reviewed evidence version set",
+      "expected": "No independent confirmation; exact detailed error mapping to be verified in B10.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-N13",
+      "apiId": "G01",
+      "resetToState": "pledged",
+      "expectedHttp": 201,
+      "expectedCodeOrLabel": "IDEMPOTENT_REPLAY",
+      "action": "Repeat same successful actor/key/body",
+      "expected": "Same original response/resource; zero ADDITIONAL quantity/audit/job effect.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-N14",
+      "apiId": "G01",
+      "resetToState": "pledged",
+      "expectedHttp": 409,
+      "expectedCodeOrLabel": "IDEMPOTENCY_CONFLICT",
+      "action": "Reuse successful key with changed body",
+      "expected": "No new contribution or quantity effect.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-N15",
+      "apiId": "D01",
+      "resetToState": "received",
+      "expectedHttp": 201,
+      "expectedCodeOrLabel": "FAILED_ATTEMPT",
+      "action": "outcome FAILED, items=[], reason present",
+      "expected": "Failed record/local audit, zero delivered/confirmed effect, no chain job.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "F01-N16",
+      "apiId": "T02",
+      "resetToState": "verified",
+      "expectedHttp": null,
+      "expectedCodeOrLabel": "PENDING_OR_FAILED_CHAIN",
+      "action": "RPC unavailable, null/reverted/mismatched receipt",
+      "expected": "Business VERIFIED unchanged; no false confirmed-on-chain badge. No HTTP status prediction for a worker fault.",
+      "executionStatus": "NOT_RUN"
+    }
+  ],
+  "notes": [
+    "Planning states, not HTTP DTOs or seed data. Resolve real UUIDs from responses.",
+    "P03 draft is an explicitly described intermediate record; totals snapshot remains verified until publish.",
+    "N10 adds an OPEN dispute in an isolated branch; do not run on the primary happy path.",
+    "Detailed errors for incomplete evidence remain expected/proposed until B10 implementation is reviewed.",
+    "NOT_RUN means no actual demo/API/contract execution was performed."
+  ]
+}
