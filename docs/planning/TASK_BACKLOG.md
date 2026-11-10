@@ -29,7 +29,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | B03 | P0-01 | Dũng (B) | Khoa / Minh | L | 5 | B02 | 2026-11-06 | 2026-11-06 | In Progress |
 | B04 | P0-02 | Dũng (B) | Khoa / Minh | M | 4 | B03 | 2026-11-07 | 2026-11-07 | In Progress |
 | B05 | P0-03 | Dũng (B) | Khoa / Minh | L | 4 | B04, C01 | 2026-11-08 | 2026-11-08 | In Review |
-| B06 | P0-04 | Dũng (B) | Khoa / Minh | M | 6 | B05 | 2026-11-10 | 2026-11-10 | Not Started |
+| B06 | P0-04 | Dũng (B) | Khoa / Minh | M | 6 | B05 | 2026-11-10 | 2026-11-10 | In Review |
 | B07 | P0-04 | Dũng (B) | Khoa / Minh | L | 7 | B06 | 2026-11-13 | 2026-11-13 | Not Started |
 | B08 | P0-05 | Dũng (B) | Khoa / Minh | M | 5 | B07 | 2026-11-14 | 2026-11-14 | Not Started |
 | B09 | P0-05 | Dũng (B) | Khoa / Minh | L | 5 | B08 | 2026-11-15 | 2026-11-15 | Not Started |
@@ -192,7 +192,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Acceptance criteria:** Copy every approved need line and exact unit/qty; one campaign/case; unverified publish blocked; sanitized public DTO.
 - **Required tests:** BR03-P/N, BR08-P/N; stale review/draft privacy/duplicate campaign.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Review (11/11/2026). Forward `V10__reconcile_campaign_schema.sql` + `campaign` package (P01–P04, local audit `CAMPAIGN_CREATED`/`CAMPAIGN_PUBLISHED`, không tạo blockchain job). Dũng chạy trên `aidbridge_test` (IntelliJ): `CampaignApiIT` 15/15 pass, `CampaignRequestValidationTest` 4/4 pass. Test phát hiện và đã sửa 2 lỗi trong `CampaignService`: (1) điều kiện review hiện hành phải là `reviewedCaseVersion + 1 == case.version` vì approve tự tăng version; (2) publish so sánh item theo thứ tự không ổn định gây `409` ngẫu nhiên, đã đổi sang so sánh tập hợp và thêm test hồi quy 5 need line. Trễ 1 ngày so với deadline 10/11; actual human effort chưa được cung cấp. Còn chờ: cross-owner review (Khoa payload/chain boundary, Minh API/UI), integration evidence với F06, quyết định D50 về thứ tự `items[]`.
 
 ### B07 - Commitments/cancel/idempotency
 
@@ -679,6 +679,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | C02 (Hardhat 3 local toolchain & smoke tests) | 09/11/2026 | In Review | Chưa ghi nhận giờ làm thực tế của Dũng | Commit `84a042f` (PR `#3` merged vào `main`): `contracts/` với Solidity `0.8.28`, `evmVersion: paris`, `ToolchainSmokeProbe.sol` & `ToolchainSmoke.test.ts` (`3 passing`) | Khoa review và dùng làm nền triển khai `C03` (`AidRegistry.sol`) |
 | C01 & F02 (D49 cross-owner review & protocol freeze) | 10/11/2026 | In Review | Chưa ghi nhận giờ làm thực tế của Dũng | Dũng chạy `node docs/fixtures/c01/verify-c01.mjs --ethers` và `node docs/fixtures/f02/verify-f02.mjs` (`PASS`); chốt toàn bộ `C01-O01..O05` và `F02-A01..A05` tại `D49` | Bàn giao lại cho Khoa (`C03`/`C05`) và Minh (`F03`/`F04`/`F07`/`F08`) |
 | C03 (AidRegistry slice, Part 1 + Part 2 negative/privacy tests) | 10/11/2026 | In Review | Chưa ghi nhận giờ làm thực tế của Dũng | `AidRegistry.sol` + 2 file test; `npm run compile` PASS ("No contracts to compile" — artifact hiện có đã khớp source); `npm test` 44 passing (3 + 5 + 36); `verify-c01.mjs --ethers` PASS; ABI draft 4/4 khớp artifact | Khoa review contract, guard order và C01-T12 deviation trước C04 Fuji pilot (11/11); C06 mở rộng milestone khi được giao |
+| B06 (P01–P04 implementation & tests) | 11/11/2026 | In Review | Estimate gốc 6h (deadline gốc 10/11/2026); actual human effort chưa được cung cấp | V10 reconcile + `Campaign`/`CampaignItem` + `CampaignService`/`CampaignController`; sửa 2 lỗi do test phát hiện (off-by-one reviewed version, so sánh item phụ thuộc thứ tự); Dũng xác nhận `CampaignApiIT` 15/15 và `CampaignRequestValidationTest` 4/4 pass trên `aidbridge_test` | Khoa/Minh cross-owner review; bàn giao P01–P04 cho F06; chốt D50; B07 sẵn sàng khi được phê duyệt |
 
 ### C01 review handoff - 09/11/2026
 

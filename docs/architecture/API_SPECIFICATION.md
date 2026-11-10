@@ -127,6 +127,23 @@ Abbreviations: FV/CV/OA/DC/PA như Business Workflows; Auth=enabled authenticate
 
 All endpoint failures: 401 for required auth; 403 role/CSRF; 404 scope; 400 fields; 409 state/quantity/replay conflict as applicable. Dependency downtime trước SQL commit503. GET binary errors vẫn problem+json, không trả arbitrary file bytes.
 
+### B06 campaign implementation notes (11/11/2026)
+
+Implemented and covered by `CampaignApiIT` (15 tests) and `CampaignRequestValidationTest` (4 tests).
+
+- **P01 `POST /api/campaigns`**: active `ORG_ADMIN` of the owning `APPROVED` organization, CSRF + `Idempotency-Key`. Lock order `AidCase` -> `Campaign`. Returns `201` + `Location: /api/campaigns/{id}` + `Cache-Control: no-store`; replay returns the stored response with `Idempotent-Replayed: true`. Copies every current (unretired) need line with exact name/unit/quantity.
+  - `403 FORBIDDEN`: caller is a member of the owning org without `ORG_ADMIN` (e.g. `VOLUNTEER`, `VERIFIER`).
+  - `404 RESOURCE_NOT_FOUND`: case belongs to another organization.
+  - `409 INVALID_STATE`: case not `VERIFIED`; campaign already exists for the case; dispute `OPEN`/`UNDER_REVIEW` (a `RESOLVED` dispute does not block); consent not `GRANTED` or `publicSummaryAllowed=false`; no approved review.
+  - `409 VERSION_CONFLICT`: case changed after approval. Rule: the latest review is `APPROVED` and `reviewedCaseVersion + 1 == case.version` (approval itself increments the case version by one).
+  - `409 IDEMPOTENCY_CONFLICT`: same key with a different payload.
+  - `400 VALIDATION_ERROR`: missing `caseId`, blank/oversized `title` (160) or `publicSummary` (2000), or text containing `<`, `>`, `://` or NUL.
+- **P02 `POST /api/campaigns/{id}/publish`**: same caller/CSRF/idempotency rules as P01; body must be empty or `{}`. Requires campaign `DRAFT` and re-checks every P01 case/consent/dispute/review rule. Copied items are compared with the current approved needs as a set (order-independent); mismatch -> `409 VERSION_CONFLICT`. On success campaign `PUBLISHED` (+ `publishedAt`), case `IN_PROGRESS`, local audit `CAMPAIGN_PUBLISHED`; no blockchain job is enqueued.
+- **P03 `GET /api/campaigns?page=0&size=20`**: public. `page >= 0`, `size` in `1..100`, otherwise `400 VALIDATION_ERROR`. Returns only `PUBLISHED`/`FULFILLED`/`CLOSED` campaigns of `APPROVED` organizations (`PENDING`/`SUSPENDED` excluded). Response `CampaignPage {items, page, size, totalElements}`.
+- **P04 `GET /api/campaigns/{id}`**: public for `PUBLISHED`/`FULFILLED`/`CLOSED` of `APPROVED` organizations. A `DRAFT` is returned only to an active `ORG_ADMIN` of the owning organization; anonymous callers, other roles of the same organization and admins of other organizations receive `404 RESOURCE_NOT_FOUND`. A suspended organization's campaigns return `404` to everyone.
+- **`CampaignResponse`**: `{id, status, title, publicSummary, approximateArea, organization {name, publicRef}, items[{id, name, unit, targetQty, pledgedQty, receivedQty, deliveredQty, confirmedQty, remainingPledgeQty}], auditUrl}`. `publicRef` is `0x` + 64 lowercase hex. Until B07–B10 the progress fields are `0` and `remainingPledgeQty = targetQty`. Never exposes case ID, beneficiary alias, internal title, user IDs/emails, evidence keys or the internal organization ID.
+- **OPEN (D50)**: the order of `items[]` is currently not guaranteed.
+
 ## End-to-end request example
 
 Donor authenticated with CSRF sends `POST /api/campaigns/{id}/commitments`, `Idempotency-Key: <new UUID>`:
