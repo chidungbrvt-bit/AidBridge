@@ -13,7 +13,10 @@ export interface DonorAppProps {
   donorEnabled: boolean;
   mode: 'mock' | 'real';
 }
-export function DonorApp({ api, campaignId, view, navigate, donorEnabled, mode }: DonorAppProps) {
+export function DonorApp(props: DonorAppProps) {
+  return <DonorWorkspace key={props.campaignId} {...props}/>;
+}
+function DonorWorkspace({ api, campaignId, view, navigate, donorEnabled, mode }: DonorAppProps) {
   const [campaign, setCampaign] = useState<CampaignResponse>();
   const [loadError, setLoadError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -32,6 +35,7 @@ export function DonorApp({ api, campaignId, view, navigate, donorEnabled, mode }
   const [historyError, setHistoryError] = useState('');
   const [historyLoading, setHistoryLoading] = useState(false);
   const [page, setPage] = useState(0);
+  const [historyRevision, setHistoryRevision] = useState(0);
   const [refresh, setRefresh] = useState(0);
   useEffect(() => {
     let active = true; setLoading(true); setLoadError(''); setCampaign(undefined);
@@ -43,7 +47,7 @@ export function DonorApp({ api, campaignId, view, navigate, donorEnabled, mode }
     let active = true; setHistoryLoading(true); setHistoryError(''); setHistory(undefined);
     api.getCommitments(page).then(value => { if (active) setHistory(value); }).catch(() => { if (active) setHistoryError('Unable to load your pledge history.'); }).finally(() => { if (active) setHistoryLoading(false); });
     return () => { active = false; };
-  }, [api, view, page, refresh, donorEnabled]);
+  }, [api, view, page, refresh, donorEnabled, historyRevision]);
   useEffect(() => { if (message) summary.current?.focus(); }, [message, errors]);
   useEffect(() => { if (result) resultRef.current?.focus(); }, [result]);
   useEffect(() => { if (!donorEnabled) { setHistory(undefined); setDraft({}); setResult(undefined); pending.current = null; setUnknown(false); } }, [donorEnabled]);
@@ -62,7 +66,7 @@ export function DonorApp({ api, campaignId, view, navigate, donorEnabled, mode }
     try {
       const saved = await api.pledge(campaignId, request.body, request.key);
       if (!access.current) { pending.current = null; setUnknown(false); return; }
-      pending.current = null; setUnknown(false); setDraft({}); setPage(0); setResult(saved);
+      pending.current = null; setUnknown(false); setDraft({}); setPage(0); setHistoryRevision(x => x + 1); setResult(saved);
       // Read the authoritative view, never infer campaign totals from a donor-level response.
       try { setCampaign(await api.getCampaign(campaignId)); } catch { setLoadError('Pledge saved. Refresh campaign information before making another pledge.'); }
     } catch (error) {

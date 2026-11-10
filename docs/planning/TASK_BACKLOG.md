@@ -593,3 +593,7 @@ Nghiệm thu nội bộ F01 10/11: đạt đủ bộ tài liệu theo phân côn
 ### F07 - nghiệm thu nội bộ G01/G02 ngày 10/11/2026
 
 Not Started -> In Progress -> In Review. User giao implementation mock G01/G02 ngày10 và commit local riêng sau QA; không push/PR. Bộ React feature ở frontend/features/donor và harness dev riêng frontend/dev/donor-preview, không sửa shell/client của Minh hay backend Dũng. G03 unreceived cancellation là acceptance baseline còn lại, chưa thuộc phạm vi lượt này; không ghi Done hoặc tự đổi dependencies/owner/estimate. Xem F07 implementation để biết lệnh chạy, test results, UI routes, mock labels và các OPEN integration. F01 commit cd5d88d được bảo toàn.
+
+### QA độc lập F01/F07 - 10/11/2026
+
+Giữ F01/F07 In Review và owner/estimate/dependencies cũ. Đối chiếu scope ngày10 đạt ở mức F01 tài liệu/F07 mock G01/G02. [QA report](../reviews/F01_F07_QA_REVIEW.md): đã tái hiện/sửa history/campaign races, optional ProblemDetail.fieldErrors, reset pending mock, single-line409; checker F01 exact enum. Lint/typecheck/build PASS; 7 unit +10 browser E2E PASS; real HTTP/Next/Fuji/NGO Not Run. Các sửa QA chỉ nằm working tree, chưa commit/push/PR. C01/F02 không đổi status.

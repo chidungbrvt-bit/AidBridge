@@ -1,4 +1,7 @@
 import {test,expect} from '@playwright/test';
+const backendCalls=new WeakMap<import('@playwright/test').Page,string[]>();
+test.beforeEach(async({page})=>{const calls:string[]=[];backendCalls.set(page,calls);page.on('request',request=>{if(new URL(request.url()).pathname.startsWith('/api/'))calls.push(request.url());});});
+test.afterEach(async({page})=>{expect(backendCalls.get(page)).toEqual([]);});
 async function fill(page:import('@playwright/test').Page){await page.getByLabel('Rice',{exact:false}).first().check();await page.getByLabel('Quantity (kg)').fill('8');await page.getByLabel('Drinking Water',{exact:false}).first().check();await page.getByLabel('Quantity (box)').fill('2');}
 test.beforeEach(async({page})=>{await page.goto('/');await expect(page.getByRole('heading',{name:'Pledge essential goods'})).toBeVisible();});
 test('multi-item pledge to own history, separate totals, mobile layout',async({page})=>{

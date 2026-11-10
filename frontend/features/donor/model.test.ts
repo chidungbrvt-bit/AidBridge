@@ -31,3 +31,22 @@ test('response lost after save recovers original pledge by exact key; history pa
  for(let n=0;n<5;n++)await mock.api.pledge(id,body,`new-${n}`);
  assert.equal((await mock.api.getCommitments(0)).items.length,5);assert.equal((await mock.api.getCommitments(1)).items.length,1);
 });
+
+test('ProblemDetail may omit fieldErrors; UI must receive an empty list',()=>{
+ const error=new ApiError({type:'about:blank',title:'Forbidden',status:403,code:'FORBIDDEN',detail:'Access denied',instance:'/api/test',traceId:'test'} as import('./model.ts').ProblemDetail);
+ assert.deepEqual(error.problem.fieldErrors,[]);
+});
+test('reset cancels an in-flight mock write instead of leaking it into fresh data',async()=>{
+ const mock=createMockDonorApi(20);const c=await mock.api.getCampaign(id);
+ const request=mock.api.pledge(id,{items:[{campaignItemId:c.items[0].id,quantity:1}]},'reset-key');mock.reset();
+ await assert.rejects(request);assert.equal((await mock.api.getCommitments(0)).totalElements,0);
+});
+
+test('concurrent mock pledges remain atomic; one-line 409 points at submitted row',async()=>{
+ const mock=createMockDonorApi(0);const c=await mock.api.getCampaign(id);
+ const body={items:[{campaignItemId:c.items[0].id,quantity:8},{campaignItemId:c.items[1].id,quantity:2}]};
+ const results=await Promise.allSettled([mock.api.pledge(id,body,'concurrent-a'),mock.api.pledge(id,body,'concurrent-b')]);
+ assert.equal(results.filter(x=>x.status==='fulfilled').length,1);assert.equal((await mock.api.getCommitments(0)).totalElements,1);
+ assert.deepEqual((await mock.api.getCampaign(id)).items.map(x=>x.pledgedQty),[14,3]);
+ mock.setFault('409');await assert.rejects(mock.api.pledge(id,{items:[{campaignItemId:c.items[0].id,quantity:1}]},'single-error'),(e:unknown)=>e instanceof ApiError&&e.problem.fieldErrors[0].field==='items[0].quantity');
+});

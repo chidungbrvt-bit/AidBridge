@@ -8,7 +8,11 @@ assert.equal(data.household,'Demo Household A');
 assert.equal(data.positiveChecklist.length,11); assert.equal(data.alternativeChecklist.length,16);
 const ids=[...data.positiveChecklist,...data.alternativeChecklist].map(x=>x.id);
 assert.equal(new Set(ids).size,27);
-for(const a of Object.values(data.identities)) if(a.role!=='DONOR_CAPABILITY') assert(roles.includes(a.role));
+const roleBody=/enum Role\s*\{([^}]+)\}/.exec(roles)?.[1];
+assert(roleBody);
+const roleNames=new Set(roleBody.split(',').map(x=>x.trim()).filter(Boolean));
+for(const a of Object.values(data.identities)) if(a.role!=='DONOR_CAPABILITY') assert(roleNames.has(a.role));
+assert.equal(new Set(Object.values(data.identities).map(x=>x.userId)).size,Object.keys(data.identities).length);
 assert.notEqual(data.identities.volunteer.userId,data.identities.verifier.userId);
 assert.notEqual(data.identities.volunteer.userId,data.identities.confirmer.userId);
 for(const state of Object.values(data.states)) {

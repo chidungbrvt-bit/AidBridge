@@ -156,3 +156,7 @@ Khác tên role đã được ghi F01-A01: ý nghĩa tạo/duyệt/giao/xác nh�
 Bổ sung quan sát để không làm Codex khác hiểu sai khả năng demo: AuthService.java hiện gọi `toMeResponse(user, memberships, false)`, nên donorEnabled của API auth hiện false; donor trong scenario chỉ là capability kỳ vọng/giả lập, chưa được provisioning thực tế. Liên hệ F01-A08 (OPEN implementation): Dũng xác nhận donor capability, Minh xử lý shared client trước tích hợp thật. Không thay backend hoặc fixtures của người khác, không tự bỏ guard donorEnabled. Vấn đề không chặn kịch bản F01, cũng không chứng minh F07/API đã hoạt động.
 
 Kết luận: đủ đầu ra tài liệu theo phân công 10/11 để commit local và review. Trạng thái task **In Review**, không Done. NGO validation, thống nhất interfaces/role mapping, cấp donor capability và thử HTTP/UI/Fuji còn OPEN hoặc chưa chạy; không đánh dấu chúng PASS để đạt nghiệm thu giả.
+
+## QA độc lập sau commit F01 - 10/11/2026
+
+Xem [báo cáo QA F01/F07](../../reviews/F01_F07_QA_REVIEW.md) cho kết quả mới nhất.

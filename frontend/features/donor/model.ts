@@ -8,7 +8,7 @@ export interface DonorApi {
 }
 export class ApiError extends Error {
   problem: ProblemDetail;
-  constructor(problem: ProblemDetail) { super(problem.detail); this.name = 'ApiError'; this.problem = problem; }
+  constructor(problem: Omit<ProblemDetail, 'fieldErrors'> & { fieldErrors?: ProblemDetail['fieldErrors'] }) { super(problem.detail); this.name = 'ApiError'; this.problem = { ...problem, fieldErrors: problem.fieldErrors ?? [] }; }
 }
 export type Draft = Record<string, { selected: boolean; quantity: string }>;
 export function validateDraft(campaign: CampaignResponse, draft: Draft) {

@@ -103,3 +103,7 @@ pnpm test:e2e
 E2E mặc định dùng Edge trên Windows để không tải browser mới; máy khác dùng Chromium sau khi cài browser Playwright tương ứng. Cấu hình theo process.platform; lệnh/browser engine ghi rõ khi chạy lại. Preview chỉ được build/chạy local, chưa deploy.
 
 Status cuối: đạt nghiệm thu nội bộ phạm vi G01/G02 mock đã giao, sẵn sàng review/commit local riêng F07. Giữ **In Review** cho tới cross-owner review và dependency/integration gates; không push/PR hoặc làm task khác trong lượt này.
+
+## QA độc lập sau commit F07 - 10/11/2026
+
+Xem [báo cáo QA F01/F07](../reviews/F01_F07_QA_REVIEW.md): đã sửa 4 regression và field mapping409, kết quả mới nhất **7 unit +10 browser E2E PASS**, thay cho counts4/8 của ledger triển khai ban đầu. Test host race nằm riêng trong tests và không được import vào preview main/build. Adapter boundary và real integration vẫn OPEN; F07 In Review. Sửa QA chưa commit/push/PR.
