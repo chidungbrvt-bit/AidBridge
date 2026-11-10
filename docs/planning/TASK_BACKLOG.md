@@ -316,7 +316,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Acceptance criteria:** After coding approval: pinned compatible toolchain/compiler/optimizer/EVM target, distinct test accounts, deterministic compile/test, no keys.
 - **Required tests:** Local compile/test smoke; wrong chain/secret configuration checks.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Review (09/11/2026, Dũng hỗ trợ setup). Commit `84a042f` (PR `#3`): Hardhat `3.21.2`, Solidity `0.8.28`, `evmVersion: paris`, optimizer 200 runs, `ToolchainSmokeProbe.sol` + `test/ToolchainSmoke.test.ts` (3 tests). Chạy lại ngày 10/11/2026 cùng C03 Part 2 trong `contracts/`: `npm run compile` PASS ("No contracts to compile" — artifact hiện có đã khớp source); `npm test` 44 passing, trong đó `ToolchainSmoke.test.ts` 3/3. Not Run: cấu hình Fuji thật (`REQUIRE_FUJI_CONFIG=true`), thuộc C04. Actual effort chưa ghi nhận. Chờ Khoa review trước khi Done.
 
 ### C03 - Authorized verification contract slice
 
@@ -331,7 +331,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Required tests:** BR12-P/N, BR11-N; SC01-04/09-11.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
 - **Phối hợp cụ thể:** Dũng làm Part 1 (3h dự kiến): `AidRegistry.sol` và test happy-path. Khoa làm các phần còn lại của C03 và review contract.
-- **Status / evidence:** In Review (10/11/2026, Part 1 + test negative do Dũng thực hiện). `AidRegistry.sol` (registerOrganization/updateOrganizationRelayer/revokeOrganizationRelayer/setOrganizationStatus, recordCaseVerification theo guard order D49 C01-O05, getEventRecord/getCaseSummary flat outputs). Test: `AidRegistry.test.ts` (SC01, C01-T01) và `AidRegistry.negative.test.ts` (C01-T02..T12, vòng đời relayer, 19 test). Chạy `npm run compile` và `npm test` trong `contracts/`: 5 passing (Part 1 + C02); `npx hardhat test test/AidRegistry.negative.test.ts`: 19 passing. Not Run: review chéo của Khoa, đối chiếu Java/TypeScript golden vector, C06 milestone functions, Fuji. Actual effort: X giờ (Dũng tự ghi). Chưa Done: cần Khoa review contract. Estimate/deadline gốc giữ nguyên. Ngày hoàn thành: chưa có.
+- **Status / evidence:** In Review (10/11/2026, Part 1 + Part 2 do Dũng hỗ trợ; chờ Khoa review). `AidRegistry.sol` không đổi ở Part 2 (guard order D49 `C01-O05`). Test: `AidRegistry.test.ts` 5 tests (SC01, C01-T01, 3 tests C01-T13 privacy/ABI allowlist) và `AidRegistry.negative.test.ts` 36 tests (C01-T02..T12 + vòng đời relayer). Lệnh chạy trong `contracts/`: `npm run compile` PASS ("No contracts to compile" — artifact hiện có đã khớp source); `npm test` **44 passing** (ToolchainSmoke 3 + AidRegistry 5 + negative 36). Từ repo root: `node docs/fixtures/c01/verify-c01.mjs --ethers` PASS. ABI parity: 4/4 entry trong `docs/fixtures/c01/AidRegistry.abi.draft.json` (`recordCaseVerification`, `CaseVerified`, `getEventRecord`, `getCaseSummary`) khớp tên/type/indexed/stateMutability/outputs với `contracts/artifacts/contracts/AidRegistry.sol/AidRegistry.json`; artifact không có hàm payable, receive hoặc fallback. Lệch so với yêu cầu: `C01-T12` với `orgRef = 0` revert `OrganizationNotActive(0x0)` thay vì `InvalidZeroInput`, vì D49 kiểm tra organization trước zero-input; giữ D49, không sửa contract. Not Run: Khoa cross-owner review, đối chiếu golden vector Java/TS (C05), C06 milestone functions, Fuji (C04). Chưa deploy Fuji. Actual effort chưa ghi nhận. Estimate/deadline gốc giữ nguyên. Ngày hoàn thành: chưa có.
 
 ### C04 - Fuji pilot deployment
 
@@ -678,7 +678,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | B05 (Units 1–4 implementation & handoff) | 09/11/2026 | In Review | Estimate gốc 4h (deadline gốc 08/11/2026); actual human effort chưa được cung cấp | V7/V8 + `/verify`, `/reject`, `/request-changes` + snapshot/audit/outbox; 42 unit/slice tests pass trong terminal; Dũng xác nhận `VerificationApiIT` (10/10) và `VerificationOutboxIT` (4/4) pass trên `aidbridge_test` trong IntelliJ; docs & D48 C05 handoff cập nhật | Khoa/Minh cross-owner review; Khoa nhận `blockchain_jobs(PENDING)` để triển khai C05 trên Fuji; sẵn sàng điều kiện phụ thuộc cho B06 khi được phê duyệt |
 | C02 (Hardhat 3 local toolchain & smoke tests) | 09/11/2026 | In Review | Chưa ghi nhận giờ làm thực tế của Dũng | Commit `84a042f` (PR `#3` merged vào `main`): `contracts/` với Solidity `0.8.28`, `evmVersion: paris`, `ToolchainSmokeProbe.sol` & `ToolchainSmoke.test.ts` (`3 passing`) | Khoa review và dùng làm nền triển khai `C03` (`AidRegistry.sol`) |
 | C01 & F02 (D49 cross-owner review & protocol freeze) | 10/11/2026 | In Review | Chưa ghi nhận giờ làm thực tế của Dũng | Dũng chạy `node docs/fixtures/c01/verify-c01.mjs --ethers` và `node docs/fixtures/f02/verify-f02.mjs` (`PASS`); chốt toàn bộ `C01-O01..O05` và `F02-A01..A05` tại `D49` | Bàn giao lại cho Khoa (`C03`/`C05`) và Minh (`F03`/`F04`/`F07`/`F08`) |
-| C03 (AidRegistry slice, Part 1 + negative tests) | 10/11/2026 | In Review | Chưa ghi nhận giờ làm thực tế của Dũng | `AidRegistry.sol` + 2 file test; `npm test` 5 passing, negative test file 19 passing | Khoa review contract và guard order; cập nhật giờ thực tế; C06 mở rộng milestone khi được giao |
+| C03 (AidRegistry slice, Part 1 + Part 2 negative/privacy tests) | 10/11/2026 | In Review | Chưa ghi nhận giờ làm thực tế của Dũng | `AidRegistry.sol` + 2 file test; `npm run compile` PASS ("No contracts to compile" — artifact hiện có đã khớp source); `npm test` 44 passing (3 + 5 + 36); `verify-c01.mjs --ethers` PASS; ABI draft 4/4 khớp artifact | Khoa review contract, guard order và C01-T12 deviation trước C04 Fuji pilot (11/11); C06 mở rộng milestone khi được giao |
 
 ### C01 review handoff - 09/11/2026
 
@@ -703,3 +703,17 @@ Not Started -> In Progress -> In Review. User giao implementation mock G01/G02 n
 ### QA độc lập F01/F07 - 10/11/2026
 
 Giữ F01/F07 In Review và owner/estimate/dependencies cũ. Đối chiếu scope ngày10 đạt ở mức F01 tài liệu/F07 mock G01/G02. [QA report](../reviews/F01_F07_QA_REVIEW.md): đã tái hiện/sửa history/campaign races, optional ProblemDetail.fieldErrors, reset pending mock, single-line409; checker F01 exact enum. Lint/typecheck/build PASS; 7 unit +10 browser E2E PASS; real HTTP/Next/Fuji/NGO Not Run. Các sửa QA chỉ nằm working tree, chưa commit/push/PR. C01/F02 không đổi status.
+
+### C03 Part 2 handoff cho Khoa - 10/11/2026
+
+C03 vẫn In Review; Dũng hỗ trợ Part 2, Khoa là primary owner và reviewer. Bằng chứng là chạy local Hardhat (EDR), không phải Fuji; chưa có deployment hay transaction thật.
+
+Khoa cần kiểm tra trước khi bắt đầu C04 (Fuji pilot, 11/11):
+
+1. Chạy lại trong `contracts/`: `npm run compile`, `npm test` (kỳ vọng 44 passing); từ repo root: `node docs/fixtures/c01/verify-c01.mjs --ethers`.
+2. Review guard order D49 `C01-O05` qua các test: caller không có quyền luôn nhận `UnauthorizedRelayer` / `OrganizationNotActive` trước mọi lookup `eventId` (C01-T02, T03, T04, T06, T11); `EventAlreadyRecorded` / `EventIdConflict` trước `CaseAlreadyVerified` / `InvalidChainSequence` (C01-T09, T10).
+3. Quyết định về C01-T12: `orgRef = 0` hiện revert `OrganizationNotActive(0x0)`, không phải `InvalidZeroInput`. Vẫn fail-closed; đổi tên lỗi cần decision mới vì thay D49.
+4. Xem xét: `AccessControl` cho admin gọi trực tiếp `grantRole`/`revokeRole` với `RELAYER_ROLE`. Việc này không cho quyền ghi (contract còn kiểm tra `org.relayer == msg.sender`) nhưng có thể làm lệch bộ đếm `_activeOrgCountByRelayer`. Chưa sửa; Khoa quyết định có chặn hay ghi nhận là giới hạn đã biết.
+5. Decoder Java/Web3j (C05) dùng ABI đã khớp draft: 3 topic indexed `orgRef/caseRef/eventId`, data 128 bytes `uint64, bytes32, uint16, uint64`.
+
+Not Run: Fuji, golden vector Java/TS, C06. Không đánh dấu C03 Done trước khi Khoa review xong.

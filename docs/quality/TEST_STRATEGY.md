@@ -78,3 +78,19 @@ B04 tests07/11 (D41/A): `casefile/CaseApiIT`, `EvidenceAccessIT`, `B04MigrationI
 Fictional household `Demo Household A`, org `AidBridge Demo Organization`, need food package2 and hygiene kit2; alternate second org; users each own identity plus dual-role negative account. Private evidence markers are synthetic strings used to assert no leak, not real people data. Each test creates isolated IDs; test transaction/snapshots must not obscure separate-thread locking tests.
 
 Results template to append after execution: `Test ID | date | environment/build | command | expected | actual | pass/fail | owner | evidence link | defect/task`. Không đánh dấu Pass/Done trước khi command thực sự chạy. Fuji evidence: actual chain/address/hash/block/log arguments; local passing tests không thay Fuji gate. Không broaden/repeat suites sau khi pass nếu không có change/failure mới.
+
+### Kết quả contract C03 (10/11/2026)
+
+Môi trường: local Hardhat `3.21.2` (EDR), Solidity `0.8.28`, `paris`, optimizer 200; Windows, thư mục `contracts/`. Lệnh: `npm run compile` ("No contracts to compile" — artifact hiện có đã khớp source); `npm test`; `node docs/fixtures/c01/verify-c01.mjs --ethers` (repo root, PASS). Tổng: 44 passing (`ToolchainSmoke.test.ts` 3, `AidRegistry.test.ts` 5, `AidRegistry.negative.test.ts` 36). Kết quả local, không thay Fuji gate.
+
+| Test ID | date | environment/build | command | expected | actual | pass/fail | owner | evidence link | defect/task |
+|---|---|---|---|---|---|---|---|---|---|
+| C01-T01 (SC01/02/03/10, BR12-P) | 10/11/2026 | local Hardhat | `npm test` | 1 CaseVerified, 4 topics, 128 data bytes, golden digest | như kỳ vọng | Pass | Dũng / Khoa review | `contracts/test/AidRegistry.test.ts` | C03 |
+| C01-T02..T06 (SC01/SC02, BR12-N) | 10/11/2026 | local Hardhat | `npm test` | Unknown/admin/inactive/wrong-org/revoked/rotated caller revert trước lookup `eventId`; không đổi state/event | như kỳ vọng | Pass | Dũng / Khoa review | `contracts/test/AidRegistry.negative.test.ts` | C03 |
+| C01-T07, T08 (SC03/SC09) | 10/11/2026 | local Hardhat | `npm test` | Sequence 0 → `InvalidZeroInput`; 2 → `InvalidChainSequence(1,2)`; case đã verified → `CaseAlreadyVerified` | như kỳ vọng | Pass | Dũng / Khoa review | `AidRegistry.negative.test.ts` | C03 |
+| C01-T09, T10, T11 (SC04, BR11-N) | 10/11/2026 | local Hardhat | `npm test` | Replay → `EventAlreadyRecorded`; đổi payload → `EventIdConflict` trước case guards; khác org không có quyền → authorization error; record gốc giữ nguyên | như kỳ vọng | Pass | Dũng / Khoa review | `AidRegistry.negative.test.ts` | C03 |
+| C01-T12 (SC01/SC03/SC10) | 10/11/2026 | local Hardhat | `npm test` | Zero refs/commitment → `InvalidZeroInput`; schema 0/2 → `UnsupportedSchemaVersion`; uint tràn bị ethers encoder chặn, không gửi tx | như kỳ vọng; `orgRef = 0` → `OrganizationNotActive(0x0)` theo D49 | Pass (có deviation) | Dũng / Khoa review | `AidRegistry.negative.test.ts` | C03 – Khoa xác nhận deviation |
+| C01-T13 (SC10/SC11, BR08-P/N) | 10/11/2026 | local Hardhat | `npm test` | ABI chỉ có fixed-size types, không payable/receive/fallback; gửi AVAX revert; calldata/log không chứa PII/URL/salt marker | như kỳ vọng | Pass | Dũng / Khoa review | `AidRegistry.test.ts` | C03 |
+| ABI parity | 10/11/2026 | compiler artifact | so khớp `AidRegistry.json` với `AidRegistry.abi.draft.json` | 4/4 entry khớp | 4/4 khớp | Pass | Dũng / Khoa review | `docs/fixtures/c01/` | C03 → C05 |
+
+Not Run: C01-T14..T17 (C05/C07/C08/C06), Fuji smoke (C04).
