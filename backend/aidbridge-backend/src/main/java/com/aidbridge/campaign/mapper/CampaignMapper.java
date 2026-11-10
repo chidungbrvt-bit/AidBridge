@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class CampaignMapper {
-
     public CampaignResponse toResponse(Campaign campaign, List<CampaignItem> items) {
         var org = campaign.getOrganization();
         String publicRefHex = "0x" + HexFormat.of().formatHex(org.getPublicRef());
