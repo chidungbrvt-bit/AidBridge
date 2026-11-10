@@ -22,7 +22,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | B10 | P0-05 | B | C/F | L | 6 | B09 | 2026-11-22 | 2026-11-20 | Not Started |
 | B11 | Quality | B | C/F | L | 6 | B03, B04, B05, B06, B07, B08, B09, B10 | 2026-11-23 | 2026-11-21 | Not Started |
 | B12 | Submission | B | C/F | M | 3 | B11 | 2026-11-25 | 2026-11-25 | Not Started |
-| C01 | Design | C | B/F | L | 4 | B01 | 2026-11-05 | 2026-11-04 | Not Started |
+| C01 | Design | C | B/F | L | 4 | B01 | 2026-11-05 | 2026-11-04 | In Review |
 | C02 | Foundation | C | B/F | M | 3 | C01 | 2026-11-06 | 2026-11-06 | Not Started |
 | C03 | P0-03/P0-06 | C | B/F | L | 5 | C01, C02 | 2026-11-07 | 2026-11-07 | Not Started |
 | C04 | P0-06 | C | B/F | M | 2 | C03 | 2026-11-08 | 2026-11-08 | Not Started |
@@ -35,7 +35,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | C11 | Quality | C | B/F | L | 6 | C06, C07, C08, C09, C10 | 2026-11-22 | 2026-11-21 | Not Started |
 | C12 | Submission | C | B/F | M | 3 | C11 | 2026-11-25 | 2026-11-25 | Not Started |
 | F01 | Validation | F | B/C | M | 2 | Planning review | 2026-11-05 | 2026-11-03 | Not Started |
-| F02 | Design | F | B/C | M | 4 | B01 | 2026-11-06 | 2026-11-05 | Not Started |
+| F02 | Design | F | B/C | M | 4 | B01 | 2026-11-06 | 2026-11-05 | In Review |
 | F03 | P0-01 | F | B/C | M | 4 | F02, B03 | 2026-11-08 | 2026-11-07 | Not Started |
 | F04 | P0-02/P0-03 | F | B/C | L | 6 | F03, B04, B05 | 2026-11-09 | 2026-11-08 | Not Started |
 | F05 | P0-06 | F | B/C | L | 4 | F04, C05 | 2026-11-11 | 2026-11-09 | Not Started |
@@ -231,7 +231,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Acceptance criteria:** JIT learning, random refs, stable event IDs, salt/private manifest, sequence and custody boundary; B/F review.
 - **Required tests:** BR08-P/N design, BR11/12 design; Java/TS golden-vector expectations.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Review (09/11/2026). Khoa hoàn thành bộ tài liệu review được giao theo `9_11.pdf`: [C01 handoff](../reviews/C01_BLOCKCHAIN_REVIEW.md), ABI draft, reviewed sample, golden-vector input và test expectations tại `docs/fixtures/c01/`. Design-fixture checks PASS; contract/Java/TypeScript/Fuji checks Not Run. Chưa Done: cần Dũng xác nhận C01-O01..O05 và cross-owner review. Actual effort chưa ghi nhận đủ tin cậy; không sửa estimate/lịch gốc. Ngày hoàn thành task: chưa có.
 
 ### C02 - Hardhat local setup
 
@@ -413,7 +413,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Acceptance criteria:** B/C/F agree combined case/goods/audit screens, loading/empty/error/403/409 states, accessibility, no beneficiary wallet.
 - **Required tests:** API design review; E2E07 specification.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Review (09/11/2026). Khoa/Codex bàn giao phần F02 được giao trong `9_11.pdf`: [three wireframes and handoff](../design/F02_WIREFRAMES_AND_STATES.md), shared mock/typed declarations/state map/checker tại `docs/fixtures/f02/`. Fixture arithmetic, ID/DTO-shape and 403/409 atomic-rejection checks PASS; backend HTTP/frontend render/keyboard E2E Not Run. Cần Minh review UI và Dũng review F02-A01..A05; chưa Done; Khoa cho phép commit/push/PR sau final QA ngày 10/11. Owner/estimate/date gốc giữ nguyên; actual effort chưa ghi nhận đủ tin cậy, ngày hoàn thành task chưa có.
 
 ### F03 - Next shell/session client
 
@@ -573,3 +573,13 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | Task | Date | State | Actual hours | Evidence | Next action |
 |---|---|---|---|---|---|
 | All36 | 03/11/2026 | Not Started | Not recorded | Planning specification only | Await application task authorization |
+
+### C01 review handoff - 09/11/2026
+
+C01: Not Started -> In Progress -> In Review trong phiên làm việc C01; không thay trạng thái các task khác. Bản ghi All36 ngày 03/11 ở trên là baseline lịch sử, không phải tiến độ hiện tại. Bộ handoff đã chuẩn bị; chưa có human/cross-owner approval, contract implementation hoặc Fuji proof. Xem `docs/reviews/C01_BLOCKCHAIN_REVIEW.md` để biết checks, OPEN owners và bước tiếp theo.
+
+### F02 review handoff - 09/11/2026
+
+F02: Not Started -> In Progress -> In Review trong phiên F02. Chỉ hoàn thành design/mock handoff G01/R01/D01 được giao cho Khoa; không claim frontend/API đã chạy hoặc full F02 acceptance đã được nhóm duyệt. C01 đã lưu ở commit `2365378`; C01 còn In Review. Xem `docs/design/F02_WIREFRAMES_AND_STATES.md` và các F02-Axx về response items/read projections chưa freeze. Không sửa task khác, không tự đổi owner hoặc lịch sử estimate.
+
+Final QA 10/11/2026: C01 commit `2365378` giữ nguyên; F02 static checkers/negative cases và review contracts PASS, thêm idempotencyConflict UI state bị thiếu. Khoa chấp nhận handoff ở mức review và cho phép commit F02/push khoa/PR main, không merge. C01/F02 còn In Review chờ Dũng/Minh; application/contract/Java/TypeScript runtime checks Not Run. Chi tiết ở final quality review trong `docs/design/F02_WIREFRAMES_AND_STATES.md`.

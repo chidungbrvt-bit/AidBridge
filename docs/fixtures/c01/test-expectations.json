@@ -1,0 +1,142 @@
+{
+  "fixtureLabel": "TEST_SPECIFICATION_NOT_EXECUTION_RESULTS",
+  "defaultStatus": "NOT_RUN",
+  "cases": [
+    {
+      "id": "C01-T01",
+      "trace": "SC01/SC02/SC03/SC10; BR12-P",
+      "given": "Registered active org; own authorized relayer; fresh case/event; sequence=1; schema=1; nonzero commitment",
+      "expectedOutcome": "SUCCESS",
+      "assertions": "One CaseVerified; correct owner/verified/sequence; stored payload digest; exactly 4 topics and 128 data bytes",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "C01-T02",
+      "trace": "SC02; BR12-N",
+      "given": "Unknown caller; also repeat against an existing eventId",
+      "expectedOutcome": "REVERT",
+      "assertions": "Authorization fails before event/case lookup; no state change or event",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "C01-T03",
+      "trace": "SC02; BR12-N",
+      "given": "Admin has DEFAULT_ADMIN_ROLE but is not explicitly authorized relayer",
+      "expectedOutcome": "REVERT",
+      "assertions": "No implicit business-write permission",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "C01-T04",
+      "trace": "SC01/SC02; BR12-N",
+      "given": "Organization unregistered or inactive",
+      "expectedOutcome": "REVERT",
+      "assertions": "No write; exact error precedence remains proposed",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "C01-T05",
+      "trace": "SC02/SC03; BR12-N",
+      "given": "Org B relayer calls for org A; separately org B authorized caller tries case owned by A using fresh eventId",
+      "expectedOutcome": "REVERT",
+      "assertions": "Caller mismatch rejected; cross-org case ownership rejected",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "C01-T06",
+      "trace": "SC02; BR12-N",
+      "given": "Previously authorized relayer revoked; valid payload",
+      "expectedOutcome": "REVERT",
+      "assertions": "No state change, including when replaying a stored eventId",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "C01-T07",
+      "trace": "SC03/SC09",
+      "given": "Fresh case with chainSequence=0 and then 2, each in isolated setup",
+      "expectedOutcome": "REVERT",
+      "assertions": "First sequence must be 1; no event/state change",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "C01-T08",
+      "trace": "SC03",
+      "given": "Already verified case; new eventId; next sequence",
+      "expectedOutcome": "REVERT",
+      "assertions": "Case verification cannot be recorded twice",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "C01-T09",
+      "trace": "SC04; BR11-N",
+      "given": "Replay T01 exactly with same eventId and digest",
+      "expectedOutcome": "REVERT EventAlreadyRecorded (proposed error name)",
+      "assertions": "No second event/state update; worker validates original successful receipt/log, never confirms the reverted retry",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "C01-T10",
+      "trace": "SC04; BR11-N",
+      "given": "Same eventId; change one of commitment/caseRef/sequence; maintain authorized org context and structurally valid values",
+      "expectedOutcome": "REVERT EventIdConflict (proposed error name)",
+      "assertions": "Compare digest before new-case transition guards; original stored record unchanged. Unsupported schemaVersion is a separate validation rejection before duplicate lookup under the proposed guard order.",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "C01-T11",
+      "trace": "SC04/SC02",
+      "given": "Same eventId with changed orgRef; caller NOT authorized for target org",
+      "expectedOutcome": "REVERT authorization",
+      "assertions": "Do not promise EventIdConflict before authorization; use a caller authorized for both orgs for isolated cross-org digest-conflict test",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "C01-T12",
+      "trace": "SC01/SC03/SC10",
+      "given": "Zero org/case/event/commitment; schema 0 or 2; invalid uint widths at encoder boundary",
+      "expectedOutcome": "REVERT_OR_CLIENT_REJECT",
+      "assertions": "No write; distinguish ABI encoder rejection from contract guard",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "C01-T13",
+      "trace": "SC10/SC11; BR08-P/N",
+      "given": "Inspect calldata/log fields; marker PII/private URL/salt injected in private fixture",
+      "expectedOutcome": "ALLOWLIST_ONLY",
+      "assertions": "Only envelope and block timestamp public; fixed salt test input never copied to real records; no payable call",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "C01-T14",
+      "trace": "IT13; BR10-N",
+      "given": "Null receipt, status=0, wrong chain/address/topic/eventId/commitment/sequence/schema or removed log",
+      "expectedOutcome": "NOT_CONFIRMED",
+      "assertions": "Business VERIFIED persists; chain proof missing/mismatched; no fabricated transaction evidence",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "C01-T15",
+      "trace": "IT02/IT03/IT04; BR11-P",
+      "given": "Restart after prepare/broadcast/mining or DB receipt save failure",
+      "expectedOutcome": "RECOVER_ORIGINAL",
+      "assertions": "Exact signed bytes/hash/nonce preserved; recover original event; do not regenerate eventId/salt",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "C01-T16",
+      "trace": "IT14; BR08/09",
+      "given": "Java and TypeScript encode the same golden-vector input plus Unicode/order/mutation cases",
+      "expectedOutcome": "BYTE_IDENTICAL_EXPECTED",
+      "assertions": "Canonical UTF8, SHA256, ABI bytes, Keccak commitment/payloadDigest and decoded fields agree",
+      "executionStatus": "NOT_RUN"
+    },
+    {
+      "id": "C01-T17",
+      "trace": "SC04; C06 follow-up",
+      "given": "Same eventId and same envelope reused through a different milestone function",
+      "expectedOutcome": "REVERT EventIdConflict (proposed)",
+      "assertions": "Operation-bound digest required; C01-only implementation cannot establish multi-function compatibility",
+      "executionStatus": "NOT_RUN"
+    }
+  ]
+}

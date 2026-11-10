@@ -1,0 +1,1881 @@
+{
+  "fixtureLabel": "F02_SHARED_MOCK_ONLY_NOT_LIVE_API",
+  "schemaVersion": 1,
+  "baselineCommit": "236537853fb829ccc8c778a932e2e1597e8304ab",
+  "fixtureClockUtc": "2026-11-09T02:00:00.000Z",
+  "organizationId": "11111111-1111-4111-8111-111111111111",
+  "caseId": "22222222-2222-4222-8222-222222222222",
+  "campaignId": "10000000-0000-4000-8000-000000000001",
+  "assumptionRefs": [
+    "F02-A01",
+    "F02-A02",
+    "F02-A03",
+    "F02-A04",
+    "F02-A05"
+  ],
+  "actors": {
+    "donor": {
+      "userId": "70000000-0000-4000-8000-000000000001",
+      "displayName": "Fictional Donor",
+      "donorEnabled": true,
+      "platformAdmin": false,
+      "memberships": []
+    },
+    "organizationAdmin": {
+      "userId": "70000000-0000-4000-8000-000000000002",
+      "displayName": "Fictional Organization Admin",
+      "donorEnabled": false,
+      "platformAdmin": false,
+      "memberships": [
+        {
+          "organizationId": "11111111-1111-4111-8111-111111111111",
+          "roles": [
+            "ORGANIZATION_ADMIN"
+          ],
+          "active": true
+        }
+      ]
+    },
+    "fieldVolunteer": {
+      "userId": "70000000-0000-4000-8000-000000000003",
+      "displayName": "Fictional Field Volunteer",
+      "donorEnabled": false,
+      "platformAdmin": false,
+      "memberships": [
+        {
+          "organizationId": "11111111-1111-4111-8111-111111111111",
+          "roles": [
+            "FIELD_VOLUNTEER"
+          ],
+          "active": true
+        }
+      ]
+    },
+    "caseVerifier": {
+      "userId": "70000000-0000-4000-8000-000000000004",
+      "displayName": "Fictional Case Verifier",
+      "donorEnabled": false,
+      "platformAdmin": false,
+      "memberships": [
+        {
+          "organizationId": "11111111-1111-4111-8111-111111111111",
+          "roles": [
+            "CASE_VERIFIER"
+          ],
+          "active": true
+        }
+      ]
+    }
+  },
+  "itemDefinitions": [
+    {
+      "id": "20000000-0000-4000-8000-000000000001",
+      "name": "Rice",
+      "unit": "kg",
+      "targetQty": 20
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000002",
+      "name": "Drinking Water",
+      "unit": "box",
+      "targetQty": 4
+    }
+  ],
+  "baselineContext": {
+    "fixtureLabel": "MOCK_SETUP_NOT_HTTP_DTO",
+    "organizationStatus": "APPROVED",
+    "caseStatus": "IN_PROGRESS",
+    "openDisputeCount": 0,
+    "campaignCreatedAt": "2026-11-09T01:15:00.000Z",
+    "priorOtherContributions": {
+      "pledgedQty": [
+        6,
+        1
+      ],
+      "receivedQty": [
+        2,
+        0
+      ],
+      "deliveredQty": [
+        1,
+        0
+      ],
+      "confirmedQty": [
+        0,
+        0
+      ]
+    },
+    "priorRecordsNote": "S0 includes earlier simulated goods and an unconfirmed 1 kg delivery. Receipts/deliveries arrays hold only focal records created in this fixture, not full campaign history."
+  },
+  "states": {
+    "S0": {
+      "campaign": {
+        "id": "10000000-0000-4000-8000-000000000001",
+        "status": "PUBLISHED",
+        "title": "Simulated flood relief essentials",
+        "publicSummary": "Fictional campaign for rice and drinking water.",
+        "approximateArea": "Simulated District",
+        "organization": {
+          "name": "AidBridge Demo Organization",
+          "publicRef": "0x1010101010101010101010101010101010101010101010101010101010101010"
+        },
+        "items": [
+          {
+            "id": "20000000-0000-4000-8000-000000000001",
+            "name": "Rice",
+            "unit": "kg",
+            "targetQty": 20,
+            "pledgedQty": 6,
+            "receivedQty": 2,
+            "deliveredQty": 1,
+            "confirmedQty": 0,
+            "remainingPledgeQty": 14
+          },
+          {
+            "id": "20000000-0000-4000-8000-000000000002",
+            "name": "Drinking Water",
+            "unit": "box",
+            "targetQty": 4,
+            "pledgedQty": 1,
+            "receivedQty": 0,
+            "deliveredQty": 0,
+            "confirmedQty": 0,
+            "remainingPledgeQty": 3
+          }
+        ],
+        "auditUrl": "/api/campaigns/10000000-0000-4000-8000-000000000001/audit-trail"
+      },
+      "focalContribution": null,
+      "receipts": [],
+      "deliveries": []
+    },
+    "S1": {
+      "campaign": {
+        "id": "10000000-0000-4000-8000-000000000001",
+        "status": "PUBLISHED",
+        "title": "Simulated flood relief essentials",
+        "publicSummary": "Fictional campaign for rice and drinking water.",
+        "approximateArea": "Simulated District",
+        "organization": {
+          "name": "AidBridge Demo Organization",
+          "publicRef": "0x1010101010101010101010101010101010101010101010101010101010101010"
+        },
+        "items": [
+          {
+            "id": "20000000-0000-4000-8000-000000000001",
+            "name": "Rice",
+            "unit": "kg",
+            "targetQty": 20,
+            "pledgedQty": 14,
+            "receivedQty": 2,
+            "deliveredQty": 1,
+            "confirmedQty": 0,
+            "remainingPledgeQty": 6
+          },
+          {
+            "id": "20000000-0000-4000-8000-000000000002",
+            "name": "Drinking Water",
+            "unit": "box",
+            "targetQty": 4,
+            "pledgedQty": 3,
+            "receivedQty": 0,
+            "deliveredQty": 0,
+            "confirmedQty": 0,
+            "remainingPledgeQty": 1
+          }
+        ],
+        "auditUrl": "/api/campaigns/10000000-0000-4000-8000-000000000001/audit-trail"
+      },
+      "focalContribution": {
+        "id": "30000000-0000-4000-8000-000000000001",
+        "campaignId": "10000000-0000-4000-8000-000000000001",
+        "items": [
+          {
+            "id": "40000000-0000-4000-8000-000000000001",
+            "campaignItemId": "20000000-0000-4000-8000-000000000001",
+            "pledgedQty": 8,
+            "cancelledQty": 0,
+            "receivedQty": 0,
+            "outstandingQty": 8
+          },
+          {
+            "id": "40000000-0000-4000-8000-000000000002",
+            "campaignItemId": "20000000-0000-4000-8000-000000000002",
+            "pledgedQty": 2,
+            "cancelledQty": 0,
+            "receivedQty": 0,
+            "outstandingQty": 2
+          }
+        ],
+        "status": "PLEDGED",
+        "createdAt": "2026-11-09T01:30:00.000Z",
+        "auditEventId": "80000000-0000-4000-8000-000000000001",
+        "blockchainStatus": "PENDING_ON_CHAIN"
+      },
+      "receipts": [],
+      "deliveries": []
+    },
+    "S2": {
+      "campaign": {
+        "id": "10000000-0000-4000-8000-000000000001",
+        "status": "PUBLISHED",
+        "title": "Simulated flood relief essentials",
+        "publicSummary": "Fictional campaign for rice and drinking water.",
+        "approximateArea": "Simulated District",
+        "organization": {
+          "name": "AidBridge Demo Organization",
+          "publicRef": "0x1010101010101010101010101010101010101010101010101010101010101010"
+        },
+        "items": [
+          {
+            "id": "20000000-0000-4000-8000-000000000001",
+            "name": "Rice",
+            "unit": "kg",
+            "targetQty": 20,
+            "pledgedQty": 14,
+            "receivedQty": 7,
+            "deliveredQty": 1,
+            "confirmedQty": 0,
+            "remainingPledgeQty": 6
+          },
+          {
+            "id": "20000000-0000-4000-8000-000000000002",
+            "name": "Drinking Water",
+            "unit": "box",
+            "targetQty": 4,
+            "pledgedQty": 3,
+            "receivedQty": 1,
+            "deliveredQty": 0,
+            "confirmedQty": 0,
+            "remainingPledgeQty": 1
+          }
+        ],
+        "auditUrl": "/api/campaigns/10000000-0000-4000-8000-000000000001/audit-trail"
+      },
+      "focalContribution": {
+        "id": "30000000-0000-4000-8000-000000000001",
+        "campaignId": "10000000-0000-4000-8000-000000000001",
+        "items": [
+          {
+            "id": "40000000-0000-4000-8000-000000000001",
+            "campaignItemId": "20000000-0000-4000-8000-000000000001",
+            "pledgedQty": 8,
+            "cancelledQty": 0,
+            "receivedQty": 5,
+            "outstandingQty": 3
+          },
+          {
+            "id": "40000000-0000-4000-8000-000000000002",
+            "campaignItemId": "20000000-0000-4000-8000-000000000002",
+            "pledgedQty": 2,
+            "cancelledQty": 0,
+            "receivedQty": 1,
+            "outstandingQty": 1
+          }
+        ],
+        "status": "PARTIALLY_RECEIVED",
+        "createdAt": "2026-11-09T01:30:00.000Z",
+        "auditEventId": "80000000-0000-4000-8000-000000000001",
+        "blockchainStatus": "PENDING_ON_CHAIN"
+      },
+      "receipts": [
+        {
+          "id": "50000000-0000-4000-8000-000000000001",
+          "contributionId": "30000000-0000-4000-8000-000000000001",
+          "items": [
+            {
+              "contributionItemId": "40000000-0000-4000-8000-000000000001",
+              "quantity": 5
+            },
+            {
+              "contributionItemId": "40000000-0000-4000-8000-000000000002",
+              "quantity": 1
+            }
+          ],
+          "receivedAt": "2026-11-09T01:39:00.000Z",
+          "recordedAt": "2026-11-09T01:40:00.000Z",
+          "recorderId": "70000000-0000-4000-8000-000000000002",
+          "auditEventId": "80000000-0000-4000-8000-000000000002",
+          "blockchainStatus": "PENDING_ON_CHAIN"
+        }
+      ],
+      "deliveries": []
+    },
+    "S3": {
+      "campaign": {
+        "id": "10000000-0000-4000-8000-000000000001",
+        "status": "PUBLISHED",
+        "title": "Simulated flood relief essentials",
+        "publicSummary": "Fictional campaign for rice and drinking water.",
+        "approximateArea": "Simulated District",
+        "organization": {
+          "name": "AidBridge Demo Organization",
+          "publicRef": "0x1010101010101010101010101010101010101010101010101010101010101010"
+        },
+        "items": [
+          {
+            "id": "20000000-0000-4000-8000-000000000001",
+            "name": "Rice",
+            "unit": "kg",
+            "targetQty": 20,
+            "pledgedQty": 14,
+            "receivedQty": 7,
+            "deliveredQty": 5,
+            "confirmedQty": 0,
+            "remainingPledgeQty": 6
+          },
+          {
+            "id": "20000000-0000-4000-8000-000000000002",
+            "name": "Drinking Water",
+            "unit": "box",
+            "targetQty": 4,
+            "pledgedQty": 3,
+            "receivedQty": 1,
+            "deliveredQty": 1,
+            "confirmedQty": 0,
+            "remainingPledgeQty": 1
+          }
+        ],
+        "auditUrl": "/api/campaigns/10000000-0000-4000-8000-000000000001/audit-trail"
+      },
+      "focalContribution": {
+        "id": "30000000-0000-4000-8000-000000000001",
+        "campaignId": "10000000-0000-4000-8000-000000000001",
+        "items": [
+          {
+            "id": "40000000-0000-4000-8000-000000000001",
+            "campaignItemId": "20000000-0000-4000-8000-000000000001",
+            "pledgedQty": 8,
+            "cancelledQty": 0,
+            "receivedQty": 5,
+            "outstandingQty": 3
+          },
+          {
+            "id": "40000000-0000-4000-8000-000000000002",
+            "campaignItemId": "20000000-0000-4000-8000-000000000002",
+            "pledgedQty": 2,
+            "cancelledQty": 0,
+            "receivedQty": 1,
+            "outstandingQty": 1
+          }
+        ],
+        "status": "PARTIALLY_RECEIVED",
+        "createdAt": "2026-11-09T01:30:00.000Z",
+        "auditEventId": "80000000-0000-4000-8000-000000000001",
+        "blockchainStatus": "PENDING_ON_CHAIN"
+      },
+      "receipts": [
+        {
+          "id": "50000000-0000-4000-8000-000000000001",
+          "contributionId": "30000000-0000-4000-8000-000000000001",
+          "items": [
+            {
+              "contributionItemId": "40000000-0000-4000-8000-000000000001",
+              "quantity": 5
+            },
+            {
+              "contributionItemId": "40000000-0000-4000-8000-000000000002",
+              "quantity": 1
+            }
+          ],
+          "receivedAt": "2026-11-09T01:39:00.000Z",
+          "recordedAt": "2026-11-09T01:40:00.000Z",
+          "recorderId": "70000000-0000-4000-8000-000000000002",
+          "auditEventId": "80000000-0000-4000-8000-000000000002",
+          "blockchainStatus": "PENDING_ON_CHAIN"
+        }
+      ],
+      "deliveries": [
+        {
+          "id": "60000000-0000-4000-8000-000000000001",
+          "caseId": "22222222-2222-4222-8222-222222222222",
+          "recorderId": "70000000-0000-4000-8000-000000000003",
+          "outcome": "DELIVERED",
+          "reviewStatus": "PENDING",
+          "items": [
+            {
+              "campaignItemId": "20000000-0000-4000-8000-000000000001",
+              "quantity": 4
+            },
+            {
+              "campaignItemId": "20000000-0000-4000-8000-000000000002",
+              "quantity": 1
+            }
+          ],
+          "evidenceVersionIds": [
+            "55555555-5555-4555-8555-555555555551",
+            "55555555-5555-4555-8555-555555555552"
+          ],
+          "recordedAt": "2026-11-09T01:50:00.000Z",
+          "auditEventId": "80000000-0000-4000-8000-000000000003",
+          "blockchainStatus": "PENDING_ON_CHAIN"
+        }
+      ]
+    },
+    "S2F": {
+      "campaign": {
+        "id": "10000000-0000-4000-8000-000000000001",
+        "status": "PUBLISHED",
+        "title": "Simulated flood relief essentials",
+        "publicSummary": "Fictional campaign for rice and drinking water.",
+        "approximateArea": "Simulated District",
+        "organization": {
+          "name": "AidBridge Demo Organization",
+          "publicRef": "0x1010101010101010101010101010101010101010101010101010101010101010"
+        },
+        "items": [
+          {
+            "id": "20000000-0000-4000-8000-000000000001",
+            "name": "Rice",
+            "unit": "kg",
+            "targetQty": 20,
+            "pledgedQty": 14,
+            "receivedQty": 7,
+            "deliveredQty": 1,
+            "confirmedQty": 0,
+            "remainingPledgeQty": 6
+          },
+          {
+            "id": "20000000-0000-4000-8000-000000000002",
+            "name": "Drinking Water",
+            "unit": "box",
+            "targetQty": 4,
+            "pledgedQty": 3,
+            "receivedQty": 1,
+            "deliveredQty": 0,
+            "confirmedQty": 0,
+            "remainingPledgeQty": 1
+          }
+        ],
+        "auditUrl": "/api/campaigns/10000000-0000-4000-8000-000000000001/audit-trail"
+      },
+      "focalContribution": {
+        "id": "30000000-0000-4000-8000-000000000001",
+        "campaignId": "10000000-0000-4000-8000-000000000001",
+        "items": [
+          {
+            "id": "40000000-0000-4000-8000-000000000001",
+            "campaignItemId": "20000000-0000-4000-8000-000000000001",
+            "pledgedQty": 8,
+            "cancelledQty": 0,
+            "receivedQty": 5,
+            "outstandingQty": 3
+          },
+          {
+            "id": "40000000-0000-4000-8000-000000000002",
+            "campaignItemId": "20000000-0000-4000-8000-000000000002",
+            "pledgedQty": 2,
+            "cancelledQty": 0,
+            "receivedQty": 1,
+            "outstandingQty": 1
+          }
+        ],
+        "status": "PARTIALLY_RECEIVED",
+        "createdAt": "2026-11-09T01:30:00.000Z",
+        "auditEventId": "80000000-0000-4000-8000-000000000001",
+        "blockchainStatus": "PENDING_ON_CHAIN"
+      },
+      "receipts": [
+        {
+          "id": "50000000-0000-4000-8000-000000000001",
+          "contributionId": "30000000-0000-4000-8000-000000000001",
+          "items": [
+            {
+              "contributionItemId": "40000000-0000-4000-8000-000000000001",
+              "quantity": 5
+            },
+            {
+              "contributionItemId": "40000000-0000-4000-8000-000000000002",
+              "quantity": 1
+            }
+          ],
+          "receivedAt": "2026-11-09T01:39:00.000Z",
+          "recordedAt": "2026-11-09T01:40:00.000Z",
+          "recorderId": "70000000-0000-4000-8000-000000000002",
+          "auditEventId": "80000000-0000-4000-8000-000000000002",
+          "blockchainStatus": "PENDING_ON_CHAIN"
+        }
+      ],
+      "deliveries": [
+        {
+          "id": "60000000-0000-4000-8000-000000000002",
+          "caseId": "22222222-2222-4222-8222-222222222222",
+          "recorderId": "70000000-0000-4000-8000-000000000003",
+          "outcome": "FAILED",
+          "reviewStatus": "NOT_APPLICABLE",
+          "items": [],
+          "evidenceVersionIds": [],
+          "recordedAt": "2026-11-09T01:51:00.000Z",
+          "auditEventId": "80000000-0000-4000-8000-000000000004",
+          "blockchainStatus": "NOT_APPLICABLE"
+        }
+      ]
+    }
+  },
+  "mockReadModels": {
+    "S0": {
+      "fixtureLabel": "ASSUMPTION_UI_PROJECTION_NOT_API_RESPONSE",
+      "caseContext": {
+        "caseId": "22222222-2222-4222-8222-222222222222",
+        "organizationId": "11111111-1111-4111-8111-111111111111",
+        "campaignId": "10000000-0000-4000-8000-000000000001",
+        "status": "IN_PROGRESS",
+        "openDisputeCount": 0,
+        "availableEvidenceVersionIds": [
+          "55555555-5555-4555-8555-555555555551",
+          "55555555-5555-4555-8555-555555555552"
+        ],
+        "deliveryAvailableItems": [
+          {
+            "campaignItemId": "20000000-0000-4000-8000-000000000001",
+            "name": "Rice",
+            "unit": "kg",
+            "availableQty": 1
+          },
+          {
+            "campaignItemId": "20000000-0000-4000-8000-000000000002",
+            "name": "Drinking Water",
+            "unit": "box",
+            "availableQty": 0
+          }
+        ]
+      },
+      "receiptContext": {
+        "selectedContributionId": null,
+        "selectableCommitments": [],
+        "items": []
+      }
+    },
+    "S1": {
+      "fixtureLabel": "ASSUMPTION_UI_PROJECTION_NOT_API_RESPONSE",
+      "caseContext": {
+        "caseId": "22222222-2222-4222-8222-222222222222",
+        "organizationId": "11111111-1111-4111-8111-111111111111",
+        "campaignId": "10000000-0000-4000-8000-000000000001",
+        "status": "IN_PROGRESS",
+        "openDisputeCount": 0,
+        "availableEvidenceVersionIds": [
+          "55555555-5555-4555-8555-555555555551",
+          "55555555-5555-4555-8555-555555555552"
+        ],
+        "deliveryAvailableItems": [
+          {
+            "campaignItemId": "20000000-0000-4000-8000-000000000001",
+            "name": "Rice",
+            "unit": "kg",
+            "availableQty": 1
+          },
+          {
+            "campaignItemId": "20000000-0000-4000-8000-000000000002",
+            "name": "Drinking Water",
+            "unit": "box",
+            "availableQty": 0
+          }
+        ]
+      },
+      "receiptContext": {
+        "selectedContributionId": "30000000-0000-4000-8000-000000000001",
+        "selectableCommitments": [
+          {
+            "id": "30000000-0000-4000-8000-000000000001",
+            "status": "PLEDGED"
+          }
+        ],
+        "items": [
+          {
+            "contributionItemId": "40000000-0000-4000-8000-000000000001",
+            "campaignItemId": "20000000-0000-4000-8000-000000000001",
+            "name": "Rice",
+            "unit": "kg",
+            "pledgedQty": 8,
+            "receivedQty": 0,
+            "outstandingQty": 8
+          },
+          {
+            "contributionItemId": "40000000-0000-4000-8000-000000000002",
+            "campaignItemId": "20000000-0000-4000-8000-000000000002",
+            "name": "Drinking Water",
+            "unit": "box",
+            "pledgedQty": 2,
+            "receivedQty": 0,
+            "outstandingQty": 2
+          }
+        ]
+      }
+    },
+    "S2": {
+      "fixtureLabel": "ASSUMPTION_UI_PROJECTION_NOT_API_RESPONSE",
+      "caseContext": {
+        "caseId": "22222222-2222-4222-8222-222222222222",
+        "organizationId": "11111111-1111-4111-8111-111111111111",
+        "campaignId": "10000000-0000-4000-8000-000000000001",
+        "status": "IN_PROGRESS",
+        "openDisputeCount": 0,
+        "availableEvidenceVersionIds": [
+          "55555555-5555-4555-8555-555555555551",
+          "55555555-5555-4555-8555-555555555552"
+        ],
+        "deliveryAvailableItems": [
+          {
+            "campaignItemId": "20000000-0000-4000-8000-000000000001",
+            "name": "Rice",
+            "unit": "kg",
+            "availableQty": 6
+          },
+          {
+            "campaignItemId": "20000000-0000-4000-8000-000000000002",
+            "name": "Drinking Water",
+            "unit": "box",
+            "availableQty": 1
+          }
+        ]
+      },
+      "receiptContext": {
+        "selectedContributionId": "30000000-0000-4000-8000-000000000001",
+        "selectableCommitments": [
+          {
+            "id": "30000000-0000-4000-8000-000000000001",
+            "status": "PARTIALLY_RECEIVED"
+          }
+        ],
+        "items": [
+          {
+            "contributionItemId": "40000000-0000-4000-8000-000000000001",
+            "campaignItemId": "20000000-0000-4000-8000-000000000001",
+            "name": "Rice",
+            "unit": "kg",
+            "pledgedQty": 8,
+            "receivedQty": 5,
+            "outstandingQty": 3
+          },
+          {
+            "contributionItemId": "40000000-0000-4000-8000-000000000002",
+            "campaignItemId": "20000000-0000-4000-8000-000000000002",
+            "name": "Drinking Water",
+            "unit": "box",
+            "pledgedQty": 2,
+            "receivedQty": 1,
+            "outstandingQty": 1
+          }
+        ]
+      }
+    },
+    "S3": {
+      "fixtureLabel": "ASSUMPTION_UI_PROJECTION_NOT_API_RESPONSE",
+      "caseContext": {
+        "caseId": "22222222-2222-4222-8222-222222222222",
+        "organizationId": "11111111-1111-4111-8111-111111111111",
+        "campaignId": "10000000-0000-4000-8000-000000000001",
+        "status": "IN_PROGRESS",
+        "openDisputeCount": 0,
+        "availableEvidenceVersionIds": [
+          "55555555-5555-4555-8555-555555555551",
+          "55555555-5555-4555-8555-555555555552"
+        ],
+        "deliveryAvailableItems": [
+          {
+            "campaignItemId": "20000000-0000-4000-8000-000000000001",
+            "name": "Rice",
+            "unit": "kg",
+            "availableQty": 2
+          },
+          {
+            "campaignItemId": "20000000-0000-4000-8000-000000000002",
+            "name": "Drinking Water",
+            "unit": "box",
+            "availableQty": 0
+          }
+        ]
+      },
+      "receiptContext": {
+        "selectedContributionId": "30000000-0000-4000-8000-000000000001",
+        "selectableCommitments": [
+          {
+            "id": "30000000-0000-4000-8000-000000000001",
+            "status": "PARTIALLY_RECEIVED"
+          }
+        ],
+        "items": [
+          {
+            "contributionItemId": "40000000-0000-4000-8000-000000000001",
+            "campaignItemId": "20000000-0000-4000-8000-000000000001",
+            "name": "Rice",
+            "unit": "kg",
+            "pledgedQty": 8,
+            "receivedQty": 5,
+            "outstandingQty": 3
+          },
+          {
+            "contributionItemId": "40000000-0000-4000-8000-000000000002",
+            "campaignItemId": "20000000-0000-4000-8000-000000000002",
+            "name": "Drinking Water",
+            "unit": "box",
+            "pledgedQty": 2,
+            "receivedQty": 1,
+            "outstandingQty": 1
+          }
+        ]
+      }
+    },
+    "S2F": {
+      "fixtureLabel": "ASSUMPTION_UI_PROJECTION_NOT_API_RESPONSE",
+      "caseContext": {
+        "caseId": "22222222-2222-4222-8222-222222222222",
+        "organizationId": "11111111-1111-4111-8111-111111111111",
+        "campaignId": "10000000-0000-4000-8000-000000000001",
+        "status": "IN_PROGRESS",
+        "openDisputeCount": 0,
+        "availableEvidenceVersionIds": [
+          "55555555-5555-4555-8555-555555555551",
+          "55555555-5555-4555-8555-555555555552"
+        ],
+        "deliveryAvailableItems": [
+          {
+            "campaignItemId": "20000000-0000-4000-8000-000000000001",
+            "name": "Rice",
+            "unit": "kg",
+            "availableQty": 6
+          },
+          {
+            "campaignItemId": "20000000-0000-4000-8000-000000000002",
+            "name": "Drinking Water",
+            "unit": "box",
+            "availableQty": 1
+          }
+        ]
+      },
+      "receiptContext": {
+        "selectedContributionId": "30000000-0000-4000-8000-000000000001",
+        "selectableCommitments": [
+          {
+            "id": "30000000-0000-4000-8000-000000000001",
+            "status": "PARTIALLY_RECEIVED"
+          }
+        ],
+        "items": [
+          {
+            "contributionItemId": "40000000-0000-4000-8000-000000000001",
+            "campaignItemId": "20000000-0000-4000-8000-000000000001",
+            "name": "Rice",
+            "unit": "kg",
+            "pledgedQty": 8,
+            "receivedQty": 5,
+            "outstandingQty": 3
+          },
+          {
+            "contributionItemId": "40000000-0000-4000-8000-000000000002",
+            "campaignItemId": "20000000-0000-4000-8000-000000000002",
+            "name": "Drinking Water",
+            "unit": "box",
+            "pledgedQty": 2,
+            "receivedQty": 1,
+            "outstandingQty": 1
+          }
+        ]
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "id": "G01-success",
+      "endpointId": "G01",
+      "fixtureLabel": "MOCK_NOT_RUNTIME",
+      "actorKey": "donor",
+      "readAccessAssumption": "Readable resource in the same organization, or public campaign for G01. No cross-org resource exposure.",
+      "beforeState": "S0",
+      "afterState": "S1",
+      "request": {
+        "method": "POST",
+        "path": "/api/campaigns/10000000-0000-4000-8000-000000000001/commitments",
+        "credentials": "same-origin",
+        "headers": {
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": "MOCK_CSRF_TOKEN_NOT_A_SECRET",
+          "Idempotency-Key": "90000000-0000-4000-8000-000000000001"
+        },
+        "body": {
+          "items": [
+            {
+              "campaignItemId": "20000000-0000-4000-8000-000000000001",
+              "quantity": 8
+            },
+            {
+              "campaignItemId": "20000000-0000-4000-8000-000000000002",
+              "quantity": 2
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store",
+          "Location": "/api/commitments/30000000-0000-4000-8000-000000000001"
+        },
+        "body": {
+          "id": "30000000-0000-4000-8000-000000000001",
+          "campaignId": "10000000-0000-4000-8000-000000000001",
+          "items": [
+            {
+              "id": "40000000-0000-4000-8000-000000000001",
+              "campaignItemId": "20000000-0000-4000-8000-000000000001",
+              "pledgedQty": 8,
+              "cancelledQty": 0,
+              "receivedQty": 0,
+              "outstandingQty": 8
+            },
+            {
+              "id": "40000000-0000-4000-8000-000000000002",
+              "campaignItemId": "20000000-0000-4000-8000-000000000002",
+              "pledgedQty": 2,
+              "cancelledQty": 0,
+              "receivedQty": 0,
+              "outstandingQty": 2
+            }
+          ],
+          "status": "PLEDGED",
+          "createdAt": "2026-11-09T01:30:00.000Z",
+          "auditEventId": "80000000-0000-4000-8000-000000000001",
+          "blockchainStatus": "PENDING_ON_CHAIN"
+        }
+      },
+      "totalsBefore": [
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000001",
+          "unit": "kg",
+          "targetQty": 20,
+          "pledgedQty": 6,
+          "receivedQty": 2,
+          "deliveredQty": 1,
+          "confirmedQty": 0
+        },
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000002",
+          "unit": "box",
+          "targetQty": 4,
+          "pledgedQty": 1,
+          "receivedQty": 0,
+          "deliveredQty": 0,
+          "confirmedQty": 0
+        }
+      ],
+      "totalsAfter": [
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000001",
+          "unit": "kg",
+          "targetQty": 20,
+          "pledgedQty": 14,
+          "receivedQty": 2,
+          "deliveredQty": 1,
+          "confirmedQty": 0
+        },
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000002",
+          "unit": "box",
+          "targetQty": 4,
+          "pledgedQty": 3,
+          "receivedQty": 0,
+          "deliveredQty": 0,
+          "confirmedQty": 0
+        }
+      ],
+      "expectedEffects": {
+        "businessAuditEventsCreated": 1,
+        "blockchainJobsCreated": 1,
+        "auditType": "AID_PLEDGED",
+        "businessOutcome": "APPLIED"
+      },
+      "ui": {
+        "state": "success",
+        "focusTarget": "pledge-result",
+        "firstFieldError": null,
+        "refetchRequired": true
+      }
+    },
+    {
+      "id": "G01-forbidden",
+      "endpointId": "G01",
+      "fixtureLabel": "MOCK_NOT_RUNTIME",
+      "actorKey": "caseVerifier",
+      "readAccessAssumption": "Readable resource in the same organization, or public campaign for G01. No cross-org resource exposure.",
+      "beforeState": "S0",
+      "afterState": "S0",
+      "request": {
+        "method": "POST",
+        "path": "/api/campaigns/10000000-0000-4000-8000-000000000001/commitments",
+        "credentials": "same-origin",
+        "headers": {
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": "MOCK_CSRF_TOKEN_NOT_A_SECRET",
+          "Idempotency-Key": "90000000-0000-4000-8000-000000000002"
+        },
+        "body": {
+          "items": [
+            {
+              "campaignItemId": "20000000-0000-4000-8000-000000000001",
+              "quantity": 8
+            },
+            {
+              "campaignItemId": "20000000-0000-4000-8000-000000000002",
+              "quantity": 2
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 403,
+        "headers": {
+          "Content-Type": "application/problem+json",
+          "Cache-Control": "no-store"
+        },
+        "body": {
+          "type": "urn:aidbridge:error:forbidden",
+          "title": "Action is not allowed",
+          "status": 403,
+          "code": "FORBIDDEN",
+          "detail": "You can view this resource but cannot perform this action.",
+          "instance": "/api/campaigns/10000000-0000-4000-8000-000000000001/commitments",
+          "traceId": "f02-g01-403",
+          "fieldErrors": []
+        }
+      },
+      "totalsBefore": [
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000001",
+          "unit": "kg",
+          "targetQty": 20,
+          "pledgedQty": 6,
+          "receivedQty": 2,
+          "deliveredQty": 1,
+          "confirmedQty": 0
+        },
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000002",
+          "unit": "box",
+          "targetQty": 4,
+          "pledgedQty": 1,
+          "receivedQty": 0,
+          "deliveredQty": 0,
+          "confirmedQty": 0
+        }
+      ],
+      "totalsAfter": [
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000001",
+          "unit": "kg",
+          "targetQty": 20,
+          "pledgedQty": 6,
+          "receivedQty": 2,
+          "deliveredQty": 1,
+          "confirmedQty": 0
+        },
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000002",
+          "unit": "box",
+          "targetQty": 4,
+          "pledgedQty": 1,
+          "receivedQty": 0,
+          "deliveredQty": 0,
+          "confirmedQty": 0
+        }
+      ],
+      "expectedEffects": {
+        "businessAuditEventsCreated": 0,
+        "blockchainJobsCreated": 0,
+        "auditType": null,
+        "businessOutcome": "REJECTED_NO_MUTATION"
+      },
+      "ui": {
+        "state": "forbidden",
+        "focusTarget": "error-summary",
+        "firstFieldError": null,
+        "refetchRequired": false
+      }
+    },
+    {
+      "id": "G01-quantity-conflict",
+      "endpointId": "G01",
+      "fixtureLabel": "MOCK_NOT_RUNTIME",
+      "actorKey": "donor",
+      "readAccessAssumption": "Readable resource in the same organization, or public campaign for G01. No cross-org resource exposure.",
+      "beforeState": "S0",
+      "afterState": "S0",
+      "request": {
+        "method": "POST",
+        "path": "/api/campaigns/10000000-0000-4000-8000-000000000001/commitments",
+        "credentials": "same-origin",
+        "headers": {
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": "MOCK_CSRF_TOKEN_NOT_A_SECRET",
+          "Idempotency-Key": "90000000-0000-4000-8000-000000000003"
+        },
+        "body": {
+          "items": [
+            {
+              "campaignItemId": "20000000-0000-4000-8000-000000000001",
+              "quantity": 8
+            },
+            {
+              "campaignItemId": "20000000-0000-4000-8000-000000000002",
+              "quantity": 4
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 409,
+        "headers": {
+          "Content-Type": "application/problem+json",
+          "Cache-Control": "no-store"
+        },
+        "body": {
+          "type": "urn:aidbridge:error:quantity-exceeded",
+          "title": "Quantity exceeds remaining capacity",
+          "status": 409,
+          "code": "QUANTITY_EXCEEDED",
+          "detail": "Refresh the campaign and try again.",
+          "instance": "/api/campaigns/10000000-0000-4000-8000-000000000001/commitments",
+          "traceId": "f02-g01-409",
+          "fieldErrors": [
+            {
+              "field": "items[1].quantity",
+              "code": "EXCEEDS_REMAINING"
+            }
+          ]
+        }
+      },
+      "totalsBefore": [
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000001",
+          "unit": "kg",
+          "targetQty": 20,
+          "pledgedQty": 6,
+          "receivedQty": 2,
+          "deliveredQty": 1,
+          "confirmedQty": 0
+        },
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000002",
+          "unit": "box",
+          "targetQty": 4,
+          "pledgedQty": 1,
+          "receivedQty": 0,
+          "deliveredQty": 0,
+          "confirmedQty": 0
+        }
+      ],
+      "totalsAfter": [
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000001",
+          "unit": "kg",
+          "targetQty": 20,
+          "pledgedQty": 6,
+          "receivedQty": 2,
+          "deliveredQty": 1,
+          "confirmedQty": 0
+        },
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000002",
+          "unit": "box",
+          "targetQty": 4,
+          "pledgedQty": 1,
+          "receivedQty": 0,
+          "deliveredQty": 0,
+          "confirmedQty": 0
+        }
+      ],
+      "expectedEffects": {
+        "businessAuditEventsCreated": 0,
+        "blockchainJobsCreated": 0,
+        "auditType": null,
+        "businessOutcome": "REJECTED_NO_MUTATION"
+      },
+      "ui": {
+        "state": "quantityConflict",
+        "focusTarget": "error-summary",
+        "firstFieldError": "items[1].quantity",
+        "refetchRequired": true
+      }
+    },
+    {
+      "id": "R01-success",
+      "endpointId": "R01",
+      "fixtureLabel": "MOCK_NOT_RUNTIME",
+      "actorKey": "organizationAdmin",
+      "readAccessAssumption": "Readable resource in the same organization, or public campaign for G01. No cross-org resource exposure.",
+      "beforeState": "S1",
+      "afterState": "S2",
+      "request": {
+        "method": "POST",
+        "path": "/api/commitments/30000000-0000-4000-8000-000000000001/receipts",
+        "credentials": "same-origin",
+        "headers": {
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": "MOCK_CSRF_TOKEN_NOT_A_SECRET",
+          "Idempotency-Key": "90000000-0000-4000-8000-000000000004"
+        },
+        "body": {
+          "receivedAt": "2026-11-09T01:39:00.000Z",
+          "items": [
+            {
+              "contributionItemId": "40000000-0000-4000-8000-000000000001",
+              "quantity": 5
+            },
+            {
+              "contributionItemId": "40000000-0000-4000-8000-000000000002",
+              "quantity": 1
+            }
+          ],
+          "note": "Partial receipt for simulated goods."
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store",
+          "Location": "/api/receipts/50000000-0000-4000-8000-000000000001"
+        },
+        "body": {
+          "id": "50000000-0000-4000-8000-000000000001",
+          "contributionId": "30000000-0000-4000-8000-000000000001",
+          "items": [
+            {
+              "contributionItemId": "40000000-0000-4000-8000-000000000001",
+              "quantity": 5
+            },
+            {
+              "contributionItemId": "40000000-0000-4000-8000-000000000002",
+              "quantity": 1
+            }
+          ],
+          "receivedAt": "2026-11-09T01:39:00.000Z",
+          "recordedAt": "2026-11-09T01:40:00.000Z",
+          "recorderId": "70000000-0000-4000-8000-000000000002",
+          "auditEventId": "80000000-0000-4000-8000-000000000002",
+          "blockchainStatus": "PENDING_ON_CHAIN"
+        }
+      },
+      "totalsBefore": [
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000001",
+          "unit": "kg",
+          "targetQty": 20,
+          "pledgedQty": 14,
+          "receivedQty": 2,
+          "deliveredQty": 1,
+          "confirmedQty": 0
+        },
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000002",
+          "unit": "box",
+          "targetQty": 4,
+          "pledgedQty": 3,
+          "receivedQty": 0,
+          "deliveredQty": 0,
+          "confirmedQty": 0
+        }
+      ],
+      "totalsAfter": [
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000001",
+          "unit": "kg",
+          "targetQty": 20,
+          "pledgedQty": 14,
+          "receivedQty": 7,
+          "deliveredQty": 1,
+          "confirmedQty": 0
+        },
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000002",
+          "unit": "box",
+          "targetQty": 4,
+          "pledgedQty": 3,
+          "receivedQty": 1,
+          "deliveredQty": 0,
+          "confirmedQty": 0
+        }
+      ],
+      "expectedEffects": {
+        "businessAuditEventsCreated": 1,
+        "blockchainJobsCreated": 1,
+        "auditType": "GOODS_RECEIVED",
+        "businessOutcome": "APPLIED"
+      },
+      "ui": {
+        "state": "success",
+        "focusTarget": "receipt-result",
+        "firstFieldError": null,
+        "refetchRequired": true
+      }
+    },
+    {
+      "id": "R01-forbidden",
+      "endpointId": "R01",
+      "fixtureLabel": "MOCK_NOT_RUNTIME",
+      "actorKey": "fieldVolunteer",
+      "readAccessAssumption": "Readable resource in the same organization, or public campaign for G01. No cross-org resource exposure.",
+      "beforeState": "S1",
+      "afterState": "S1",
+      "request": {
+        "method": "POST",
+        "path": "/api/commitments/30000000-0000-4000-8000-000000000001/receipts",
+        "credentials": "same-origin",
+        "headers": {
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": "MOCK_CSRF_TOKEN_NOT_A_SECRET",
+          "Idempotency-Key": "90000000-0000-4000-8000-000000000005"
+        },
+        "body": {
+          "receivedAt": "2026-11-09T01:39:00.000Z",
+          "items": [
+            {
+              "contributionItemId": "40000000-0000-4000-8000-000000000001",
+              "quantity": 5
+            },
+            {
+              "contributionItemId": "40000000-0000-4000-8000-000000000002",
+              "quantity": 1
+            }
+          ],
+          "note": "Partial receipt for simulated goods."
+        }
+      },
+      "response": {
+        "status": 403,
+        "headers": {
+          "Content-Type": "application/problem+json",
+          "Cache-Control": "no-store"
+        },
+        "body": {
+          "type": "urn:aidbridge:error:forbidden",
+          "title": "Action is not allowed",
+          "status": 403,
+          "code": "FORBIDDEN",
+          "detail": "You can view this resource but cannot perform this action.",
+          "instance": "/api/commitments/30000000-0000-4000-8000-000000000001/receipts",
+          "traceId": "f02-r01-403",
+          "fieldErrors": []
+        }
+      },
+      "totalsBefore": [
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000001",
+          "unit": "kg",
+          "targetQty": 20,
+          "pledgedQty": 14,
+          "receivedQty": 2,
+          "deliveredQty": 1,
+          "confirmedQty": 0
+        },
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000002",
+          "unit": "box",
+          "targetQty": 4,
+          "pledgedQty": 3,
+          "receivedQty": 0,
+          "deliveredQty": 0,
+          "confirmedQty": 0
+        }
+      ],
+      "totalsAfter": [
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000001",
+          "unit": "kg",
+          "targetQty": 20,
+          "pledgedQty": 14,
+          "receivedQty": 2,
+          "deliveredQty": 1,
+          "confirmedQty": 0
+        },
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000002",
+          "unit": "box",
+          "targetQty": 4,
+          "pledgedQty": 3,
+          "receivedQty": 0,
+          "deliveredQty": 0,
+          "confirmedQty": 0
+        }
+      ],
+      "expectedEffects": {
+        "businessAuditEventsCreated": 0,
+        "blockchainJobsCreated": 0,
+        "auditType": null,
+        "businessOutcome": "REJECTED_NO_MUTATION"
+      },
+      "ui": {
+        "state": "forbidden",
+        "focusTarget": "error-summary",
+        "firstFieldError": null,
+        "refetchRequired": false
+      }
+    },
+    {
+      "id": "R01-quantity-conflict",
+      "endpointId": "R01",
+      "fixtureLabel": "MOCK_NOT_RUNTIME",
+      "actorKey": "organizationAdmin",
+      "readAccessAssumption": "Readable resource in the same organization, or public campaign for G01. No cross-org resource exposure.",
+      "beforeState": "S1",
+      "afterState": "S1",
+      "request": {
+        "method": "POST",
+        "path": "/api/commitments/30000000-0000-4000-8000-000000000001/receipts",
+        "credentials": "same-origin",
+        "headers": {
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": "MOCK_CSRF_TOKEN_NOT_A_SECRET",
+          "Idempotency-Key": "90000000-0000-4000-8000-000000000006"
+        },
+        "body": {
+          "receivedAt": "2026-11-09T01:39:00.000Z",
+          "items": [
+            {
+              "contributionItemId": "40000000-0000-4000-8000-000000000001",
+              "quantity": 5
+            },
+            {
+              "contributionItemId": "40000000-0000-4000-8000-000000000002",
+              "quantity": 3
+            }
+          ],
+          "note": "Partial receipt for simulated goods."
+        }
+      },
+      "response": {
+        "status": 409,
+        "headers": {
+          "Content-Type": "application/problem+json",
+          "Cache-Control": "no-store"
+        },
+        "body": {
+          "type": "urn:aidbridge:error:quantity-exceeded",
+          "title": "Quantity exceeds remaining capacity",
+          "status": 409,
+          "code": "QUANTITY_EXCEEDED",
+          "detail": "Refresh the commitment and try again.",
+          "instance": "/api/commitments/30000000-0000-4000-8000-000000000001/receipts",
+          "traceId": "f02-r01-409",
+          "fieldErrors": [
+            {
+              "field": "items[1].quantity",
+              "code": "EXCEEDS_REMAINING"
+            }
+          ]
+        }
+      },
+      "totalsBefore": [
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000001",
+          "unit": "kg",
+          "targetQty": 20,
+          "pledgedQty": 14,
+          "receivedQty": 2,
+          "deliveredQty": 1,
+          "confirmedQty": 0
+        },
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000002",
+          "unit": "box",
+          "targetQty": 4,
+          "pledgedQty": 3,
+          "receivedQty": 0,
+          "deliveredQty": 0,
+          "confirmedQty": 0
+        }
+      ],
+      "totalsAfter": [
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000001",
+          "unit": "kg",
+          "targetQty": 20,
+          "pledgedQty": 14,
+          "receivedQty": 2,
+          "deliveredQty": 1,
+          "confirmedQty": 0
+        },
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000002",
+          "unit": "box",
+          "targetQty": 4,
+          "pledgedQty": 3,
+          "receivedQty": 0,
+          "deliveredQty": 0,
+          "confirmedQty": 0
+        }
+      ],
+      "expectedEffects": {
+        "businessAuditEventsCreated": 0,
+        "blockchainJobsCreated": 0,
+        "auditType": null,
+        "businessOutcome": "REJECTED_NO_MUTATION"
+      },
+      "ui": {
+        "state": "quantityConflict",
+        "focusTarget": "error-summary",
+        "firstFieldError": "items[1].quantity",
+        "refetchRequired": true
+      }
+    },
+    {
+      "id": "D01-success",
+      "endpointId": "D01",
+      "fixtureLabel": "MOCK_NOT_RUNTIME",
+      "actorKey": "fieldVolunteer",
+      "readAccessAssumption": "Readable resource in the same organization, or public campaign for G01. No cross-org resource exposure.",
+      "beforeState": "S2",
+      "afterState": "S3",
+      "request": {
+        "method": "POST",
+        "path": "/api/cases/22222222-2222-4222-8222-222222222222/deliveries",
+        "credentials": "same-origin",
+        "headers": {
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": "MOCK_CSRF_TOKEN_NOT_A_SECRET",
+          "Idempotency-Key": "90000000-0000-4000-8000-000000000007"
+        },
+        "body": {
+          "outcome": "DELIVERED",
+          "handedOverAt": "2026-11-09T01:49:00.000Z",
+          "items": [
+            {
+              "campaignItemId": "20000000-0000-4000-8000-000000000001",
+              "quantity": 4
+            },
+            {
+              "campaignItemId": "20000000-0000-4000-8000-000000000002",
+              "quantity": 1
+            }
+          ],
+          "evidenceVersionIds": [
+            "55555555-5555-4555-8555-555555555551",
+            "55555555-5555-4555-8555-555555555552"
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store",
+          "Location": "/api/deliveries/60000000-0000-4000-8000-000000000001"
+        },
+        "body": {
+          "id": "60000000-0000-4000-8000-000000000001",
+          "caseId": "22222222-2222-4222-8222-222222222222",
+          "recorderId": "70000000-0000-4000-8000-000000000003",
+          "outcome": "DELIVERED",
+          "reviewStatus": "PENDING",
+          "items": [
+            {
+              "campaignItemId": "20000000-0000-4000-8000-000000000001",
+              "quantity": 4
+            },
+            {
+              "campaignItemId": "20000000-0000-4000-8000-000000000002",
+              "quantity": 1
+            }
+          ],
+          "evidenceVersionIds": [
+            "55555555-5555-4555-8555-555555555551",
+            "55555555-5555-4555-8555-555555555552"
+          ],
+          "recordedAt": "2026-11-09T01:50:00.000Z",
+          "auditEventId": "80000000-0000-4000-8000-000000000003",
+          "blockchainStatus": "PENDING_ON_CHAIN"
+        }
+      },
+      "totalsBefore": [
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000001",
+          "unit": "kg",
+          "targetQty": 20,
+          "pledgedQty": 14,
+          "receivedQty": 7,
+          "deliveredQty": 1,
+          "confirmedQty": 0
+        },
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000002",
+          "unit": "box",
+          "targetQty": 4,
+          "pledgedQty": 3,
+          "receivedQty": 1,
+          "deliveredQty": 0,
+          "confirmedQty": 0
+        }
+      ],
+      "totalsAfter": [
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000001",
+          "unit": "kg",
+          "targetQty": 20,
+          "pledgedQty": 14,
+          "receivedQty": 7,
+          "deliveredQty": 5,
+          "confirmedQty": 0
+        },
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000002",
+          "unit": "box",
+          "targetQty": 4,
+          "pledgedQty": 3,
+          "receivedQty": 1,
+          "deliveredQty": 1,
+          "confirmedQty": 0
+        }
+      ],
+      "expectedEffects": {
+        "businessAuditEventsCreated": 1,
+        "blockchainJobsCreated": 1,
+        "auditType": "DELIVERY_RECORDED",
+        "businessOutcome": "APPLIED"
+      },
+      "ui": {
+        "state": "success",
+        "focusTarget": "delivery-result",
+        "firstFieldError": null,
+        "refetchRequired": true
+      }
+    },
+    {
+      "id": "D01-forbidden",
+      "endpointId": "D01",
+      "fixtureLabel": "MOCK_NOT_RUNTIME",
+      "actorKey": "organizationAdmin",
+      "readAccessAssumption": "Readable resource in the same organization, or public campaign for G01. No cross-org resource exposure.",
+      "beforeState": "S2",
+      "afterState": "S2",
+      "request": {
+        "method": "POST",
+        "path": "/api/cases/22222222-2222-4222-8222-222222222222/deliveries",
+        "credentials": "same-origin",
+        "headers": {
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": "MOCK_CSRF_TOKEN_NOT_A_SECRET",
+          "Idempotency-Key": "90000000-0000-4000-8000-000000000008"
+        },
+        "body": {
+          "outcome": "DELIVERED",
+          "handedOverAt": "2026-11-09T01:49:00.000Z",
+          "items": [
+            {
+              "campaignItemId": "20000000-0000-4000-8000-000000000001",
+              "quantity": 4
+            },
+            {
+              "campaignItemId": "20000000-0000-4000-8000-000000000002",
+              "quantity": 1
+            }
+          ],
+          "evidenceVersionIds": [
+            "55555555-5555-4555-8555-555555555551",
+            "55555555-5555-4555-8555-555555555552"
+          ]
+        }
+      },
+      "response": {
+        "status": 403,
+        "headers": {
+          "Content-Type": "application/problem+json",
+          "Cache-Control": "no-store"
+        },
+        "body": {
+          "type": "urn:aidbridge:error:forbidden",
+          "title": "Action is not allowed",
+          "status": 403,
+          "code": "FORBIDDEN",
+          "detail": "You can view this resource but cannot perform this action.",
+          "instance": "/api/cases/22222222-2222-4222-8222-222222222222/deliveries",
+          "traceId": "f02-d01-403",
+          "fieldErrors": []
+        }
+      },
+      "totalsBefore": [
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000001",
+          "unit": "kg",
+          "targetQty": 20,
+          "pledgedQty": 14,
+          "receivedQty": 7,
+          "deliveredQty": 1,
+          "confirmedQty": 0
+        },
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000002",
+          "unit": "box",
+          "targetQty": 4,
+          "pledgedQty": 3,
+          "receivedQty": 1,
+          "deliveredQty": 0,
+          "confirmedQty": 0
+        }
+      ],
+      "totalsAfter": [
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000001",
+          "unit": "kg",
+          "targetQty": 20,
+          "pledgedQty": 14,
+          "receivedQty": 7,
+          "deliveredQty": 1,
+          "confirmedQty": 0
+        },
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000002",
+          "unit": "box",
+          "targetQty": 4,
+          "pledgedQty": 3,
+          "receivedQty": 1,
+          "deliveredQty": 0,
+          "confirmedQty": 0
+        }
+      ],
+      "expectedEffects": {
+        "businessAuditEventsCreated": 0,
+        "blockchainJobsCreated": 0,
+        "auditType": null,
+        "businessOutcome": "REJECTED_NO_MUTATION"
+      },
+      "ui": {
+        "state": "forbidden",
+        "focusTarget": "error-summary",
+        "firstFieldError": null,
+        "refetchRequired": false
+      }
+    },
+    {
+      "id": "D01-quantity-conflict",
+      "endpointId": "D01",
+      "fixtureLabel": "MOCK_NOT_RUNTIME",
+      "actorKey": "fieldVolunteer",
+      "readAccessAssumption": "Readable resource in the same organization, or public campaign for G01. No cross-org resource exposure.",
+      "beforeState": "S2",
+      "afterState": "S2",
+      "request": {
+        "method": "POST",
+        "path": "/api/cases/22222222-2222-4222-8222-222222222222/deliveries",
+        "credentials": "same-origin",
+        "headers": {
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": "MOCK_CSRF_TOKEN_NOT_A_SECRET",
+          "Idempotency-Key": "90000000-0000-4000-8000-000000000009"
+        },
+        "body": {
+          "outcome": "DELIVERED",
+          "handedOverAt": "2026-11-09T01:49:00.000Z",
+          "items": [
+            {
+              "campaignItemId": "20000000-0000-4000-8000-000000000001",
+              "quantity": 4
+            },
+            {
+              "campaignItemId": "20000000-0000-4000-8000-000000000002",
+              "quantity": 2
+            }
+          ],
+          "evidenceVersionIds": [
+            "55555555-5555-4555-8555-555555555551",
+            "55555555-5555-4555-8555-555555555552"
+          ]
+        }
+      },
+      "response": {
+        "status": 409,
+        "headers": {
+          "Content-Type": "application/problem+json",
+          "Cache-Control": "no-store"
+        },
+        "body": {
+          "type": "urn:aidbridge:error:quantity-exceeded",
+          "title": "Quantity exceeds remaining capacity",
+          "status": 409,
+          "code": "QUANTITY_EXCEEDED",
+          "detail": "Refresh the available goods and try again.",
+          "instance": "/api/cases/22222222-2222-4222-8222-222222222222/deliveries",
+          "traceId": "f02-d01-409",
+          "fieldErrors": [
+            {
+              "field": "items[1].quantity",
+              "code": "EXCEEDS_REMAINING"
+            }
+          ]
+        }
+      },
+      "totalsBefore": [
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000001",
+          "unit": "kg",
+          "targetQty": 20,
+          "pledgedQty": 14,
+          "receivedQty": 7,
+          "deliveredQty": 1,
+          "confirmedQty": 0
+        },
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000002",
+          "unit": "box",
+          "targetQty": 4,
+          "pledgedQty": 3,
+          "receivedQty": 1,
+          "deliveredQty": 0,
+          "confirmedQty": 0
+        }
+      ],
+      "totalsAfter": [
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000001",
+          "unit": "kg",
+          "targetQty": 20,
+          "pledgedQty": 14,
+          "receivedQty": 7,
+          "deliveredQty": 1,
+          "confirmedQty": 0
+        },
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000002",
+          "unit": "box",
+          "targetQty": 4,
+          "pledgedQty": 3,
+          "receivedQty": 1,
+          "deliveredQty": 0,
+          "confirmedQty": 0
+        }
+      ],
+      "expectedEffects": {
+        "businessAuditEventsCreated": 0,
+        "blockchainJobsCreated": 0,
+        "auditType": null,
+        "businessOutcome": "REJECTED_NO_MUTATION"
+      },
+      "ui": {
+        "state": "quantityConflict",
+        "focusTarget": "error-summary",
+        "firstFieldError": "items[1].quantity",
+        "refetchRequired": true
+      }
+    },
+    {
+      "id": "D01-failed-attempt",
+      "endpointId": "D01",
+      "fixtureLabel": "MOCK_NOT_RUNTIME",
+      "actorKey": "fieldVolunteer",
+      "readAccessAssumption": "Readable resource in the same organization, or public campaign for G01. No cross-org resource exposure.",
+      "beforeState": "S2",
+      "afterState": "S2F",
+      "request": {
+        "method": "POST",
+        "path": "/api/cases/22222222-2222-4222-8222-222222222222/deliveries",
+        "credentials": "same-origin",
+        "headers": {
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": "MOCK_CSRF_TOKEN_NOT_A_SECRET",
+          "Idempotency-Key": "90000000-0000-4000-8000-00000000000a"
+        },
+        "body": {
+          "outcome": "FAILED",
+          "items": [],
+          "evidenceVersionIds": [],
+          "reason": "Road access blocked in simulated scenario."
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store",
+          "Location": "/api/deliveries/60000000-0000-4000-8000-000000000002"
+        },
+        "body": {
+          "id": "60000000-0000-4000-8000-000000000002",
+          "caseId": "22222222-2222-4222-8222-222222222222",
+          "recorderId": "70000000-0000-4000-8000-000000000003",
+          "outcome": "FAILED",
+          "reviewStatus": "NOT_APPLICABLE",
+          "items": [],
+          "evidenceVersionIds": [],
+          "recordedAt": "2026-11-09T01:51:00.000Z",
+          "auditEventId": "80000000-0000-4000-8000-000000000004",
+          "blockchainStatus": "NOT_APPLICABLE"
+        }
+      },
+      "totalsBefore": [
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000001",
+          "unit": "kg",
+          "targetQty": 20,
+          "pledgedQty": 14,
+          "receivedQty": 7,
+          "deliveredQty": 1,
+          "confirmedQty": 0
+        },
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000002",
+          "unit": "box",
+          "targetQty": 4,
+          "pledgedQty": 3,
+          "receivedQty": 1,
+          "deliveredQty": 0,
+          "confirmedQty": 0
+        }
+      ],
+      "totalsAfter": [
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000001",
+          "unit": "kg",
+          "targetQty": 20,
+          "pledgedQty": 14,
+          "receivedQty": 7,
+          "deliveredQty": 1,
+          "confirmedQty": 0
+        },
+        {
+          "campaignItemId": "20000000-0000-4000-8000-000000000002",
+          "unit": "box",
+          "targetQty": 4,
+          "pledgedQty": 3,
+          "receivedQty": 1,
+          "deliveredQty": 0,
+          "confirmedQty": 0
+        }
+      ],
+      "expectedEffects": {
+        "businessAuditEventsCreated": 1,
+        "blockchainJobsCreated": 0,
+        "auditType": "DELIVERY_ATTEMPT_FAILED",
+        "businessOutcome": "FAILED_ATTEMPT_RECORDED_ZERO_GOODS_EFFECT"
+      },
+      "ui": {
+        "state": "failedAttemptRecorded",
+        "focusTarget": "delivery-result",
+        "firstFieldError": null,
+        "refetchRequired": true
+      }
+    }
+  ],
+  "replayExpectation": {
+    "scenarioId": "G01-success",
+    "sameActorSameKeySameBody": {
+      "status": 201,
+      "header": {
+        "Idempotent-Replayed": "true"
+      },
+      "sameResourceId": true,
+      "additionalQuantityAuditOrJobEffects": 0
+    },
+    "sameKeyDifferentBody": {
+      "status": 409,
+      "code": "IDEMPOTENCY_CONFLICT",
+      "additionalQuantityAuditOrJobEffects": 0
+    },
+    "executionStatus": "NOT_RUN"
+  },
+  "runtimeEvidence": {
+    "backendHttp": "NOT_RUN",
+    "frontendRendering": "NOT_RUN",
+    "keyboardE2E": "NOT_RUN",
+    "blockchain": "NOT_RUN"
+  }
+}

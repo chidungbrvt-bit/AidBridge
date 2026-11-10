@@ -1,0 +1,243 @@
+{
+  "fixtureLabel": "F02_UI_STATE_SPEC_NOT_EXECUTED",
+  "commonStates": [
+    {
+      "state": "loading",
+      "trigger": "Initial GET or explicit refresh",
+      "display": "Loading goods...",
+      "action": "Disable mutation until fresh context is available",
+      "focus": "Keep focus; announce status with aria-live"
+    },
+    {
+      "state": "empty",
+      "trigger": "No selectable or available item",
+      "display": "No goods available for this action.",
+      "action": "Hide/disable submit, preserve read-only totals; explain next operational step",
+      "focus": "Keep focus; do not auto-open another form"
+    },
+    {
+      "state": "loadError",
+      "trigger": "Context read failed",
+      "display": "Unable to load goods.",
+      "action": "Retry read only; do not submit stale quantities",
+      "focus": "Error summary after requested refresh; keep initial-load focus stable"
+    },
+    {
+      "state": "submitting",
+      "trigger": "POST in flight",
+      "display": "Saving...",
+      "action": "Prevent repeat submit; preserve one idempotency key/body",
+      "focus": "Keep focus on submit; announce progress"
+    },
+    {
+      "state": "validationError",
+      "trigger": "400 VALIDATION_ERROR or local form invalid",
+      "display": "Check the highlighted fields.",
+      "action": "Map items[index].quantity to stable row ID; keep entered values",
+      "focus": "Error summary -> first invalid input"
+    },
+    {
+      "state": "unauthenticated",
+      "trigger": "401",
+      "display": "Your session has expired.",
+      "action": "Clear private state; use Minh session flow; reauthenticate before deciding replay",
+      "focus": "Login heading"
+    },
+    {
+      "state": "csrfInvalid",
+      "trigger": "403 CSRF_INVALID",
+      "display": "Your session needs to be refreshed.",
+      "action": "Refresh CSRF through shared client; do not show as missing role or blindly retry business write",
+      "focus": "Error summary"
+    },
+    {
+      "state": "notFound",
+      "trigger": "404 resource outside permitted scope or missing",
+      "display": "Resource not found.",
+      "action": "Clear protected context; never disclose whether another organization owns it",
+      "focus": "Error heading"
+    },
+    {
+      "state": "unknownOutcome",
+      "trigger": "Network timeout after POST",
+      "display": "The result is not yet known.",
+      "action": "Do not increment totals or allocate new key; retry identical request via Minh client when authorized",
+      "focus": "Recovery panel heading"
+    },
+    {
+      "state": "stateConflict",
+      "trigger": "409 INVALID_STATE or DISPUTE_OPEN",
+      "display": "This action is no longer available.",
+      "action": "Refetch and disable conflicting action; do not retry automatically",
+      "focus": "Error summary"
+    },
+    {
+      "state": "idempotencyConflict",
+      "trigger": "409 IDEMPOTENCY_CONFLICT",
+      "display": "This request key was used with different data.",
+      "action": "Preserve the draft; require an explicit new submission with a new key for changed data. Never replace the key for an unknown outcome retry.",
+      "focus": "Error summary"
+    }
+  ],
+  "endpoints": [
+    {
+      "endpointId": "G01",
+      "method": "POST",
+      "path": "/api/campaigns/10000000-0000-4000-8000-000000000001/commitments",
+      "mockScenarioIds": [
+        "G01-success",
+        "G01-forbidden",
+        "G01-quantity-conflict"
+      ],
+      "role": "donorEnabled account",
+      "commonStateRefs": [
+        "loading",
+        "empty",
+        "loadError",
+        "submitting",
+        "validationError",
+        "unauthenticated",
+        "csrfInvalid",
+        "notFound",
+        "unknownOutcome",
+        "stateConflict",
+        "idempotencyConflict"
+      ],
+      "specificStates": [
+        {
+          "state": "success",
+          "response": "201",
+          "fixtureScenario": "G01-success",
+          "display": "Goods pledged. Pending on-chain.",
+          "action": "Refetch permitted projections; never add campaign totals by using a contribution-level response alone",
+          "focus": "pledge-result"
+        },
+        {
+          "state": "forbidden",
+          "response": "403 FORBIDDEN",
+          "fixtureScenario": "G01-forbidden",
+          "display": "You can view this resource but cannot perform this action.",
+          "action": "Keep permitted read-only context; remove mutation controls until capabilities refreshed",
+          "focus": "error-summary"
+        },
+        {
+          "state": "quantityConflict",
+          "response": "409 QUANTITY_EXCEEDED",
+          "fixtureScenario": "G01-quantity-conflict",
+          "display": "Refresh quantities and review your entries.",
+          "action": "Refetch limits; preserve draft; require explicit correction and resubmit with new key for changed body",
+          "focus": "error-summary -> items[1].quantity"
+        }
+      ]
+    },
+    {
+      "endpointId": "R01",
+      "method": "POST",
+      "path": "/api/commitments/30000000-0000-4000-8000-000000000001/receipts",
+      "mockScenarioIds": [
+        "R01-success",
+        "R01-forbidden",
+        "R01-quantity-conflict"
+      ],
+      "role": "ORGANIZATION_ADMIN in owning organization",
+      "commonStateRefs": [
+        "loading",
+        "empty",
+        "loadError",
+        "submitting",
+        "validationError",
+        "unauthenticated",
+        "csrfInvalid",
+        "notFound",
+        "unknownOutcome",
+        "stateConflict",
+        "idempotencyConflict"
+      ],
+      "specificStates": [
+        {
+          "state": "success",
+          "response": "201",
+          "fixtureScenario": "R01-success",
+          "display": "Partial receipt recorded. Pending on-chain.",
+          "action": "Refetch permitted projections; never add campaign totals by using a contribution-level response alone",
+          "focus": "receipt-result"
+        },
+        {
+          "state": "forbidden",
+          "response": "403 FORBIDDEN",
+          "fixtureScenario": "R01-forbidden",
+          "display": "You can view this resource but cannot perform this action.",
+          "action": "Keep permitted read-only context; remove mutation controls until capabilities refreshed",
+          "focus": "error-summary"
+        },
+        {
+          "state": "quantityConflict",
+          "response": "409 QUANTITY_EXCEEDED",
+          "fixtureScenario": "R01-quantity-conflict",
+          "display": "Refresh quantities and review your entries.",
+          "action": "Refetch limits; preserve draft; require explicit correction and resubmit with new key for changed body",
+          "focus": "error-summary -> items[1].quantity"
+        }
+      ]
+    },
+    {
+      "endpointId": "D01",
+      "method": "POST",
+      "path": "/api/cases/22222222-2222-4222-8222-222222222222/deliveries",
+      "mockScenarioIds": [
+        "D01-success",
+        "D01-forbidden",
+        "D01-quantity-conflict",
+        "D01-failed-attempt"
+      ],
+      "role": "FIELD_VOLUNTEER in owning organization",
+      "commonStateRefs": [
+        "loading",
+        "empty",
+        "loadError",
+        "submitting",
+        "validationError",
+        "unauthenticated",
+        "csrfInvalid",
+        "notFound",
+        "unknownOutcome",
+        "stateConflict",
+        "idempotencyConflict"
+      ],
+      "specificStates": [
+        {
+          "state": "success",
+          "response": "201",
+          "fixtureScenario": "D01-success",
+          "display": "Delivery recorded. Awaiting independent confirmation. Pending on-chain.",
+          "action": "Refetch permitted projections; never add campaign totals by using a contribution-level response alone",
+          "focus": "delivery-result"
+        },
+        {
+          "state": "forbidden",
+          "response": "403 FORBIDDEN",
+          "fixtureScenario": "D01-forbidden",
+          "display": "You can view this resource but cannot perform this action.",
+          "action": "Keep permitted read-only context; remove mutation controls until capabilities refreshed",
+          "focus": "error-summary"
+        },
+        {
+          "state": "quantityConflict",
+          "response": "409 QUANTITY_EXCEEDED",
+          "fixtureScenario": "D01-quantity-conflict",
+          "display": "Refresh quantities and review your entries.",
+          "action": "Refetch limits; preserve draft; require explicit correction and resubmit with new key for changed body",
+          "focus": "error-summary -> items[1].quantity"
+        },
+        {
+          "state": "failedAttemptRecorded",
+          "response": "201",
+          "fixtureScenario": "D01-failed-attempt",
+          "display": "Failed attempt recorded. Goods totals are unchanged.",
+          "action": "No confirmation or on-chain success badge; keep stock unchanged",
+          "focus": "delivery-result"
+        }
+      ]
+    }
+  ]
+}
