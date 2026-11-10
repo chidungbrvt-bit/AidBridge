@@ -1,6 +1,20 @@
 # Task Backlog
 
-Ngày tạo: 03/11/2026. Owner: B. Status: **36 tasks Not Started**; application chưa triển khai. Authorization hiện tại tạo planning workspace, không tự cho phép coding/Git/deploy/purchase.
+Ngày tạo: 03/11/2026. Cập nhật: 07/11/2026. Người duy trì: Dũng (B). Status: **32 tasks Not Started, B01 In Review, B02/B03/B04 In Progress**. USER_CONFIRMED: từng phần user/security, B01 documentation, B02 phần1 PostgreSQL setup, B03 scoped fixes/tests và B04 Beneficiary entity/annotations; quyền này không tự mở rộng sang full CRUD/deploy/purchase. Status dựa trên bằng chứng hiện có, không đổi owner/estimate/deadline.
+
+## Thành viên và phối hợp tích hợp
+
+- B = **Dũng — Backend**; C = **Khoa — Blockchain & Integration**; F = **Minh — Frontend & Product**. Các mã task không đổi.
+- C05/C07/C08/C09/C10 vẫn có Khoa là người chịu trách nhiệm chính, nhưng Dũng trực tiếp làm/hỗ trợ phần Java, database, transaction, DTO và REST theo [phân công chi tiết](TEAM_RESPONSIBILITIES.md).
+- Dũng bàn giao đầu ra B05/B07/B08–B11 cho Khoa theo từng tính năng, không chờ toàn bộ backend xong. Khoa chịu phần contract/Fuji/signing/nonce/receipt/event semantics; Minh ghép UI và E2E.
+- Không cộng cứng giờ hỗ trợ ngoài lịch đang kín. Công chung ghi người/phần việc/giờ một lần; hỗ trợ sâu hơn dùng giờ thực tế tiết kiệm hoặc điều chỉnh allocation trước. Không tự lấy toàn bộ8h reserve như thể rảnh sớm trước18/11.
+- Không đổi primary owner, estimates, deadlines, dependencies, test/acceptance gates hoặc trạng thái task trong lần cập nhật phân công này.
+
+## Early-completion policy - user confirmed03/11/2026
+
+18/11 đủ sáu P0;20/11 stable demo;22/11 package/video/runbooks sẵn sàng;25/11 chỉ external submission limit. Xong task sớm thì handoff ngay và pull task tiếp theo đã đủ dependencies, không đợi đến ngày trong lịch. Khi blocked, giúp critical path/review/tests; không tự thêm P1/ML. WIP1 task chính/người.
+
+Giữ nguyên56h work+8h reserve/người.03-20/11 weekday2.5h/weekend5h=55h;21-22/11 x3h=6h;23-25/11 x1h=3h reserve; tổng64h/người không đổi. D26/D27 thay cách phân bổ và deadlines cũ, không giảm estimate/quality hoặc ghi lùi completion. Tiến độ thực tế cập nhật trong bảng và progress log; chưa có bằng chứng deploy.
 
 ## Issue conventions và estimates
 
@@ -8,44 +22,44 @@ Mỗi task dưới đây P0 hoặc P0 enabler; không cộng P1/P2 vào168h. Com
 
 Dependencies là gate cho integrated Done; mock/design/scaffold prework có thể overlap nhưng không đánh dấu Done khi chỉ có mocks. Planned integrated finish dưới đây là forecast từ daily allocation, không actual completion. State: Not Started -> In Progress -> In Review -> Testing -> Done; Blocked cần reason/owner/next action.
 
-| ID | Feature | Owner | Support | Complexity | Hours | Dependencies | Deadline | Planned finish | Status |
+| ID | Feature | Phụ trách chính | Hỗ trợ | Complexity | Hours | Dependencies | Deadline | Planned finish | Status |
 |---|---|---|---|---|---:|---|---|---|---|
-| B01 | Design | B | C/F | M | 2 | Planning review | 2026-11-05 | 2026-11-03 | Not Started |
-| B02 | Foundation | B | C/F | M | 3 | B01 | 2026-11-06 | 2026-11-05 | Not Started |
-| B03 | P0-01 | B | C/F | L | 5 | B02 | 2026-11-08 | 2026-11-07 | Not Started |
-| B04 | P0-02 | B | C/F | M | 4 | B03 | 2026-11-08 | 2026-11-08 | Not Started |
-| B05 | P0-03 | B | C/F | L | 4 | B04, C01 | 2026-11-09 | 2026-11-08 | Not Started |
-| B06 | P0-04 | B | C/F | M | 6 | B05 | 2026-11-12 | 2026-11-11 | Not Started |
-| B07 | P0-04 | B | C/F | L | 7 | B06 | 2026-11-15 | 2026-11-14 | Not Started |
-| B08 | P0-05 | B | C/F | M | 5 | B07 | 2026-11-18 | 2026-11-15 | Not Started |
-| B09 | P0-05 | B | C/F | L | 5 | B08 | 2026-11-20 | 2026-11-17 | Not Started |
-| B10 | P0-05 | B | C/F | L | 6 | B09 | 2026-11-22 | 2026-11-20 | Not Started |
-| B11 | Quality | B | C/F | L | 6 | B03, B04, B05, B06, B07, B08, B09, B10 | 2026-11-23 | 2026-11-21 | Not Started |
-| B12 | Submission | B | C/F | M | 3 | B11 | 2026-11-25 | 2026-11-25 | Not Started |
-| C01 | Design | C | B/F | L | 4 | B01 | 2026-11-05 | 2026-11-04 | In Review |
-| C02 | Foundation | C | B/F | M | 3 | C01 | 2026-11-06 | 2026-11-06 | Not Started |
-| C03 | P0-03/P0-06 | C | B/F | L | 5 | C01, C02 | 2026-11-07 | 2026-11-07 | Not Started |
-| C04 | P0-06 | C | B/F | M | 2 | C03 | 2026-11-08 | 2026-11-08 | Not Started |
-| C05 | P0-03/P0-06 | C | B/F | L | 6 | B05, C04 | 2026-11-10 | 2026-11-09 | Not Started |
-| C06 | P0-04/P0-05/P0-06 | C | B/F | L | 6 | C03 | 2026-11-15 | 2026-11-12 | Not Started |
-| C07 | P0-06 | C | B/F | L | 7 | C05 | 2026-11-16 | 2026-11-14 | Not Started |
-| C08 | P0-06 | C | B/F | L | 7 | C06, C07 | 2026-11-18 | 2026-11-16 | Not Started |
-| C09 | P0-06 | C | B/F | M | 3 | C08 | 2026-11-18 | 2026-11-18 | Not Started |
-| C10 | P0-05/P0-06 | C | B/F | L | 4 | B08, B09, C08 | 2026-11-20 | 2026-11-20 | Not Started |
-| C11 | Quality | C | B/F | L | 6 | C06, C07, C08, C09, C10 | 2026-11-22 | 2026-11-21 | Not Started |
-| C12 | Submission | C | B/F | M | 3 | C11 | 2026-11-25 | 2026-11-25 | Not Started |
-| F01 | Validation | F | B/C | M | 2 | Planning review | 2026-11-05 | 2026-11-03 | In Review |
-| F02 | Design | F | B/C | M | 4 | B01 | 2026-11-06 | 2026-11-05 | In Review |
-| F03 | P0-01 | F | B/C | M | 4 | F02, B03 | 2026-11-08 | 2026-11-07 | Not Started |
-| F04 | P0-02/P0-03 | F | B/C | L | 6 | F03, B04, B05 | 2026-11-09 | 2026-11-08 | Not Started |
-| F05 | P0-06 | F | B/C | L | 4 | F04, C05 | 2026-11-11 | 2026-11-09 | Not Started |
-| F06 | P0-04 | F | B/C | M | 6 | F02, B06 | 2026-11-13 | 2026-11-12 | Not Started |
-| F07 | P0-04 | F | B/C | M | 5 | F06, B07 | 2026-11-15 | 2026-11-14 | In Review |
-| F08 | P0-05 | F | B/C | M | 5 | F04, B08, B09 | 2026-11-20 | 2026-11-17 | Not Started |
-| F09 | P0-05/P0-06 | F | B/C | L | 5 | F08, B10, C09 | 2026-11-22 | 2026-11-20 | Not Started |
-| F10 | Deployment | F | B/C | L | 4 | F09, C10 | 2026-11-22 | 2026-11-21 | Not Started |
-| F11 | Quality | F | B/C | L | 6 | F10, B11, C11 | 2026-11-23 | 2026-11-22 | Not Started |
-| F12 | Submission | F | B/C | L | 5 | F11 | 2026-11-25 | 2026-11-25 | Not Started |
+| B01 | Design | Dũng (B) | Khoa / Minh | M | 2 | Planning review | 2026-11-03 | 2026-11-03 | In Review |
+| B02 | Foundation | Dũng (B) | Khoa / Minh | M | 3 | B01 | 2026-11-04 | 2026-11-04 | In Progress |
+| B03 | P0-01 | Dũng (B) | Khoa / Minh | L | 5 | B02 | 2026-11-06 | 2026-11-06 | In Progress |
+| B04 | P0-02 | Dũng (B) | Khoa / Minh | M | 4 | B03 | 2026-11-07 | 2026-11-07 | In Progress |
+| B05 | P0-03 | Dũng (B) | Khoa / Minh | L | 4 | B04, C01 | 2026-11-08 | 2026-11-08 | In Review |
+| B06 | P0-04 | Dũng (B) | Khoa / Minh | M | 6 | B05 | 2026-11-10 | 2026-11-10 | Not Started |
+| B07 | P0-04 | Dũng (B) | Khoa / Minh | L | 7 | B06 | 2026-11-13 | 2026-11-13 | Not Started |
+| B08 | P0-05 | Dũng (B) | Khoa / Minh | M | 5 | B07 | 2026-11-14 | 2026-11-14 | Not Started |
+| B09 | P0-05 | Dũng (B) | Khoa / Minh | L | 5 | B08 | 2026-11-15 | 2026-11-15 | Not Started |
+| B10 | P0-05 | Dũng (B) | Khoa / Minh | L | 6 | B09 | 2026-11-18 | 2026-11-17 | Not Started |
+| B11 | Quality | Dũng (B) | Khoa / Minh | L | 6 | B03, B04, B05, B06, B07, B08, B09, B10 | 2026-11-20 | 2026-11-20 | Not Started |
+| B12 | Submission | Dũng (B) | Khoa / Minh | M | 3 | B11 | 2026-11-22 | 2026-11-21 | Not Started |
+| C01 | Design | Khoa (C) | Dũng / Minh | L | 4 | B01 | 2026-11-04 | 2026-11-04 | In Review |
+| C02 | Foundation | Khoa (C) | Dũng / Minh | M | 3 | C01 | 2026-11-05 | 2026-11-05 | In Review |
+| C03 | P0-03/P0-06 | Khoa (C) | Dũng / Minh | L | 5 | C01, C02 | 2026-11-07 | 2026-11-07 | In Review |
+| C04 | P0-06 | Khoa (C) | Dũng / Minh | M | 2 | C03 | 2026-11-07 | 2026-11-07 | Not Started |
+| C05 | P0-03/P0-06 | Khoa (C) | Dũng / Minh | L | 6 | B05, C04 | 2026-11-09 | 2026-11-08 | Not Started |
+| C06 | P0-04/P0-05/P0-06 | Khoa (C) | Dũng / Minh | L | 6 | C03 | 2026-11-11 | 2026-11-11 | Not Started |
+| C07 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C05 | 2026-11-14 | 2026-11-14 | Not Started |
+| C08 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C06, C07 | 2026-11-15 | 2026-11-15 | Not Started |
+| C09 | P0-06 | Khoa (C) | Dũng / Minh | M | 3 | C08 | 2026-11-16 | 2026-11-16 | Not Started |
+| C10 | P0-05/P0-06 | Khoa (C) | Dũng / Minh | L | 4 | B08, B09, C08 | 2026-11-17 | 2026-11-17 | Not Started |
+| C11 | Quality | Khoa (C) | Dũng / Minh | L | 6 | C06, C07, C08, C09, C10 | 2026-11-20 | 2026-11-20 | Not Started |
+| C12 | Submission | Khoa (C) | Dũng / Minh | M | 3 | C11 | 2026-11-22 | 2026-11-21 | Not Started |
+| F01 | Validation | Minh (F) | Dũng / Khoa | M | 2 | Planning review | 2026-11-03 | 2026-11-03 | In Review |
+| F02 | Design | Minh (F) | Dũng / Khoa | M | 4 | B01 | 2026-11-05 | 2026-11-05 | In Review |
+| F03 | P0-01 | Minh (F) | Dũng / Khoa | M | 4 | F02, B03 | 2026-11-06 | 2026-11-06 | Not Started |
+| F04 | P0-02/P0-03 | Minh (F) | Dũng / Khoa | L | 6 | F03, B04, B05 | 2026-11-08 | 2026-11-08 | Not Started |
+| F05 | P0-06 | Minh (F) | Dũng / Khoa | L | 4 | F04, C05 | 2026-11-09 | 2026-11-08 | Not Started |
+| F06 | P0-04 | Minh (F) | Dũng / Khoa | M | 6 | F02, B06 | 2026-11-11 | 2026-11-11 | Not Started |
+| F07 | P0-04 | Minh (F) | Dũng / Khoa | M | 5 | F06, B07 | 2026-11-13 | 2026-11-13 | In Review |
+| F08 | P0-05 | Minh (F) | Dũng / Khoa | M | 5 | F04, B08, B09 | 2026-11-15 | 2026-11-15 | Not Started |
+| F09 | P0-05/P0-06 | Minh (F) | Dũng / Khoa | L | 5 | F08, B10, C09 | 2026-11-18 | 2026-11-17 | Not Started |
+| F10 | Deployment | Minh (F) | Dũng / Khoa | L | 4 | F09, C10 | 2026-11-18 | 2026-11-18 | Not Started |
+| F11 | Quality | Minh (F) | Dũng / Khoa | L | 6 | F10, B11, C11 | 2026-11-20 | 2026-11-20 | Not Started |
+| F12 | Submission | Minh (F) | Dũng / Khoa | L | 5 | F11 | 2026-11-22 | 2026-11-22 | Not Started |
 
 **Total36 tasks/168h; B56h, C56h, F56h;24h reserve against192h capacity.**
 
@@ -54,80 +68,125 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 ### B01 - Khóa RBAC/ERD/API
 
 - **Feature / priority:** Design / P0.
-- **Owner / support / reviewer:** B / C/F / C cho auth/transaction; F cho API/UX.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Dũng (B) / Khoa / Minh / Khoa kiểm tra payload/chain boundary; Minh kiểm tra API/UI.
 - **Complexity / estimate:** M / 2h.
 - **Dependencies:** Planning/source review; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-03 through 2026-11-03; deadline 2026-11-05, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-03 through 2026-11-03; deadline 2026-11-03, Asia/Bangkok.
 - **Description / expected behavior:** Khóa RBAC/ERD/API; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
-- **Expected output files (future, not created):** docs/architecture/API_SPECIFICATION.md; DATABASE_DESIGN.md.
+- **Output files:** docs/architecture/B01_BASELINE.md; API_SPECIFICATION.md; DATABASE_DESIGN.md; BUSINESS_WORKFLOWS.md; SYSTEM_DESIGN.md; initial mapping trong BLOCKCHAIN_ARCHITECTURE.md.
 - **Acceptance criteria:** B/C/F đồng ý case/need/consent ownership, DTO/error/idempotency và initial event contract.
 - **Required tests:** BR01-P/N, BR02-P/N, BR03-P/N; design review.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Review,04/11/2026. USER_CONFIRMED: user yêu cầu thống nhất RBAC/ERD/API. B01_BASELINE tổng hợp field/role/status canonical theo V1/User, giữ explicit donor grant theo thiết kế trước; DTO/error/idempotency/ownership và initial audit/contract event mapping đồng bộ trong các design docs. Đối chiếu source PDF pp.4-5 và text/code hiện có; chỉ thay Markdown, không sửa Java/SQL. Các tình huống BR01/02/03 positive/negative đã viết để review, chưa phải runtime tests Pass. Dũng/Khoa/Minh chưa có cross-owner acceptance; human actual effort và integrated completion date chưa ghi nhận.
+- **Findings handed off:** V1 thiếu donor_enabled/public_ref/relayer/approval metadata theo design target; V2–V5 chỉ placeholders0 bytes. B02 implement/verify migrations và startup/health; B03 bổ sung donor mapping, auth/me, membership/state guard, full error envelope/fieldErrors array; C01/C03/C05 review/golden vector/ABI. Giữ ownership/identity/transaction boundaries, không thay scope/estimate/deadline để che gaps.
+- **Static verification04/11/2026:** bundled Python `-X utf8 backend/aidbridge-backend/target/verify-b01.py` từ repo root:15 consistency checks OK;16 relative file links resolved trong11 docs; SQL/Java enums, identity/MeResponse naming, donor gap, V2–V5 placeholders và36 task statuses khớp. `git diff --check` cho affected docs không có whitespace errors. Đây là document consistency verification; không ghi runtime BR tests Pass hoặc thay cross-owner review.
 
 ### B02 - Spring/PostgreSQL/Flyway skeleton
 
 - **Feature / priority:** Foundation / P0.
-- **Owner / support / reviewer:** B / C/F / C cho auth/transaction; F cho API/UX.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Dũng (B) / Khoa / Minh / Khoa kiểm tra payload/chain boundary; Minh kiểm tra API/UI.
 - **Complexity / estimate:** M / 3h.
 - **Dependencies:** B01; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-04 through 2026-11-05; deadline 2026-11-06, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-03 through 2026-11-04; deadline 2026-11-04, Asia/Bangkok.
 - **Description / expected behavior:** Spring/PostgreSQL/Flyway skeleton; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
-- **Expected output files (future, not created):** backend/pom.xml; mvnw; application config; infra/compose.yml; V1 migration.
+- **Expected output files:** backend/aidbridge-backend/pom.xml; mvnw/mvnw.cmd; src/main/resources/application.properties và db/migration; hướng dẫn environment/database user quản lý. Compose chỉ khi được chọn riêng, không là điều kiện bắt buộc cho native setup.
 - **Acceptance criteria:** Sau coding approval: health+DB, clean migration; no ddl-auto update, no secrets in files.
 - **Required tests:** Clean/upgrade migration smoke; safe errors/health access.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Progress,04/11/2026: Spring Boot/Maven skeleton, dependencies, V1 SQL và một phần config có. Lượt trước UserRepositoryTest chạy PostgreSQL18.6 + Flyway target1/ddl-auto validate,7 focused tests pass tổng cộng (3 entity,4 repo), log target/user-repository-verification/maven-test.log. Đây không phải full B02 clean/upgrade acceptance: V2–V5 là0-byte placeholders; chưa có full-app DB startup/health evidence hoặc infra/compose.yml; target runtime17/18 cần pin/verify. Identity forward migration theo B01 còn thiếu. Không coi việc có file là đã có schema; actual human effort, review và completion date chưa ghi nhận.
+- **Local DB hiện tại04/11/2026:** user yêu cầu xóa phần tạo PostgreSQL riêng. Đã gỡ instance5433, toàn bộ scripts/version pin/data/credentials trong infra/postgres và10 artifacts test được tạo riêng cho phần này; rule Git ignore riêng cũng đã gỡ. Không còn target DB/account Ready trong workspace; cần xác nhận database/account/endpoint trên installation user quản lý trước khi nối datasource.
+- **Lịch sử đã kết thúc:** trước khi gỡ, native18.6 setup đã có16 isolated checks,14 lifecycle checks và7 default-directory regression checks pass. Đây chỉ là evidence lịch sử; generated scripts/logs liên quan đã xóa theo yêu cầu. Không dùng các kết quả này để đánh dấu database mới hoặc B02 Done. V1 repository test evidence của feature user được giữ riêng.
+- **Removal verification04/11/2026:** kiểm tra absolute path/reparse points và postmaster PID/command/data/port5433 rồi stop sạch trước recursive removal. Không còn infra/postgres hoặc process/listener của instance đó. PostgreSQL binaries trên máy còn nguyên; sau thao tác service postgresql-x64-18 Running và cổng5432 accepting. Không sửa Java/SQL, không chạy migration hoặc reset password server khác. Evidence local/ignored: target/postgres-removal-verification.json. B02 In Progress; human actual effort/cross-owner review chưa ghi nhận.
+
+- **SQL update04/11/2026 (D38):** V2 hiện đã có SQL do user điền; V3/V4/V5 đã ghi theo SQL user cung cấp, ghép phần đầu/cuối V5 không trùng bảng/index. Những ghi chú placeholders0 bytes phía trên là hiện trạng trước lượt này. Bundled Python inline static checker đọc V1–V5:26 tables/29 explicit indexes, ngoặc cân bằng, tên không trùng, REFERENCES tới bảng/cột đã khai báo; V3=13/V4=7/V5=18 statements. Chỉ kiểm tra cấu trúc tĩnh, không phải PostgreSQL parser hoặc migration test; chưa chạy Flyway/database. B02 vẫn In Progress; clean/upgrade, guards, review và actual human effort chưa ghi nhận. Không đánh dấu B06–B10/C05–C08 Done chỉ vì đã có SQL.
+
+- **B02 config07/11/2026:** user cho phép bổ sung các cấu hình còn thiếu trong `application.properties`: giới hạn Actuator exposure ở health, ẩn health components, explicit Flyway clean-disabled và ẩn message/stacktrace/binding errors của error endpoint. Dùng `spring.web.error.include-*` theo metadata Spring Boot4.1.2 đang có trên máy; các tên `server.error.include-*` trong hướng dẫn chat cũ đã bị thay thế từ Boot4. Kiểm tra bằng bundled Python inline (`-X utf8 -`):9 required properties đúng giá trị, xuất hiện một lần và có metadata không deprecated; `git diff --check -- backend/aidbridge-backend/src/main/resources/application.properties` pass. Đây là kiểm tra cấu hình tĩnh; không chạy application/database hoặc HTTP health trong lượt này. B02 vẫn In Progress; runtime evidence và cross-owner review còn cần xác nhận, actual human effort chưa ghi nhận.
+- **Latest dependency report07/11/2026:** user báo B02 hoàn tất khi giao B04; trước đó báo UserRepositoryTest4 tests, DatabaseMigrationTest2 tests và application/health UP trên installed PostgreSQL5432/aidbridge/aidbridge_app. Đây là user-reported completion, không phải agent chạy lại. Local surefire còn UserRepositoryTest4/4 pass nhưng không có DatabaseMigrationTest report trong thư mục reports hiện tại. Không tự restart B02; B04 chỉ regression clean/upgrade/validation cho migration mới khi có test environment. Không bổ sung actual effort/reviewer identity chưa được cung cấp; các trạng thái/bằng chứng cũ ở trên là lịch sử.
 
 ### B03 - Session auth và tenant isolation
 
 - **Feature / priority:** P0-01 / P0.
-- **Owner / support / reviewer:** B / C/F / C cho auth/transaction; F cho API/UX.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Dũng (B) / Khoa / Minh / Khoa kiểm tra payload/chain boundary; Minh kiểm tra API/UI.
 - **Complexity / estimate:** L / 5h.
 - **Dependencies:** B02; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-05 through 2026-11-07; deadline 2026-11-08, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-05 through 2026-11-06; deadline 2026-11-06, Asia/Bangkok.
 - **Description / expected behavior:** Session auth và tenant isolation; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** backend auth/organization controllers/services/repositories; SecurityConfig; AuthApiIT.
 - **Acceptance criteria:** Login/logout/me/csrf, rotate session, own active membership; no shared staff account; separate seed secrets.
 - **Required tests:** BR01-P/N; IT09, IT15; invalid login/CSRF/logout/fixation.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Progress, 04/11/2026: user cho phép hoàn thiện `user/entity/User.java` và `user/repository/UserRepository.java` trong `backend/aidbridge-backend`. Entity ánh xạ migration V1 hiện có; UUID, timestamps, validation, mặc định ACTIVE/USER, chuẩn hóa email và ẩn password hash khỏi JSON. Repository hỗ trợ CRUD và tìm/kiểm tra email không phân biệt hoa thường. Đây là prework; B02 chưa được xác nhận Done. Session, CSRF, membership authorization và tenant isolation chưa triển khai trong phạm vi này; cross-owner review chưa thực hiện. Actual effort và completion date của B03 chưa có.
+- **Verification 04/11/2026:** Maven 3.9.16 chạy `mvn -B -ntp -s target/user-repository-verification/settings.xml -Dmaven.repo.local=target/user-repository-verification/repository -Dtest=UserTest,UserRepositoryTest test`: **BUILD SUCCESS, 7 tests, 0 failures/errors/skipped** (3 entity, 4 repository). PostgreSQL 18.6 riêng, Flyway target V1, Hibernate `ddl-auto=validate`; database tạm đã dừng. Đã kiểm tra insert/read UUID/defaults/timestamps, lookup/existence có và không có email, index từ chối email trùng khác hoa/thường, persist DISABLED/update timestamp, validation và password hash không xuất JSON. Artifacts: `backend/aidbridge-backend/target/surefire-reports/` và `target/user-repository-verification/maven-test.log` (ignored, local). Chưa kiểm tra toàn bộ application hoặc migration V2–V5.
+- **Rerun repository tests:** dùng database PostgreSQL dành riêng cho test; đặt `AIDBRIDGE_TEST_DATABASE_URL` (JDBC URL), `AIDBRIDGE_TEST_DATABASE_USERNAME`, `AIDBRIDGE_TEST_DATABASE_PASSWORD` trong environment rồi chạy Maven với `-Dtest=UserTest,UserRepositoryTest test`. Không có URL thì lớp repository test được skip; không coi kết quả đó là đã kiểm tra PostgreSQL. Không dùng database production cho các test này.
+- **User response/mapping 04/11/2026:** theo yêu cầu tiếp theo, thêm `user/dto/response/UserResponse.java` (record gồm id/fullName/email/status/platformRole/createdAt) và `user/mapper/UserMapper.java` (Spring component, `toResponse(User)`, từ chối null). Mapping thủ công, không thêm dependency. DTO dành cho response đã được authorization; không phải public profile, không có password hash. Chưa có endpoint hoặc authorization service trong phạm vi này. Command: `mvn -B -ntp -s target/user-repository-verification/settings.xml -Dmaven.repo.local=target/user-mapper-verification/repository -Dtest=UserTest,UserMapperTest test`, Maven 3.9.16: **BUILD SUCCESS, 6 tests, 0 failures/errors/skipped** (3 UserTest, 3 UserMapperTest). Test kiểm tra giữ nguyên identity/status/role, JSON đúng sáu trường với UTC timestamp và không có credentials, null bị từ chối. Log: `backend/aidbridge-backend/target/user-mapper-test.log`; reports: `target/surefire-reports/` (local/ignored). Không chạy lại repository tests trong lượt chỉ thêm DTO/mapper này; chưa có cross-owner review.
+
+- **UserService 04/11/2026:** theo yêu cầu user, hoàn thiện `user/service/UserService.java`: constructor injection, `@Service`, `@Transactional(readOnly = true)`, `getUserById(UUID)` và `getUserByEmail(String)` trả `UserResponse` qua mapper. Email được strip/lowercase bằng `Locale.ROOT`; null ID hoặc email rỗng bị từ chối trước repository. Không tìm thấy ném `user/exception/UserNotFoundException` với thông báo chung không chứa PII. Đây là helper nội bộ: caller phải authorization trước khi trả dữ liệu; chưa có endpoint/error handler HTTP, không xác thực mật khẩu hoặc membership. Đọc user DISABLED vẫn trả đúng status; auth phải từ chối login tương ứng khi được triển khai.
+- **UserService verification 04/11/2026:** `mvn -B -ntp -s target/user-repository-verification/settings.xml -Dmaven.repo.local=target/user-service-verification/repository -Dtest=UserTest,UserMapperTest,UserServiceTest test` với Maven 3.9.16: **BUILD SUCCESS, 15 tests, 0 failures/errors/skipped**, gồm 9 service tests mới và 6 entity/mapper tests. Repository được mock trong service tests; không chạy lại PostgreSQL/full application trong lượt này. Log: `backend/aidbridge-backend/target/user-service-test.log`; reports: `target/surefire-reports/` (local/ignored). Cross-owner review, actual effort của Dũng và integrated completion B03 chưa có.
+
+- **SecurityConfig 04/11/2026:** hoàn thiện config đang viết dở; thêm PasswordEncoder BCrypt(12), DAO AuthenticationManager dùng CustomUserDetailsService hiện tại, HttpSession CSRF/context repositories, composite session strategy (change session ID + clear CSRF) cho controller login tương lai. Filter chain dùng IF_REQUIRED/explicit context save, request cache tắt, không form login/HTTP Basic, enable method security; chỉ permit đúng public GET routes và POST login, còn lại authenticated. Public campaign draft/ownership checks vẫn phải ở service; platform role không thay org membership checks. JSON security errors:401 UNAUTHENTICATED,403 CSRF_INVALID/FORBIDDEN; logout POST yêu cầu CSRF + session, success204 và hủy session/JSESSIONID. Session properties: timeout30m, cookie-only/HttpOnly/SameSite=Lax/Secure mặc định; SESSION_COOKIE_SECURE=false chỉ cho local HTTP; health details không public.
+- **SecurityConfig verification 04/11/2026:** `mvn -B -ntp -s target/user-repository-verification/settings.xml -Dmaven.repo.local=target/security-verification/repository -Dtest=SecurityConfigTest,UserTest,UserMapperTest,UserServiceTest test`, Maven 3.9.16: **BUILD SUCCESS, 36 tests, 0 failures/errors/skipped**, gồm21 security tests (MockMvc/real filter chain + DAO provider, repository mock) và15 entity/mapper/service tests. Kiểm tra public/private HTTP methods, JSON401/403 không redirect, không lưu anonymous request session, login/logout/write CSRF missing/invalid, platform role rejection, basic/CORS không mở truy cập, mật khẩu sai/unknown/disabled, credential clearing, session strategy rotate ID + clear old CSRF + save context, logout invalidates session và cookie. Lượt đầu có2 test fixture assumptions sai (Spring7 thêm FACTOR_PASSWORD; Mock request thiếu valid requested session ID); đã sửa fixtures, lượt cuối36/36 pass. Log: `backend/aidbridge-backend/target/security-test.log`; reports: `target/surefire-reports/` (ignored/local).
+- **SecurityConfig scope / remaining:** production AuthController/AuthService vẫn rỗng; csrf/login probes trong test chỉ kiểm tra config. Chưa có HTTP login/MeResponse/membership isolation/revocation, PostgreSQL auth integration, cookie flags qua servlet/browser/proxy hoặc cross-owner review. Không coi bean/session strategy tests là đã hoàn tất endpoint login hay B03. Giờ làm thực tế của Dũng và completion date B03 chưa ghi nhận.
+
+- **Auth decision04/11/2026 (D39):** user xác nhận giữ session cookie sau khi cân nhắc JWT. AuthResponse dùng DTO tài khoản, không JWT fields; tiếp tục explicit context save, session ID rotation, CSRF và logout invalidation theo config hiện có. Lượt này chỉ ghi nhận lựa chọn; không sửa Java hoặc chạy thêm tests, B03 vẫn In Progress. Bước tiếp theo là hoàn thiện/kiểm thử production csrf/login/me và membership guards trong approved scope.
+
+- **AuthApiIntegrationTest07/11/2026:** user yêu cầu tạo trực tiếp test cho B03. Thêm `src/test/java/com/aidbridge/auth/AuthApiIntegrationTest.java`: SpringBootTest RANDOM_PORT + JDK HttpClient, production csrf/login/me/logout, PostgreSQL/Flyway V1–V5 trong schema `auth_it_<random>` riêng. Chỉ chấp nhận localhost/127.0.0.1:5432/aidbridge_test và role aidbridge_app; datasource/Flyway đều override vào schema test, không clean/drop hoặc dùng database development. Fixture gồm user,hai org và membership/role giả; mỗi method tạo IDs riêng, không dựa vào rollback của HTTP thread. Bao phủ session persistence/rotation, old-cookie rejection, CSRF renewal/rejection, logout invalidation, disabled user, live membership/org/role revocation, platform-admin cross-org rejection, registration không mở và health không lộ DB details. HTTP dùng endpoint thực; guard theo tổ chức được gọi trực tiếp qua OrganizationService vì chưa có organization HTTP operation để kiểm tra, không thêm probe endpoint.
+- **Verification07/11/2026:** Maven3.9.16: `mvn -o -B -ntp -s target/user-repository-verification/settings.xml -Dmaven.repo.local=target/security-verification/repository -Dtest=SecurityConfigTest,AuthApiIntegrationTest test`: BUILD SUCCESS;21 SecurityConfig tests pass,14 integration test methods SKIPPED vì terminal không có ba AIDBRIDGE_TEST_DATABASE_* variables. Main/test sources compile target21; không ghi nhận PostgreSQL/real-HTTP integration Pass. Đánh dấu ProbeController cũ bằng TestComponent để tránh bị component scan vào full-app test; slice tests vẫn21/21 pass. Reports local/ignored: `target/surefire-reports/TEST-com.aidbridge.auth.AuthApiIntegrationTest.xml` và `TEST-com.aidbridge.auth.security.SecurityConfigTest.xml`. Sandbox write lần đầu bị từ chối; rerun với quyền ghi target thành công. B03 vẫn In Progress; chạy JUnit với test connection, review contract/error gaps và cross-owner acceptance còn pending; actual human effort chưa ghi nhận.
+- **Contract alignment07/11 (D40):** user xác nhận giữ login AuthResponse(user), /me MeResponse; API/B01 baseline đã đồng bộ. GlobalExceptionHandler chuẩn hóa ProblemDetail đủ type/title/status/detail/instance/code/traceId, no-store; validation trả fieldErrors array `{field,code}` không rejected values. Framework errors dùng safe messages, không parser/exception details. Thêm11 MockMvc tests qua production HTTP/filter/controller/service với repository mocks; không thêm endpoint test vào application. AuthApiIntegrationTest bổ sung hai request-error cases và kiểm tra đủ envelope.
+- **Evidence mới07/11:** user báo16/16 invocations của AuthApiIntegrationTest bản trước pass qua IntelliJ; agent không tự chạy được PostgreSQL integration để xác nhận báo cáo này. Lệnh từ backend module: `mvn -o -B -ntp -s target/user-repository-verification/settings.xml -Dmaven.repo.local=target/security-verification/repository -Dtest=GlobalExceptionHandlerTest,SecurityConfigTest,AuthApiIntegrationTest test`, Maven3.9.16, BUILD SUCCESS:11 GlobalExceptionHandlerTest +21 SecurityConfigTest pass;16 integration methods SKIPPED trước parameter expansion vì terminal thiếu AIDBRIDGE_TEST_DATABASE_URL/USERNAME/PASSWORD. Compile33 main sources và10 test sources target21. Reports local/ignored: `target/surefire-reports/TEST-com.aidbridge.exception.GlobalExceptionHandlerTest.xml`, `TEST-com.aidbridge.auth.security.SecurityConfigTest.xml`, `TEST-com.aidbridge.auth.AuthApiIntegrationTest.xml`. Không cài dependency hoặc chạy database migration trong lượt này.
+- **Remaining07/11:** chạy lại AuthApiIntegrationTest bản mới bằng JUnit config có test connection, dự kiến18 invocations; HTTPS/proxy Secure-cookie verification, account/membership authorization cho các implemented operations và cross-owner review còn cần acceptance. Guard theo tổ chức hiện được test trực tiếp ở service vì chưa có organization HTTP operation; không tuyên bố đã kiểm tra business endpoints chưa triển khai. B03 vẫn In Progress; B01 vẫn In Review; actual human effort và completion date chưa ghi nhận.
+- **Latest dependency report07/11/2026:** sau bản test mới, user báo tất cả tests pass và đã xong phần kiểm tra/review; request B04 tiếp tục xác nhận B02/B03 completed. Ghi nhận USER_REPORTED_COMPLETE, không tự nhận đã kiểm chứng HTTPS/reviewer hoặc18 executions qua agent. Local surefire còn bản16 methods SKIPPED vì thiếu env;11 error-contract và21 security tests pass là evidence agent đã chạy trước đó. Không restart B03; chạy auth regression phù hợp sau thay đổi B04. B01 vẫn In Review, không tự suy ra nhóm đã review toàn bộ B01.
 
 ### B04 - Case/needs/consent/evidence APIs
 
 - **Feature / priority:** P0-02 / P0.
-- **Owner / support / reviewer:** B / C/F / C cho auth/transaction; F cho API/UX.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Dũng (B) / Khoa / Minh / Khoa kiểm tra payload/chain boundary; Minh kiểm tra API/UI.
 - **Complexity / estimate:** M / 4h.
 - **Dependencies:** B03; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-07 through 2026-11-08; deadline 2026-11-08, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-07 through 2026-11-07; deadline 2026-11-07, Asia/Bangkok.
 - **Description / expected behavior:** Case/needs/consent/evidence APIs; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** backend casefile package; case/evidence migrations; CaseApiIT; EvidenceAccessIT.
 - **Acceptance criteria:** Atomic SUBMITTED case, relational need lines, consent; editable case versioning; private fixture authorization; old evidence immutable.
 - **Required tests:** BR01-P/N, BR08-P/N, BR09-P/N; missing consent/stale/cross-org tests.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Progress,06/11/2026, entity prework được user yêu cầu: bổ sung 9 fields, JPA/Bean Validation annotations, enum HOUSEHOLD/INDIVIDUAL, getter/protected no-args constructor và unique mapping theo V2 vào `casefile/entity/Beneficiary.java`. Chưa có constructor nghiệp vụ, repository/API tạo beneficiary hoặc integrated case workflow. Giữ dependency B03 cho integrated acceptance; chưa ghi nhận actual human effort hoặc completion date.
+- **Verification06/11/2026:** Maven3.9.16 từ backend root: `mvn -B -ntp -s target/user-repository-verification/settings.xml -Dmaven.repo.local=target/security-verification/repository -Dtest=BeneficiaryTest test`: BUILD SUCCESS,4 tests,0 failures/errors/skipped; compile toàn bộ main/test sources target Java21. Kiểm tra simulated household hợp lệ tại giới hạn50/150 ký tự, thiếu organization/creator/type, nhãn/mã trống và vượt độ dài. Report: `backend/aidbridge-backend/target/surefire-reports/TEST-com.aidbridge.casefile.entity.BeneficiaryTest.xml` (ignored/local). Lượt đầu bị sandbox repository write, lượt offline tiếp theo thiếu parent4.1.2; lượt cuối dùng file mirror đọc cache đã có và pass. Không kết nối PostgreSQL, chạy migration hoặc kiểm thử permission/concurrency/HTTP; mapping DB/cross-owner review còn pending.
+- **B04 reconciliation07/11/2026:** user cho phép scoped B04 implementation/tests/docs, không B05/blockchain/frontend/P1. Đã đọc actual entities/repositories, V2/V5, API/workflow/security/test specs và dependency evidence. Existing constructors/repos đã có, cập nhật nhận định prework cũ phía trên. D41 trong DECISION_LOG đề xuất cụ thể API-canonical forward V6 và alternative SQL-canonical; chờ user quyết định cho unresolved status/priority/consent/private-public/evidence-model differences trước dependent implementation. Chưa sửa Java, viết/chạy migration hoặc chạy tests B04. Test connection env hiện không có trong terminal; không provision DB hoặc đọc IDE credentials. Estimate gốc4h giữ nguyên; actual human effort/overrun chưa có dữ liệu, không tự ghi giờ giả.
+- **Decision/implementation07/11:** user đã chọn D41/A, supersede pending-decision note phía trên. Thêm V6 (không sửa V1–V5), @Version/current case fields và retained need history; consent/evidence/audit/revision/idempotency repositories; DTOs/mapper/CaseService, CaseController/EvidenceController cho C01–C05/E01–E03. Atomic create SUBMITTED + consent/two-or-more relational needs/fixtures/local audit/idempotency; scoped reads, FV creator editable guards, version locks, resubmit sau revision mới hơn latest NEEDS_INFO review fixture, immutable evidence versions/snapshots và audited authorized content downloads. Server fixture allowlists theo org default deny, actual bytes/hash metadata; platform role không bypass private access. No outbox/RPC/B05/frontend/P1. Implementation/privacy/config/test details tại [B04 Case Workflow](../architecture/B04_CASE_WORKFLOW.md).
+- **Tests actually executed07/11:** từ backend module bằng installed Maven3.9.16: `mvn -o -B -ntp -s target/user-repository-verification/settings.xml -Dmaven.repo.local=target/security-verification/repository -Dtest=CaseRequestValidationTest,EvidenceFixtureCatalogTest,GlobalExceptionHandlerTest,SecurityConfigTest,CaseApiIT,EvidenceAccessIT,B04MigrationIT,AuthApiIntegrationTest test`. BUILD SUCCESS;87 reported cases/methods,0 failures/errors,46 SKIPPED;41 executed tests pass =4 DTO validation +4 catalog/hash/config binding +12 global-error +21 security. Skips là CaseApiIT18 methods, EvidenceAccessIT8, B04MigrationIT4, AuthApiIntegrationTest16; parameterized invocations chưa expand. Compiled55 main/16 test sources target21 trên host JDK26.0.1. Lượt đầu compile lỗi LocalServerPort import đã sửa. Default sandbox không ghi được existing target/classes; rerun với quyền ghi target thành công, không cài dependencies.
+- **Final focused regression07/11:** bổ sung xử lý CannotCreateTransactionException thành503; rerun cùng Maven options với `-Dtest=GlobalExceptionHandlerTest test`: BUILD SUCCESS,12/12 pass,0 skipped. Không double-count12 rerun thành tests mới. Reports local/ignored ở `backend/aidbridge-backend/target/surefire-reports/TEST-com.aidbridge.casefile.*.xml`, `TEST-com.aidbridge.auth.security.SecurityConfigTest.xml`, `TEST-com.aidbridge.exception.GlobalExceptionHandlerTest.xml`, `TEST-com.aidbridge.auth.AuthApiIntegrationTest.xml`. Không chạy PostgreSQL migration hoặc main application trong lượt B04.
+- **Static verification07/11:** `git diff --check` cho affected tracked Java/tests/docs pass (chỉ có LF/CRLF notices). Bundled Python inline kiểm tra17 local links trong9 affected docs đều resolve và37 B04 source/test/new SQL/runbook files không trailing whitespace. Đây không thay PostgreSQL parser/schema validation hoặc HTTP acceptance.
+- **Remaining acceptance07/11:** user chọn tự chạy IntelliJ với ba AIDBRIDGE_TEST_DATABASE_* variables. Cần CaseApiIT dự kiến20 invocations, EvidenceAccessIT8, B04MigrationIT5 (33 B04 total), rồi AuthApiIntegrationTest18 regression; verify không SKIPPED và gửi kết quả. Clean/upgrade/Hibernate startup, HTTP first checkpoint, concurrency/rollback/immutability/log privacy vẫn chưa có runtime evidence trong lượt này; không gọi test đã viết là Pass. B04 giữ In Progress, B01 In Review; cross-owner B04 review còn pending, không tự ghi reviewer/human effort/completion hoặc thay estimate4h. Nếu measured effort vượt4h phải record/reforecast thực tế, không giảm scope/tests. B05 chỉ nhận handoff state/version/snapshot/retained evidence sau acceptance, chưa bắt đầu.
 
 ### B05 - Independent case review
 
 - **Feature / priority:** P0-03 / P0.
-- **Owner / support / reviewer:** B / C/F / C cho auth/transaction; F cho API/UX.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Dũng (B) / Khoa / Minh / Khoa kiểm tra payload/chain boundary; Minh kiểm tra API/UI.
 - **Complexity / estimate:** L / 4h.
 - **Dependencies:** B04, C01; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-08 through 2026-11-08; deadline 2026-11-09, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-07 through 2026-11-08; deadline 2026-11-08, Asia/Bangkok.
 - **Description / expected behavior:** Independent case review; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** backend verification package; snapshot/audit/job creation; VerificationApiIT.
 - **Acceptance criteria:** Other CV approves; creator dual-role403; reject/request-changes/resubmit; immutable reviewed snapshot; DB/audit/job atomic.
 - **Required tests:** BR02-P/N, BR03-N, BR09-P; IT01, IT08; rollback and competing review.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Phối hợp cụ thể:** Dũng bàn giao review/audit/job atomic và snapshot cho Khoa ở C05; phối hợp API đọc audit tối thiểu. Khoa nối Web3j/Fuji và xác minh receipt/event; không đợi B06–B10.
+- **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C. Chưa ghi nhận actual human effort.
+- **Status / evidence:** In Review (Backend B05 code + PostgreSQL HTTP/outbox tests hoàn tất 09/11/2026; chờ cross-owner review của Khoa/Minh và tích hợp Fuji ở C05). V7 chuẩn hóa decision và truy vấn resubmit. V8 liên kết decision với revision đã review. `VerificationOutboxService` ghi audit và pending job trong transaction của caller; `VerificationController` / `VerificationService` / `LocalAuditService` hoàn tất cả 3 endpoints `POST /api/cases/{id}/verify`, `POST /api/cases/{id}/reject` và `POST /api/cases/{id}/request-changes`. Giữ nguyên baseline estimate 4h và deadline gốc 08/11/2026 (hoàn tất thực tế ngày 09/11/2026, trễ 1 ngày lịch so với baseline; giờ làm thực tế của Dũng chưa được cung cấp). ABI, commitment vector và việc chuẩn bị giao dịch thuộc C01/C05; trạng thái SQL `VERIFIED` tách biệt với `blockchain_jobs(PENDING)`.
+- **Kiểm chứng D42.** Dũng báo cả bốn lớp `B04MigrationIT`, `CaseApiIT`, `EvidenceAccessIT` và `AuthApiIntegrationTest` pass trên IntelliJ sau V7. Đây là kết quả do Dũng cung cấp.
+- **Kiểm chứng D43.** Maven offline `-Dtest=B04MigrationIT,CaseApiIT,CaseRequestValidationTest test` với cache `target/security-verification/repository` và settings `target/user-repository-verification/settings.xml` đã compile và pass 4 validation tests. Các lớp PostgreSQL bị skip trong terminal vì thiếu biến `AIDBRIDGE_TEST_DATABASE_*`. Sau đó Dũng báo `B04MigrationIT` pass trên IntelliJ sau V8.
+- **Kiểm chứng D44.** Maven offline với cùng cache/settings và `-Dtest=VerificationOutboxIT,CaseRequestValidationTest test` đã compile và pass 4 validation tests. Bốn test `VerificationOutboxIT` bị skip trong terminal vì thiếu biến PostgreSQL. Dũng chạy lớp này trên `aidbridge_test` để xác nhận lưu audit/job, chống trùng, rollback và các guard.
+- **Refactor D45 (08/11/2026).** Consent, evidence, local audit, outbox và idempotency chuyển sang JPA. `EvidenceService` và `VerificationOutboxService` điều phối các thao tác trong transaction của caller. Chạy Maven offline với cache/settings trên và `-Dtest=B04MigrationIT,CaseApiIT,EvidenceAccessIT,VerificationOutboxIT,CaseRequestValidationTest,EvidenceFixtureCatalogTest test`. Build thành công, 8 unit tests pass, 36 test methods tích hợp bị skip vì terminal thiếu cấu hình `aidbridge_test`. Kiểm tra offline khởi tạo Hibernate cho 15 entity và phân tích 7 JPQL thành công. Bước kế tiếp là Dũng chạy các lớp integration để xác nhận PostgreSQL, JSONB, retry đồng thời và rollback.
+- **D45 chuẩn hóa Spring Data (08/11/2026).** Consent, evidence, audit, outbox và idempotency dùng `JpaRepository` cho thao tác trên entity. Native query của khóa PostgreSQL nằm trong `IdempotencyLock`. Chạy lại cùng lệnh Maven offline, 8 unit tests pass và 36 test methods tích hợp bị skip vì thiếu cấu hình `aidbridge_test`. Kiểm tra offline khởi tạo thành công 15 repository của Spring Data. Cần chạy các integration tests trên PostgreSQL để kiểm chứng hành vi.
+- **Unit 2 (09/11/2026).** Thêm `VerificationApiIT` cho `POST /api/cases/{id}/verify`. Sáu test bao phủ duyệt đúng revision và replay, tự duyệt và truy cập khác tổ chức, version/bằng chứng sai, thu hồi membership trước replay, hai reviewer cạnh tranh và rollback sau khi ghi outbox. Chạy Maven offline với settings/cache ở trên và `-Dtest=VerificationApiIT,VerificationOutboxIT,CaseRequestValidationTest test`. Main/test compile thành công, 4 validation tests pass. Cả 6 API tests và 4 outbox tests bị skip trong terminal vì thiếu `AIDBRIDGE_TEST_DATABASE_*`. Sau đó Dũng báo đã chạy cả `VerificationApiIT` (6 tests) và `VerificationOutboxIT` (4 tests) trên PostgreSQL `aidbridge_test` trong IntelliJ: **10/10 pass**. Đồng thời đã bổ sung gói mẫu `CASE_VERIFIED Design Fixture & ABI Review Bundle` vào `BLOCKCHAIN_ARCHITECTURE.md` và chốt `D48` (Phương án A) trong `DECISION_LOG.md` để bàn giao cho Khoa (`C01`/`C03`/`C05`). B05 vẫn In Progress (còn phần `reject` / `request-changes`).
+- **Unit 3 & Unit 4 (09/11/2026).** Hoàn thiện `POST /api/cases/{id}/reject` và `POST /api/cases/{id}/request-changes` trong `VerificationController`, `VerificationService`, `AidCase`, `Verification` và `LocalAuditService.appendVerification`. Ghi quyết định bất biến (`REJECTED` / `CHANGES_REQUESTED`), snapshot bằng chứng và local audit (`CASE_REJECTED` / `CASE_CHANGES_REQUESTED`, không tạo `blockchain_jobs`, trả `blockchainStatus = "NOT_APPLICABLE"`), tương thích trọn vòng đời `request-changes -> creator revise -> resubmit -> independent verify`. Bổ sung kiểm tra `409 IDEMPOTENCY_CONFLICT` cho `/verify`, dọn `Mockito.reset(outboxSpy)` trong `finally`, thêm 1 unit test (`CaseRequestValidationTest`) và 4 integration tests (`VerificationApiIT`, nâng tổng lên 10 HTTP tests). Chạy Maven offline: `mvn -o -B -ntp -s target/user-repository-verification/settings.xml "-Dmaven.repo.local=target/security-verification/repository" "-Dtest=VerificationApiIT,VerificationOutboxIT,CaseRequestValidationTest,EvidenceFixtureCatalogTest,GlobalExceptionHandlerTest,SecurityConfigTest" test` -> `BUILD SUCCESS`, 42 executed unit/slice tests pass (`21 SecurityConfigTest + 12 GlobalExceptionHandlerTest + 5 CaseRequestValidationTest + 4 EvidenceFixtureCatalogTest`), 14 DB tests skipped trong terminal. Sau đó Dũng chạy `VerificationApiIT` trên PostgreSQL `aidbridge_test` trong IntelliJ: **10/10 pass** (cùng `VerificationOutboxIT` **4/4 pass**). Cập nhật đồng bộ `API_SPECIFICATION.md`, `BUSINESS_WORKFLOWS.md`, `BLOCKCHAIN_ARCHITECTURE.md`, `B04_CASE_WORKFLOW.md`, `TEST_STRATEGY.md` và bàn giao sang C05.
 
 ### B06 - Multi-item campaign draft/publish
 
 - **Feature / priority:** P0-04 / P0.
-- **Owner / support / reviewer:** B / C/F / C cho auth/transaction; F cho API/UX.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Dũng (B) / Khoa / Minh / Khoa kiểm tra payload/chain boundary; Minh kiểm tra API/UI.
 - **Complexity / estimate:** M / 6h.
 - **Dependencies:** B05; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-09 through 2026-11-11; deadline 2026-11-12, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-08 through 2026-11-10; deadline 2026-11-10, Asia/Bangkok.
 - **Description / expected behavior:** Multi-item campaign draft/publish; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** backend campaign package; campaign/item migrations; CampaignApiIT.
 - **Acceptance criteria:** Copy every approved need line and exact unit/qty; one campaign/case; unverified publish blocked; sanitized public DTO.
@@ -138,80 +197,90 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 ### B07 - Commitments/cancel/idempotency
 
 - **Feature / priority:** P0-04 / P0.
-- **Owner / support / reviewer:** B / C/F / C cho auth/transaction; F cho API/UX.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Dũng (B) / Khoa / Minh / Khoa kiểm tra payload/chain boundary; Minh kiểm tra API/UI.
 - **Complexity / estimate:** L / 7h.
 - **Dependencies:** B06; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-12 through 2026-11-14; deadline 2026-11-15, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-10 through 2026-11-13; deadline 2026-11-13, Asia/Bangkok.
 - **Description / expected behavior:** Commitments/cancel/idempotency; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** backend contribution package; idempotency journal; commitment migrations/tests.
 - **Acceptance criteria:** Atomic multi-line pledge, donor history, cancel only unreceived remainder, per-item row locks and event IDs; concurrent no overflow.
 - **Required tests:** BR04-P/N, BR11-P/N; IT10; PostgreSQL last-unit/cancellation races.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
+- **Phối hợp cụ thể:** Dũng giữ quantity/idempotency và event ID nghiệp vụ; Khoa dùng đầu ra này trong C07/C06, không làm lại business validation trong adapter. Hai bạn kiểm tra retry không tạo thêm pledge/event.
+- **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
 
 ### B08 - Partial goods receipts
 
 - **Feature / priority:** P0-05 / P0.
-- **Owner / support / reviewer:** B / C/F / C cho auth/transaction; F cho API/UX.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Dũng (B) / Khoa / Minh / Khoa kiểm tra payload/chain boundary; Minh kiểm tra API/UI.
 - **Complexity / estimate:** M / 5h.
 - **Dependencies:** B07; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-14 through 2026-11-15; deadline 2026-11-18, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-13 through 2026-11-14; deadline 2026-11-14, Asia/Bangkok.
 - **Description / expected behavior:** Partial goods receipts; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** backend receipt controller/service/repository; receipt migrations; ReceiptApiIT.
 - **Acceptance criteria:** Immutable receipt per contribution line; received<=active pledge; repeat once; same org/line; not delivered.
 - **Required tests:** BR05-P/N, BR11-P/N; IT05, IT10; receipt/cancel concurrency.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
+- **Phối hợp cụ thể:** Dũng giữ receipt quantities/immutable records; bàn giao snapshot nhận hàng cho Khoa map C10. Minh hiển thị received riêng pledged/delivered.
+- **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
 
 ### B09 - Delivery records/failed attempts
 
 - **Feature / priority:** P0-05 / P0.
-- **Owner / support / reviewer:** B / C/F / C cho auth/transaction; F cho API/UX.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Dũng (B) / Khoa / Minh / Khoa kiểm tra payload/chain boundary; Minh kiểm tra API/UI.
 - **Complexity / estimate:** L / 5h.
 - **Dependencies:** B08; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-15 through 2026-11-17; deadline 2026-11-20, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-14 through 2026-11-15; deadline 2026-11-15, Asia/Bangkok.
 - **Description / expected behavior:** Delivery records/failed attempts; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** backend delivery package; delivery migrations; DeliveryConcurrencyIT.
 - **Acceptance criteria:** Reserve all nonvoid recorded delivery against received, even unconfirmed; FAILED zero quantity; immutable evidence snapshot; safe retry.
 - **Required tests:** BR05-P/N, BR09-P/N, BR11-P/N; IT11, IT16.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
+- **Phối hợp cụ thể:** Dũng giữ stock reservation/failed-attempt/evidence snapshot; Khoa map delivery milestone và causal refs ở C10; Minh dùng đúng outcome/review status.
+- **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
 
 ### B10 - Confirm/dispute/resolve/close
 
 - **Feature / priority:** P0-05 / P0.
-- **Owner / support / reviewer:** B / C/F / C cho auth/transaction; F cho API/UX.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Dũng (B) / Khoa / Minh / Khoa kiểm tra payload/chain boundary; Minh kiểm tra API/UI.
 - **Complexity / estimate:** L / 6h.
 - **Dependencies:** B09; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-17 through 2026-11-20; deadline 2026-11-22, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-15 through 2026-11-17; deadline 2026-11-18, Asia/Bangkok.
 - **Description / expected behavior:** Confirm/dispute/resolve/close; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** backend delivery confirmation/dispute services; campaign close; migrations; DisputeIT.
 - **Acceptance criteria:** Separate DC; self403; dispute blocks/reopens close; all item targets confirmed; void preserves old rows; PA cannot auto-confirm.
 - **Required tests:** BR06-P/N, BR07-P/N; IT06, IT07, IT12; concurrent flag+close.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
+- **Phối hợp cụ thể:** Dũng giữ self-confirm/dispute/close guards; Khoa kiểm tra confirmation/dispute event và chain order; hai bạn kiểm tra void/replacement không xóa lịch sử.
+- **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
 
 ### B11 - Backend cross-feature regression
 
 - **Feature / priority:** Quality / P0.
-- **Owner / support / reviewer:** B / C/F / C cho auth/transaction; F cho API/UX.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Dũng (B) / Khoa / Minh / Khoa kiểm tra payload/chain boundary; Minh kiểm tra API/UI.
 - **Complexity / estimate:** L / 6h.
 - **Dependencies:** B03, B04, B05, B06, B07, B08, B09, B10; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-20 through 2026-11-21; deadline 2026-11-23, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-17 through 2026-11-20; deadline 2026-11-20, Asia/Bangkok.
 - **Description / expected behavior:** Backend cross-feature regression; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** backend/src/test/java/com/aidbridge; Test Strategy actual results.
 - **Acceptance criteria:** Real PostgreSQL tenant/state/quantity/idempotency/upgrade tests; no critical integrity/privacy/auth bug; feature tests already embedded earlier.
 - **Required tests:** BR01-P/N..BR09-P/N as applicable; BR11-P/N; IT05-12/15/16.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
+- **Phối hợp cụ thể:** Dũng chịu API/PostgreSQL/permission/quantity assertions, phối hợp Khoa C08/C11 trên cùng failure fixture; Khoa chịu EVM/RPC/receipt/log assertions, Minh E2E.
+- **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
 
 ### B12 - Critical fixes/final handover
 
 - **Feature / priority:** Submission / P0.
-- **Owner / support / reviewer:** B / C/F / C cho auth/transaction; F cho API/UX.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Dũng (B) / Khoa / Minh / Khoa kiểm tra payload/chain boundary; Minh kiểm tra API/UI.
 - **Complexity / estimate:** M / 3h.
 - **Dependencies:** B11; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-24 through 2026-11-25; deadline 2026-11-25, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-21 through 2026-11-21; deadline 2026-11-22, Asia/Bangkok.
 - **Description / expected behavior:** Critical fixes/final handover; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** backend affected fixes/tests; API/runbook/documentation updates.
 - **Acceptance criteria:** Final smoke, actual gaps and evidence, no new features; regression only affected changes.
@@ -222,24 +291,26 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 ### C01 - EVM/event/commitment agreement
 
 - **Feature / priority:** Design / P0.
-- **Owner / support / reviewer:** C / B/F / B cho signing/permissions; F cho audit claims.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
 - **Complexity / estimate:** L / 4h.
 - **Dependencies:** B01; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-03 through 2026-11-04; deadline 2026-11-05, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-03 through 2026-11-04; deadline 2026-11-04, Asia/Bangkok.
 - **Description / expected behavior:** EVM/event/commitment agreement; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** Blockchain Architecture; event/manifest/ABI specification.
 - **Acceptance criteria:** JIT learning, random refs, stable event IDs, salt/private manifest, sequence and custody boundary; B/F review.
 - **Required tests:** BR08-P/N design, BR11/12 design; Java/TS golden-vector expectations.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** In Review (09/11/2026). Khoa hoàn thành bộ tài liệu review được giao theo `9_11.pdf`: [C01 handoff](../reviews/C01_BLOCKCHAIN_REVIEW.md), ABI draft, reviewed sample, golden-vector input và test expectations tại `docs/fixtures/c01/`. Design-fixture checks PASS; contract/Java/TypeScript/Fuji checks Not Run. Chưa Done: cần Dũng xác nhận C01-O01..O05 và cross-owner review. Actual effort chưa ghi nhận đủ tin cậy; không sửa estimate/lịch gốc. Ngày hoàn thành task: chưa có.
+- **Phối hợp cụ thể:** Dũng chốt schema/DTO/audit/job/privacy; Khoa chốt ABI/events/random refs/commitment/chain sequence. Minh xác nhận DTO/status UI. Review chung trước triển khai.
+- **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
+- **Status / evidence:** In Review (09–10/11/2026). Dũng hoàn thành sample `CASE_VERIFIED` trong `BLOCKCHAIN_ARCHITECTURE.md` (commit `97bb1be`); Khoa hoàn thành bộ tài liệu review được giao theo `9_11.pdf`: [C01 handoff](../reviews/C01_BLOCKCHAIN_REVIEW.md), ABI draft, reviewed sample, golden-vector input và test expectations tại `docs/fixtures/c01/` (commit `2365378`). Ngày 10/11/2026, Dũng chạy `node docs/fixtures/c01/verify-c01.mjs --ethers` (`PASS` static + ethers ABI encode/decode candidate golden vector) và chốt toàn bộ `C01-O01..O05` tại `D49` trong `DECISION_LOG.md`. Actual effort chưa ghi nhận đủ tin cậy; không sửa estimate/lịch gốc. Ngày hoàn thành task: chưa có (chờ Minh cross-owner review và đối chiếu Java tại `C05`).
 
 ### C02 - Hardhat local setup
 
 - **Feature / priority:** Foundation / P0.
-- **Owner / support / reviewer:** C / B/F / B cho signing/permissions; F cho audit claims.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
 - **Complexity / estimate:** M / 3h.
 - **Dependencies:** C01; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-05 through 2026-11-06; deadline 2026-11-06, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-04 through 2026-11-05; deadline 2026-11-05, Asia/Bangkok.
 - **Description / expected behavior:** Hardhat local setup; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** contracts/package.json; package-lock; hardhat.config.ts; local harness.
 - **Acceptance criteria:** After coding approval: pinned compatible toolchain/compiler/optimizer/EVM target, distinct test accounts, deterministic compile/test, no keys.
@@ -250,24 +321,25 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 ### C03 - Authorized verification contract slice
 
 - **Feature / priority:** P0-03/P0-06 / P0.
-- **Owner / support / reviewer:** C / B/F / B cho signing/permissions; F cho audit claims.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
 - **Complexity / estimate:** L / 5h.
 - **Dependencies:** C01, C02; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-06 through 2026-11-07; deadline 2026-11-07, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-05 through 2026-11-07; deadline 2026-11-07, Asia/Bangkok.
 - **Description / expected behavior:** Authorized verification contract slice; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
-- **Expected output files (future, not created):** contracts/contracts/AidRegistry.sol; contracts/test/AidRegistry.test.ts.
+- **Expected output files:** contracts/contracts/AidRegistry.sol; contracts/test/AidRegistry.test.ts; contracts/test/AidRegistry.negative.test.ts.
 - **Acceptance criteria:** Org registration, scoped relayer, verification event/sequence, unique IDs; unknown/revoked/wrong-org callers rejected.
 - **Required tests:** BR12-P/N, BR11-N; SC01-04/09-11.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Phối hợp cụ thể:** Dũng làm Part 1 (3h dự kiến): `AidRegistry.sol` và test happy-path. Khoa làm các phần còn lại của C03 và review contract.
+- **Status / evidence:** In Review (10/11/2026, Part 1 + test negative do Dũng thực hiện). `AidRegistry.sol` (registerOrganization/updateOrganizationRelayer/revokeOrganizationRelayer/setOrganizationStatus, recordCaseVerification theo guard order D49 C01-O05, getEventRecord/getCaseSummary flat outputs). Test: `AidRegistry.test.ts` (SC01, C01-T01) và `AidRegistry.negative.test.ts` (C01-T02..T12, vòng đời relayer, 19 test). Chạy `npm run compile` và `npm test` trong `contracts/`: 5 passing (Part 1 + C02); `npx hardhat test test/AidRegistry.negative.test.ts`: 19 passing. Not Run: review chéo của Khoa, đối chiếu Java/TypeScript golden vector, C06 milestone functions, Fuji. Actual effort: X giờ (Dũng tự ghi). Chưa Done: cần Khoa review contract. Estimate/deadline gốc giữ nguyên. Ngày hoàn thành: chưa có.
 
 ### C04 - Fuji pilot deployment
 
 - **Feature / priority:** P0-06 / P0.
-- **Owner / support / reviewer:** C / B/F / B cho signing/permissions; F cho audit claims.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
 - **Complexity / estimate:** M / 2h.
 - **Dependencies:** C03; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-07 through 2026-11-08; deadline 2026-11-08, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-07 through 2026-11-07; deadline 2026-11-07, Asia/Bangkok.
 - **Description / expected behavior:** Fuji pilot deployment; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** contracts/scripts/deploy.ts; public deployment manifest.
 - **Acceptance criteria:** Actual43113 deployment receipt/code/address/block/compiler/ABI saved, org role readback; explorer source status accurate.
@@ -278,24 +350,26 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 ### C05 - Java adapter/minimal audit slice
 
 - **Feature / priority:** P0-03/P0-06 / P0.
-- **Owner / support / reviewer:** C / B/F / B cho signing/permissions; F cho audit claims.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
 - **Complexity / estimate:** L / 6h.
 - **Dependencies:** B05, C04; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-08 through 2026-11-09; deadline 2026-11-10, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-07 through 2026-11-08; deadline 2026-11-09, Asia/Bangkok.
 - **Description / expected behavior:** Java adapter/minimal audit slice; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** backend blockchain adapter/worker; minimal audit controller; AdapterContractIT.
 - **Acceptance criteria:** Persistent attempt before broadcast, no RPC wait in SQL/HTTP; exact verification receipt/event; pending/failed/confirmed API.
 - **Required tests:** BR10-P/N, BR12-P; IT01/03/13; ABI parity and actual Fuji smoke.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
+- **Phối hợp cụ thể:** Dũng làm phần backend verify+SQL audit/job và hỗ trợ trực tiếp DTO/repository/REST/Java glue; Khoa làm Web3j/ABI/signing/Fuji/exact receipt-event verification. Ghép ngay sau B03–B05, không chờ backend hoàn tất.
+- **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
 
 ### C06 - Full milestone contract
 
 - **Feature / priority:** P0-04/P0-05/P0-06 / P0.
-- **Owner / support / reviewer:** C / B/F / B cho signing/permissions; F cho audit claims.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
 - **Complexity / estimate:** L / 6h.
 - **Dependencies:** C03; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-10 through 2026-11-12; deadline 2026-11-15, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-09 through 2026-11-11; deadline 2026-11-11, Asia/Bangkok.
 - **Description / expected behavior:** Full milestone contract; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** AidRegistry milestone functions; contract tests; exported ABI.
 - **Acceptance criteria:** Pledge/reduction/receipt/delivery/confirm/dispute/resolve; same org/case refs, no duplicate/absent/void/disputed confirm, sequence guards.
@@ -306,80 +380,90 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 ### C07 - Durable signing/submission worker
 
 - **Feature / priority:** P0-06 / P0.
-- **Owner / support / reviewer:** C / B/F / B cho signing/permissions; F cho audit claims.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
 - **Complexity / estimate:** L / 7h.
 - **Dependencies:** C05; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-13 through 2026-11-14; deadline 2026-11-16, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-11 through 2026-11-14; deadline 2026-11-14, Asia/Bangkok.
 - **Description / expected behavior:** Durable signing/submission worker; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** backend submission job/attempt repositories; chain migrations; CrashRecoveryIT.
 - **Acceptance criteria:** Lease+signer serialization+nonce journal; encrypted signed bytes/hash committed before send; restart same tx, one in-flight/signer.
 - **Required tests:** BR10-N, BR11-P/N; IT01/02/04.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
+- **Phối hợp cụ thể:** Dũng làm hoặc hỗ trợ entity/repository/migration, SQL transaction/query job và kiểm tra persistence/idempotency; Khoa phụ trách signer/nonce/signed bytes/broadcast/worker chain lifecycle. Không RPC trong SQL transaction; không viết trùng repository.
+- **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
 
 ### C08 - Receipt/retry/log reconciliation
 
 - **Feature / priority:** P0-06 / P0.
-- **Owner / support / reviewer:** C / B/F / B cho signing/permissions; F cho audit claims.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
 - **Complexity / estimate:** L / 7h.
 - **Dependencies:** C06, C07; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-15 through 2026-11-16; deadline 2026-11-18, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-14 through 2026-11-15; deadline 2026-11-15, Asia/Bangkok.
 - **Description / expected behavior:** Receipt/retry/log reconciliation; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** backend receipt/log jobs; cursor/observation migrations; LogReplayIT.
 - **Acceptance criteria:** Exact receipt/context, timeout remains pending, reverts failed; durable bounded cursor repairs lost DB update without duplicate event.
 - **Required tests:** BR10-P/N, BR11-P/N; IT02-04/13; SC09.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
+- **Phối hợp cụ thể:** Dũng chuẩn bị DB fixtures/assertions và hỗ trợ Java polling/retry/DB update khi có giờ; Khoa quyết định receipt/log/context hợp lệ, nonce/attempt và reconciliation. Hai bạn cùng kiểm tra null/revert/mismatch/restart.
+- **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
 
 ### C09 - Full sanitized audit API
 
 - **Feature / priority:** P0-06 / P0.
-- **Owner / support / reviewer:** C / B/F / B cho signing/permissions; F cho audit claims.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
 - **Complexity / estimate:** M / 3h.
 - **Dependencies:** C08; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-17 through 2026-11-18; deadline 2026-11-18, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-15 through 2026-11-16; deadline 2026-11-16, Asia/Bangkok.
 - **Description / expected behavior:** Full sanitized audit API; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** backend audit projections/DTOs; AuditPrivacyIT.
 - **Acceptance criteria:** Paginated internal/public timelines; business/evidence/chain axes; correct explorer network; no salt/evidence/identity leaks.
 - **Required tests:** BR08-P/N, BR10-P/N; IT09/14; E2E05/06 support.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
+- **Phối hợp cụ thể:** Dũng làm hoặc hỗ trợ controller/query/DTO/pagination/ownership/public projection; Khoa cung cấp verified chain status/hash/block/event/explorer context. Mở rộng API slice có sẵn, không làm API song song.
+- **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
 
 ### C10 - Goods-to-chain integration
 
 - **Feature / priority:** P0-05/P0-06 / P0.
-- **Owner / support / reviewer:** C / B/F / B cho signing/permissions; F cho audit claims.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
 - **Complexity / estimate:** L / 4h.
 - **Dependencies:** B08, B09, C08; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-18 through 2026-11-20; deadline 2026-11-20, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-16 through 2026-11-17; deadline 2026-11-17, Asia/Bangkok.
 - **Description / expected behavior:** Goods-to-chain integration; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** backend receipt/delivery event mappers; integration tests.
 - **Acceptance criteria:** Anchor exact immutable multi-item snapshots and causal refs, DB quantities not altered by chain replay; pair B on confirm/dispute wiring.
 - **Required tests:** BR05-P, BR09-P, BR11-P/N; IT10-12/14.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
+- **Phối hợp cụ thể:** Dũng cung cấp approved immutable goods/delivery/confirmation/dispute snapshots từ B08–B10; Khoa map contract functions/events/refs/sequence; cả hai kiểm tra retry không tăng số lượng.
+- **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
 
 ### C11 - Contract/failure regression
 
 - **Feature / priority:** Quality / P0.
-- **Owner / support / reviewer:** C / B/F / B cho signing/permissions; F cho audit claims.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
 - **Complexity / estimate:** L / 6h.
 - **Dependencies:** C06, C07, C08, C09, C10; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-20 through 2026-11-21; deadline 2026-11-22, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-17 through 2026-11-20; deadline 2026-11-20, Asia/Bangkok.
 - **Description / expected behavior:** Contract/failure regression; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** contracts/test; backend chain integration tests; actual test ledger.
 - **Acceptance criteria:** All required SC/chain BR/IT pass; actual Fuji smoke, recovery/revoke tested, no fake tx success; auth/privacy errors release blocker.
 - **Required tests:** BR08/10/11/12-P/N; SC01-11; IT01-04/12-14.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
+- **Phối hợp cụ thể:** Dũng phối hợp DB/API assertions và chẩn đoán Java; Khoa chịu contract/RPC/receipt/log/Fuji regression; Minh E2E/public states. Cùng tái hiện một scenario để phân biệt business error và chain sync error.
+- **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
 
 ### C12 - Deployment/key recovery runbook
 
 - **Feature / priority:** Submission / P0.
-- **Owner / support / reviewer:** C / B/F / B cho signing/permissions; F cho audit claims.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
 - **Complexity / estimate:** M / 3h.
 - **Dependencies:** C11; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-24 through 2026-11-25; deadline 2026-11-25, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-21 through 2026-11-21; deadline 2026-11-22, Asia/Bangkok.
 - **Description / expected behavior:** Deployment/key recovery runbook; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** Public deployment manifest; blockchain/key recovery documentation.
 - **Acceptance criteria:** Actual address/ABI/block/tx evidence, dedicated key custodians/balance, no secrets; honest outage fallback.
@@ -390,10 +474,10 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 ### F01 - Interview recruitment/product assumptions
 
 - **Feature / priority:** Validation / P0.
-- **Owner / support / reviewer:** F / B/C / B cho auth/API; C cho chain status.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Minh (F) / Dũng / Khoa / Dũng kiểm tra auth/API; Khoa kiểm tra chain status.
 - **Complexity / estimate:** M / 2h.
 - **Dependencies:** Planning/source review; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-03 through 2026-11-03; deadline 2026-11-05, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-03 through 2026-11-03; deadline 2026-11-03, Asia/Bangkok.
 - **Description / expected behavior:** Interview recruitment/product assumptions; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** Product Requirements validation notes; Risk Register.
 - **Acceptance criteria:** Identify2-3 charity-experienced candidates; actual consented notes or explicit no-contact; no invented partner/impact, no agent unsolicited messages.
@@ -404,10 +488,10 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 ### F02 - Wireframes/mock API states
 
 - **Feature / priority:** Design / P0.
-- **Owner / support / reviewer:** F / B/C / B cho auth/API; C cho chain status.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Minh (F) / Dũng / Khoa / Dũng kiểm tra auth/API; Khoa kiểm tra chain status.
 - **Complexity / estimate:** M / 4h.
 - **Dependencies:** B01; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-04 through 2026-11-05; deadline 2026-11-06, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-03 through 2026-11-05; deadline 2026-11-05, Asia/Bangkok.
 - **Description / expected behavior:** Wireframes/mock API states; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** Screen contracts; typed mock DTO fixtures planned.
 - **Acceptance criteria:** B/C/F agree combined case/goods/audit screens, loading/empty/error/403/409 states, accessibility, no beneficiary wallet.
@@ -418,10 +502,10 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 ### F03 - Next shell/session client
 
 - **Feature / priority:** P0-01 / P0.
-- **Owner / support / reviewer:** F / B/C / B cho auth/API; C cho chain status.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Minh (F) / Dũng / Khoa / Dũng kiểm tra auth/API; Khoa kiểm tra chain status.
 - **Complexity / estimate:** M / 4h.
 - **Dependencies:** F02, B03; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-06 through 2026-11-07; deadline 2026-11-08, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-05 through 2026-11-06; deadline 2026-11-06, Asia/Bangkok.
 - **Description / expected behavior:** Next shell/session client; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** frontend package/config/lock; app/login; typed API/session client.
 - **Acceptance criteria:** After coding approval, same-origin proxy/CSRF/login/logout/nav; no browser secrets/localStorage auth; handle401/403.
@@ -432,10 +516,10 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 ### F04 - Case and verifier UI
 
 - **Feature / priority:** P0-02/P0-03 / P0.
-- **Owner / support / reviewer:** F / B/C / B cho auth/API; C cho chain status.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Minh (F) / Dũng / Khoa / Dũng kiểm tra auth/API; Khoa kiểm tra chain status.
 - **Complexity / estimate:** L / 6h.
 - **Dependencies:** F03, B04, B05; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-07 through 2026-11-08; deadline 2026-11-09, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-07 through 2026-11-08; deadline 2026-11-08, Asia/Bangkok.
 - **Description / expected behavior:** Case and verifier UI; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** frontend case list/new/detail forms/review panels; tests.
 - **Acceptance criteria:** Case/consent/multi-need/evidence inputs, other-user review; self rejection/stale version handled; private error data absent.
@@ -446,24 +530,26 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 ### F05 - Audit vertical slice UI
 
 - **Feature / priority:** P0-06 / P0.
-- **Owner / support / reviewer:** F / B/C / B cho auth/API; C cho chain status.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Minh (F) / Dũng / Khoa / Dũng kiểm tra auth/API; Khoa kiểm tra chain status.
 - **Complexity / estimate:** L / 4h.
 - **Dependencies:** F04, C05; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-08 through 2026-11-09; deadline 2026-11-11, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-08 through 2026-11-08; deadline 2026-11-09, Asia/Bangkok.
 - **Description / expected behavior:** Audit vertical slice UI; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** AuditTimeline; ChainStatus; ExplorerLink; UI tests.
 - **Acceptance criteria:** Hash alone not confirmed; exact backend proof shown; business verification distinct from pending/reverted/mismatch; actual Fuji link.
 - **Required tests:** BR10-P/N; E2E05; honest record-integrity wording.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
+- **Phối hợp cụ thể:** Minh ghép API/status UI; Dũng hỗ trợ DTO/auth/errors, Khoa xác nhận chain status/hash/link. Hash vừa gửi chưa được hiển thị confirmed.
+- **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
 
 ### F06 - Campaign multi-item UI
 
 - **Feature / priority:** P0-04 / P0.
-- **Owner / support / reviewer:** F / B/C / B cho auth/API; C cho chain status.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Minh (F) / Dũng / Khoa / Dũng kiểm tra auth/API; Khoa kiểm tra chain status.
 - **Complexity / estimate:** M / 6h.
 - **Dependencies:** F02, B06; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-10 through 2026-11-12; deadline 2026-11-13, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-09 through 2026-11-11; deadline 2026-11-11, Asia/Bangkok.
 - **Description / expected behavior:** Campaign multi-item UI; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** frontend app/campaigns/detail; GoodsProgressTable; publish panel.
 - **Acceptance criteria:** Sanitized browse, fixed units and five progress columns per item, draft private, no PII; publish UI in case detail.
@@ -474,10 +560,10 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 ### F07 - Donor pledge/history/cancel
 
 - **Feature / priority:** P0-04 / P0.
-- **Owner / support / reviewer:** F / B/C / B cho auth/API; C cho chain status.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Minh (F) / Dũng / Khoa / Dũng kiểm tra auth/API; Khoa kiểm tra chain status.
 - **Complexity / estimate:** M / 5h.
 - **Dependencies:** F06, B07; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-13 through 2026-11-14; deadline 2026-11-15, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-11 through 2026-11-13; deadline 2026-11-13, Asia/Bangkok.
 - **Description / expected behavior:** Donor pledge/history/cancel; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** frontend contribution form/history/cancel; client methods.
 - **Acceptance criteria:** Atomic multi-line form, same-key network retry, overflow refresh, own history, unreceived cancel; no provenance claim.
@@ -488,10 +574,10 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 ### F08 - Receipt/delivery UI
 
 - **Feature / priority:** P0-05 / P0.
-- **Owner / support / reviewer:** F / B/C / B cho auth/API; C cho chain status.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Minh (F) / Dũng / Khoa / Dũng kiểm tra auth/API; Khoa kiểm tra chain status.
 - **Complexity / estimate:** M / 5h.
 - **Dependencies:** F04, B08, B09; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-15 through 2026-11-17; deadline 2026-11-20, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-13 through 2026-11-15; deadline 2026-11-15, Asia/Bangkok.
 - **Description / expected behavior:** Receipt/delivery UI; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** frontend case receipt/delivery/failed-attempt panels.
 - **Acceptance criteria:** Partial OA receipt distinct from FV handover and review; stock limits and safe errors; FAILED zero effect; no PII in public.
@@ -502,10 +588,10 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 ### F09 - Confirmation/dispute/full timeline
 
 - **Feature / priority:** P0-05/P0-06 / P0.
-- **Owner / support / reviewer:** F / B/C / B cho auth/API; C cho chain status.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Minh (F) / Dũng / Khoa / Dũng kiểm tra auth/API; Khoa kiểm tra chain status.
 - **Complexity / estimate:** L / 5h.
 - **Dependencies:** F08, B10, C09; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-17 through 2026-11-20; deadline 2026-11-22, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-15 through 2026-11-17; deadline 2026-11-18, Asia/Bangkok.
 - **Description / expected behavior:** Confirmation/dispute/full timeline; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** frontend confirmation/dispute/resolve/close panels; full audit UI.
 - **Acceptance criteria:** Separate reviewer, self blocked, dispute guard, all item target completion, public/internal audit separation; no false chain claim.
@@ -516,10 +602,10 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 ### F10 - Public hosting/recovery
 
 - **Feature / priority:** Deployment / P0.
-- **Owner / support / reviewer:** F / B/C / B cho auth/API; C cho chain status.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Minh (F) / Dũng / Khoa / Dũng kiểm tra auth/API; Khoa kiểm tra chain status.
 - **Complexity / estimate:** L / 4h.
 - **Dependencies:** F09, C10; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-20 through 2026-11-21; deadline 2026-11-22, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-16 through 2026-11-18; deadline 2026-11-18, Asia/Bangkok.
 - **Description / expected behavior:** Public hosting/recovery; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** infra deployment config; health/smoke/budget notes.
 - **Acceptance criteria:** Deploy only with authorization, provider eligibility/forecast under$20, HTTPS/CSRF/protected files/private DB; backup/rollback ready.
@@ -530,24 +616,26 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 ### F11 - E2E/accessibility/privacy regression
 
 - **Feature / priority:** Quality / P0.
-- **Owner / support / reviewer:** F / B/C / B cho auth/API; C cho chain status.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Minh (F) / Dũng / Khoa / Dũng kiểm tra auth/API; Khoa kiểm tra chain status.
 - **Complexity / estimate:** L / 6h.
 - **Dependencies:** F10, B11, C11; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-21 through 2026-11-22; deadline 2026-11-23, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-18 through 2026-11-20; deadline 2026-11-20, Asia/Bangkok.
 - **Description / expected behavior:** E2E/accessibility/privacy regression; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** frontend/e2e; actual Test Strategy results; fixes.
 - **Acceptance criteria:** E2E01-07 actual pass on integrated build, no critical auth/privacy/quantity/status issue, keyboard/error states usable.
 - **Required tests:** BR08-N, BR10-N; E2E01-07 and relevant IT UI.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
+- **Phối hợp cụ thể:** Minh chạy E2E/accessibility/public privacy; Dũng xử lý API/DB failures, Khoa xử lý EVM/RPC/receipt failures; không gom mọi lỗi tích hợp cho một mình Khoa.
+- **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
 
 ### F12 - Demo/video/pitch/submission
 
 - **Feature / priority:** Submission / P0.
-- **Owner / support / reviewer:** F / B/C / B cho auth/API; C cho chain status.
+- **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Minh (F) / Dũng / Khoa / Dũng kiểm tra auth/API; Khoa kiểm tra chain status.
 - **Complexity / estimate:** L / 5h.
 - **Dependencies:** F11; mock prework allowed, integrated acceptance waits.
-- **Schedule:** allocated 2026-11-23 through 2026-11-25; deadline 2026-11-25, Asia/Bangkok.
+- **Schedule:** allocated 2026-11-21 through 2026-11-22; deadline 2026-11-22, Asia/Bangkok.
 - **Description / expected behavior:** Demo/video/pitch/submission; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
 - **Expected output files (future, not created):** Demo artifacts after authorization; README/checklist actual state.
 - **Acceptance criteria:** Fictional household multi-item flow, actual Fuji evidence+negative test, no fake social results; organizer rules/links verified.
@@ -573,6 +661,24 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | Task | Date | State | Actual hours | Evidence | Next action |
 |---|---|---|---|---|---|
 | All36 | 03/11/2026 | Not Started | Not recorded | Planning specification only | Await application task authorization |
+| B01 (consolidation started) | 04/11/2026 | In Progress | Chưa ghi nhận giờ làm thực tế của Dũng | User yêu cầu thống nhất thiết kế; đọc SQL/Java/PDF và tìm drift | Chuẩn hóa docs và ghi implementation gaps |
+| B01 (consolidated baseline) | 04/11/2026 | In Review | Chưa ghi nhận giờ làm thực tế của Dũng | B01_BASELINE + DB/API/workflows/system/events/decision docs đồng bộ; static checks, không runtime tests | Dũng/Minh/Khoa review quyền/DTO/schema/events; chưa có cross-owner sign-off |
+| B02 (evidence reconciliation) | 04/11/2026 | In Progress | Chưa ghi nhận giờ làm thực tế của Dũng | Skeleton + V1 focused PostgreSQL test có evidence; V2–V5 rỗng, full startup/health chưa verified | Hoàn thiện B02 trong approved task sau B01 review; không đánh dấu Done |
+| B02 (phần1 PostgreSQL preparation, historical) | 04/11/2026 | In Progress | Chưa ghi nhận giờ làm thực tế của Dũng | Setup scripts/isolated checks từng được tạo; đã gỡ theo yêu cầu D37 | Không chạy script cũ; xác nhận DB/account user quản lý |
+| B02 (phần1 provisioning actual5433, historical) | 04/11/2026 | In Progress | Chưa ghi nhận giờ làm thực tế của Dũng | Instance5433 từng Ready/tested; đã stop và xóa data/credentials/scripts theo D37 | Không chuyển trạng thái Ready cũ sang database mới |
+| B03 (User/entity + repository prework) | 04/11/2026 | In Progress | Chưa ghi nhận giờ làm thực tế của Dũng | User request cho hai class; 7/7 focused tests pass, PostgreSQL 18.6/V1; implementation có thể review | Dũng review hai class; tiếp tục auth/membership theo task được cho phép; chưa đạt integrated Done |
+| B03 (UserResponse + UserMapper prework) | 04/11/2026 | In Progress | Chưa ghi nhận giờ làm thực tế của Dũng | User request cho DTO/mapper theo cấu trúc đã đề xuất; 6/6 focused unit tests pass (3 mới), BUILD SUCCESS | Dũng review DTO/mapping; tích hợp vào service/controller khi được yêu cầu; B03 chưa integrated Done |
+| B03 (UserService prework) | 04/11/2026 | In Progress | Chưa ghi nhận giờ làm thực tế của Dũng | User cho phép UserService; 15/15 focused unit tests pass (9 service tests mới), BUILD SUCCESS | Dũng review service; tích hợp auth/authorization và HTTP error mapping khi được yêu cầu; B03 chưa integrated Done |
+| B03 (SecurityConfig prework) | 04/11/2026 | In Progress | Chưa ghi nhận giờ làm thực tế của Dũng | User yêu cầu SecurityConfig; 36/36 focused tests pass (21 security tests mới), BUILD SUCCESS; session config + API docs cập nhật | Dũng review auth config; nối csrf/JSON login/me và active memberships trong bước được cho phép; B03 chưa integrated Done |
+| B02 (remove dedicated PostgreSQL) | 04/11/2026 | In Progress | Chưa ghi nhận giờ làm thực tế của Dũng | User yêu cầu gỡ; path/PID verified, instance/data/credentials/scripts removed; installed PostgreSQL còn nguyên | Xác nhận DB/account/port user quản lý rồi tiếp tục B02 khi được yêu cầu |
+| B04 (Beneficiary entity prework) | 06/11/2026 | In Progress | Chưa ghi nhận giờ làm thực tế của Dũng | User yêu cầu bổ sung class;9 fields/annotations theo V2, compile thành công,4 validation tests pass | Dũng review entity; constructor nghiệp vụ/repository/service và PostgreSQL integration trong scope tiếp theo; B03/integrated acceptance chưa Done |
+| B03 (production auth integration tests added) | 07/11/2026 | In Progress | Chưa ghi nhận giờ làm thực tế của Dũng | Main/test compile;21 existing security tests pass;14 integration methods skipped do thiếu test environment trong terminal | Chạy AuthApiIntegrationTest bằng cấu hình JUnit có test connection; đối chiếu login/error contract và review độc lập trước Done |
+| B03 (global error contract và D40) | 07/11/2026 | In Progress | Chưa ghi nhận giờ làm thực tế của Dũng |11 new error-contract +21 security tests pass;16 integration methods skipped do thiếu env. User báo bản integration trước16/16 pass; chưa rerun hai cases mới | Rerun AuthApiIntegrationTest dự kiến18 invocations; HTTPS/proxy và cross-owner review; không bắt đầu B04/B05 |
+| B04 (D41/A implementation) | 07/11/2026 | In Progress | Estimate gốc4h; actual human effort/overrun chưa được cung cấp | Forward V6 + C01–C05/E01–E03 code;41 unique executed tests pass,46 DB-dependent methods skipped; final12 error tests rerun pass | User chạy33 B04 PostgreSQL/HTTP invocations +18 auth regression trong IntelliJ; cross-owner review và B05 handoff pending |
+| B05 (Units 1–4 implementation & handoff) | 09/11/2026 | In Review | Estimate gốc 4h (deadline gốc 08/11/2026); actual human effort chưa được cung cấp | V7/V8 + `/verify`, `/reject`, `/request-changes` + snapshot/audit/outbox; 42 unit/slice tests pass trong terminal; Dũng xác nhận `VerificationApiIT` (10/10) và `VerificationOutboxIT` (4/4) pass trên `aidbridge_test` trong IntelliJ; docs & D48 C05 handoff cập nhật | Khoa/Minh cross-owner review; Khoa nhận `blockchain_jobs(PENDING)` để triển khai C05 trên Fuji; sẵn sàng điều kiện phụ thuộc cho B06 khi được phê duyệt |
+| C02 (Hardhat 3 local toolchain & smoke tests) | 09/11/2026 | In Review | Chưa ghi nhận giờ làm thực tế của Dũng | Commit `84a042f` (PR `#3` merged vào `main`): `contracts/` với Solidity `0.8.28`, `evmVersion: paris`, `ToolchainSmokeProbe.sol` & `ToolchainSmoke.test.ts` (`3 passing`) | Khoa review và dùng làm nền triển khai `C03` (`AidRegistry.sol`) |
+| C01 & F02 (D49 cross-owner review & protocol freeze) | 10/11/2026 | In Review | Chưa ghi nhận giờ làm thực tế của Dũng | Dũng chạy `node docs/fixtures/c01/verify-c01.mjs --ethers` và `node docs/fixtures/f02/verify-f02.mjs` (`PASS`); chốt toàn bộ `C01-O01..O05` và `F02-A01..A05` tại `D49` | Bàn giao lại cho Khoa (`C03`/`C05`) và Minh (`F03`/`F04`/`F07`/`F08`) |
+| C03 (AidRegistry slice, Part 1 + negative tests) | 10/11/2026 | In Review | Chưa ghi nhận giờ làm thực tế của Dũng | `AidRegistry.sol` + 2 file test; `npm test` 5 passing, negative test file 19 passing | Khoa review contract và guard order; cập nhật giờ thực tế; C06 mở rộng milestone khi được giao |
 
 ### C01 review handoff - 09/11/2026
 

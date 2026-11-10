@@ -55,10 +55,14 @@ AI matching, ML fraud detection, offline-first mobile, SMS/hotline, cross-organi
 
 Chỉ reconsider sau hackathon khi NGO pilot chứng minh nhu cầu: offline cần field connectivity observations; matching/ML cần lawful representative data và human appeal; SMS cần verified service/cost/consent; multi-org cần governance và independent participants; escrow cần legal/security/financial review riêng. Không thu phí beneficiary trong MVP.
 
+## Early-completion gates (D26/D27)
+
+18/11 all P0 integrated with feature tests/reviews,20/11 stable public demo/full regression,22/11 video/runbooks/package.25/11 chỉ contingency/submission. Xong sớm thì pull task ready/hardening ngay, không đợi ngày và không thêm P1/ML. Giữ all BR/multi-item/privacy, không cắt quality để đạt mốc.
+
 ## Scope-cut triggers
 
-- 11/11 vertical slice trễ >1 ngày: cả ba tập trung slice, dừng screens mới.
-- 18/11 reconciliation chưa ổn định: dừng enhancements, giảm data/screen count; không bỏ receipt/event checks.
+- 09/11 vertical slice trễ >1 ngày: cả ba tập trung slice, dừng screens mới.
+- 16/11 reconciliation chưa ổn định: dừng enhancements, giảm data/screen count; không bỏ receipt/event checks.
 - Trễ 3 ngày: bỏ dashboard độc lập, polish, P1, filters không thiết yếu.
 - Trễ 7 ngày / capacity ~118h: Minimum Demo, ghi feature gaps, ưu tiên simulated multi-item end-to-end.
 - Không đủ actual chain evidence: sửa integration hoặc ghi chưa đạt blockchain gate; không làm giả confirmation.
