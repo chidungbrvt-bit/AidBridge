@@ -84,3 +84,7 @@ Nếu không tiếp cận được: ghi risk R01, tiếp tục technical prototy
 | Underserved Reach | Cases qua đại diện cộng đồng, không tự đăng ký | Không suy từ số wallet hoặc transactions |
 
 Các metric này là measurement plan, không phải dashboard bắt buộc trong P0.
+
+## F01 - cập nhật Product/Validation 10/11/2026
+
+Theo phân công mới, Khoa đã soạn [kịch bản Demo Household A, checklist và giả định](../product/validation/F01_DEMO_AND_ASSUMPTIONS.md). Bộ này là thiết kế thử với dữ liệu giả, không phải kết quả NGO interview hoặc feature đã chạy. Chưa có ứng viên/consented notes trong repo; R01/R02 tiếp tục chưa xác thực. Có chênh lệch tên role giữa enum backend và workflows, ghi F01-A01 để Dũng/Minh review; không sửa API hoặc quyết định cũ. F01 In Review, không thay đổi scope MVP.
