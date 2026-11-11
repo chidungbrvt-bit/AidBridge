@@ -459,3 +459,8 @@ Status: **DESIGN FIXTURE (Proposed / Mock Data for C01/C03/C05 Review)** — dù
 ## Key compromise / outages
 
 Admin revoke compromised relayer, suspend organization writes, stop worker, rotate test-only key, reconcile outstanding tx/nonces and record rotation event. Contract non-upgradeability không cản revoke; compromised admin nghiêm trọng hơn, redeploy new registry và retain old audit context. Secrets rotate after public demo; deployed chain history không thể xóa. Do not silently replay old signed tx against a new contract.
+
+
+## C03 lifecycle quyền — policy xác nhận 11/11/2026
+
+Global revokeRole/renounceRole RELAYER_ROLE được lưu bằng private sticky withdrawal; chỉ grantRole hợp lệ mới xóa. Active-assignment counter và global permission là hai trạng thái riêng: organization deactivate/reactivate, register hoặc rotate không tự phục hồi quyền đã explicit withdrawal. Internal role cleanup do hết active org không tạo sticky withdrawal, nên normal lifecycle vẫn tự phục hồi như trước. Org-specific revoke/rotation giữ quyền wallet nếu còn active org khác; global revoke chặn mọi org của wallet có chủ ý. Sau explicit grant, quyền ghi vẫn cần đúng active org assignment. Public ABI D49 không đổi, bytecode/storage thay đổi; không áp dụng như upgrade cho registry đã deploy. Bằng chứng và runbook tại [C03 review](../reviews/C03_REVIEW_GATE.md).

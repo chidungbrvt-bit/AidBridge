@@ -39,8 +39,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | C01 | Design | Khoa (C) | Dũng / Minh | L | 4 | B01 | 2026-11-04 | 2026-11-04 | In Review |
 | C02 | Foundation | Khoa (C) | Dũng / Minh | M | 3 | C01 | 2026-11-05 | 2026-11-05 | In Review |
 | C03 | P0-03/P0-06 | Khoa (C) | Dũng / Minh | L | 5 | C01, C02 | 2026-11-07 | 2026-11-07 | In Review |
-| C04 | P0-06 | Khoa (C) | Dũng / Minh | M | 2 | C03 | 2026-11-07 | 2026-11-07 | Not Started |
-| C05 | P0-03/P0-06 | Khoa (C) | Dũng / Minh | L | 6 | B05, C04 | 2026-11-09 | 2026-11-08 | Not Started |
+| C04 | P0-06 | Khoa (C) | Dũng / Minh | M | 2 | C03 | 2026-11-07 | 2026-11-07 | In Review |
+| C05 | P0-03/P0-06 | Khoa (C) | Dũng / Minh | L | 6 | B05, C04 | 2026-11-09 | 2026-11-08 | Blocked |
 | C06 | P0-04/P0-05/P0-06 | Khoa (C) | Dũng / Minh | L | 6 | C03 | 2026-11-11 | 2026-11-11 | Not Started |
 | C07 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C05 | 2026-11-14 | 2026-11-14 | Not Started |
 | C08 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C06, C07 | 2026-11-15 | 2026-11-15 | Not Started |
@@ -345,7 +345,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Acceptance criteria:** Actual43113 deployment receipt/code/address/block/compiler/ABI saved, org role readback; explorer source status accurate.
 - **Required tests:** Wrong-chain preflight, authorization readback, actual deploy receipt.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Review (11/11/2026), actual Fuji C04 runtime PASS: registry 0x015D941c679b0c402c8262BE237adAD36cEf6726; deploy/registration receipts status=1, bytecode/admin/org/relayer readback PASS; 61 local tests và C01 --ethers PASS. ABI D49/schema1. Explorer source VERIFIED Exact Match (Snowtrace/Routescan, API + UI). Console Wallet NOT_DELETED vì inventory X/P/token chưa đầy đủ; tách khỏi runtime acceptance. Xem [C04 deployment](../reviews/C04_DEPLOYMENT.md). Giữ estimate/deadline, actual effort chưa có dữ liệu; chờ review nhóm, không tự Done.
+
 
 ### C05 - Java adapter/minimal audit slice
 
@@ -361,7 +362,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
 - **Phối hợp cụ thể:** Dũng làm phần backend verify+SQL audit/job và hỗ trợ trực tiếp DTO/repository/REST/Java glue; Khoa làm Web3j/ABI/signing/Fuji/exact receipt-event verification. Ghép ngay sau B03–B05, không chờ backend hoàn tất.
 - **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence (11/11/2026):** Blocked cho nghiệm thu full C05; kết quả ngày 11/11 **PARTIAL**, proof contract Fuji độc lập PASS. [C05 receipt review](../reviews/C05_FUJI_RECEIPT_REVIEW.md) và [proof JSON](../fixtures/c05/fuji-case-verified.proof.json): tx `0xc3b02934afb1f29816836fb22146dbc350202d3b2a9e8dbbb19c2fd2e7e8c00f`, block60893112/status1, đúng chain43113/registry/Relayer/CaseVerified envelope, calldata/canonical block/getters khớp. Compile và61 Hardhat tests PASS;46 verifier tests PASS; C01 --ethers và C04 readback PASS. Không sửa contract/backend hoặc ghi SQL CONFIRMED. `backendJobId=null`: chưa xác minh số job B05 thật vì không có DB env; worker/API projection chưa có trong checkout, organization binding chưa xác nhận. Dũng xác nhận DB/job/refs và phối hợp Java/DB/REST; Khoa tiếp tục adapter/receipt integration khi đầu vào sẵn sàng, Minh giữ trạng thái UI theo API thật. Chưa Java parity/DB crash/concurrency/HTTP E2E, chưa full acceptance/cross-owner review hoặc Done. Estimate/deadline gốc giữ nguyên; actual human effort chưa được cung cấp. Commit local được user cho phép, không push/PR/F07.
 
 ### C06 - Full milestone contract
 
@@ -569,7 +570,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Acceptance criteria:** Atomic multi-line form, same-key network retry, overflow refresh, own history, unreceived cancel; no provenance claim.
 - **Required tests:** BR04-N, BR11-P/N; E2E03, donor privacy.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** In Review (10/11/2026). Khoa/Codex triển khai [F07 G01/G02](../design/F07_DONOR_IMPLEMENTATION.md) theo phân công ngày10: React module + developer preview mock, multi-item pledge/own history, 400/409/403, safe replay/recovery. Lint/typecheck/build PASS; 4 unit +8 browser E2E PASS (Edge headless desktop/mobile). Chưa có backend/Next integration, donorEnabled thật vẫn false; G03 cancellation/dependencies F06,B07 chưa đạt, không Done. Owner/estimate/lịch baseline giữ nguyên; actual effort chưa ghi nhận đủ tin cậy, completion date chưa có.
+- **Status / evidence:** In Review (cập nhật11/11/2026). Khoa/Codex đã triển khai mock G01/G02 và bổ sung **G03 unreceived cancellation PASS nghiệm thu nội bộ** theo phân công ngày11. [F07 implementation](../design/F07_DONOR_IMPLEMENTATION.md): multi-line cancellation, đúng original pledged/cancelled/received/outstanding/status, capacity refetch, 400/403/409, stale receipt conflict, same-key retry/double-submit guard. Lint/typecheck/build PASS; **17 unit +17 browser E2E PASS**, gồm toàn bộ regression G01/G02 và desktop/mobile/keyboard, không gọi backend/Fuji. Fixtures S2 F02 được tái sử dụng, không đổi backend hoặc shell Minh. Chưa backend/Next/session/CSRF/DB concurrency integration, dependencies F06/B07 và group review chưa đạt; không Done. Owner/estimate/lịch baseline giữ nguyên; actual human effort chưa có số liệu.
 
 ### F08 - Receipt/delivery UI
 
@@ -718,3 +719,42 @@ Khoa cần kiểm tra trước khi bắt đầu C04 (Fuji pilot, 11/11):
 5. Decoder Java/Web3j (C05) dùng ABI đã khớp draft: 3 topic indexed `orgRef/caseRef/eventId`, data 128 bytes `uint64, bytes32, uint16, uint64`.
 
 Not Run: Fuji, golden vector Java/TS, C06. Không đánh dấu C03 Done trước khi Khoa review xong.
+
+### C03 review gate - 11/11/2026
+
+C03 giữ In Review. Khoa review tại baseline 053b0f5, contract 51d97be. Gate BLOCKED: chưa có dependencies/runtime để compile và chạy độc lập Hardhat, chưa có compiler artifact, chưa đọc được PR #7 conversation qua các kênh hiện có; cần xác nhận/test lifecycle direct AccessControl revoke/renounce so với org relayer counters. Static C01 checker PASS; ethers/Hardhat/Fuji NOT RUN. Xem [C03 review gate](../reviews/C03_REVIEW_GATE.md) để có checklist, bằng chứng và điều kiện chuyển C04. Không đổi status task Dũng/Minh, không deploy/commit/push/PR.
+
+
+### C03 review gate — cập nhật tiếp nối 11/11/2026
+
+C03 giữ In Review; gate hiện tại BLOCKED chỉ còn R1 lifecycle authorization chờ Dũng/nhóm chốt policy hoặc sửa contract. Đã cài dependencies đúng package-lock với ủy quyền user (không đổi lockfile), compile mới PASS, 51 tests PASS (44 cũ + 7 characterization review), C01 --ethers PASS, compiler ABI parity 4/4 và source/settings build-info PASS. Đã đối chiếu 3 ảnh bàn giao PR #7 do Khoa cung cấp; không cần truy cập PR lại. Lifecycle direct revoke/renounce được tái hiện: active assigned multi-org relayer không tự phục hồi qua một org, single-org có thể tự regrant; không có bypass org scope trong tests. PASS characterization không phê duyệt policy. Điều kiện C04 và phản hồi từng điểm Dũng tại [C03 review gate](../reviews/C03_REVIEW_GATE.md). Không sửa contract/task khác; Fuji/Java/C06 NOT RUN; chưa commit/push/PR. Actual human effort chưa có dữ liệu. Ghi chú lượt trước được giữ làm lịch sử, không phải trạng thái môi trường hiện tại.
+
+
+### C03 — nghiệm thu kỹ thuật lifecycle fix 11/11/2026
+
+Gate PASS, R1 RESOLVED theo policy USER_CONFIRMED: revoke/renounce bền vững qua lifecycle, chỉ explicit authorized grant khôi phục. C03 giữ In Review cho review nhóm bản sửa, chưa Done/Fuji. Đã sửa AidRegistry.sol và chuyển review tests sang regression: compile PASS, toàn suite 55 passing (44 cũ + 11 review); C01 --ethers/SHA-256/Keccak PASS, full ABI trước/sau không đổi, draft 4/4 và current compiler source/settings PASS; diff check PASS. Chi tiết [C03 review gate](../reviews/C03_REVIEW_GATE.md). Đủ điều kiện contract chuẩn bị C04 khi được giao; Fuji/Java/C06 NOT RUN. Commit local C03 theo yêu cầu user; không push/PR/merge hoặc đổi task khác. Actual human effort chưa có số liệu. Các ghi chú BLOCKED trước đó là lịch sử đã được thay thế bởi mục này.
+
+
+### C04 — preflight 11/11/2026
+
+In Progress, preflight readiness BLOCKED; baseline 61cc738 bảo toàn. Official Fuji read-only RPC chainId 43113 tại block 60883114; compile/current artifact/source/settings và D49 ABI PASS, suite 56/56 (55 cũ + 1 local deployment dry-run) PASS, C01 --ethers PASS. Chưa public wallet addresses nên balance NOT RUN; chưa deploy runner/config Fuji. Chi tiết fingerprint, lệnh chạy, giới hạn và checklist tại [C04 preflight](../reviews/C04_PREFLIGHT.md). Không ký/gửi Fuji, không commit/push/PR, không C05/F07 hoặc đổi task khác.
+
+
+### C04 preparation — runner/signers hoàn thiện 11/11/2026
+
+C04 In Progress; software preparation PASS (61 tests, compile/checker/DPAPI roundtrip PASS), deploy readiness BLOCKED chỉ funding. Runner mặc định read-only, explicit Fuji chain guard/bytecode pin/gas-fee caps/nonce journal, local deploy+org registration dry-run PASS. Hai ví riêng DPAPI ngoài repo đã tạo, public addresses/plan ở contracts/deployment; balances 0, live gas estimate 1134741. User cần test AVAX vào deployer >=0.1; relayer funding cho business events sau. Faucet hiện cần account/wallet user quản lý. Chưa ký/broadcast; chưa full C04 acceptance/Done. Xem [C04 preflight](../reviews/C04_PREFLIGHT.md). Cho phép commit local preparation theo yêu cầu user, không push/PR/merge/C05/F07.
+
+
+### C04 — actual Fuji pilot 11/11/2026
+
+In Progress -> In Review; runtime PASS trên Fuji43113, manifest/ABI/receipts/independent authorization readback tại contracts/deployment và [C04 deployment](../reviews/C04_DEPLOYMENT.md). Không tự cấu hình backend UUID binding/C05. Explorer NOT_VERIFIED; Console Wallet chưa xóa do asset inventory bị RPC rate-limit, không xóa dữ liệu khác. User cho phép commit local completion; không push/PR/C05/F07.
+
+
+### C04 — source verification và đối chiếu acceptance 11/11/2026
+
+In Review, **4/4 đầu ra phân công 11/11 đạt**, source VERIFIED Exact Match trên Fuji Snowtrace/Routescan sau user cho phép dịch vụ; compiler/input/ABI parity PASS, independent readback PASS, suite61 PASS. Evidence tại contracts/deployment/fuji-verification.*.json; mapping DB chưa triển khai và thuộc Dũng, hướng dẫn cụ thể tại [C04 backend handoff](../reviews/C04_BACKEND_HANDOFF.md). Console Wallet NOT_DELETED do chưa đủ asset inventory, không ghi PASS cleanup. Không redeploy, không đọc keys, không C05/F07; commit local bổ sung theo user, không push/PR. Còn group review trước Done.
+
+
+### F07 G03 — receipt refresh bugfix 11/11/2026
+
+Giữ In Review. Browser regression FAIL trước sửa; thêm host dataRevision để refetch history/campaign sau mock receipt, giữ draft/pending thay vì reload/remount/điều hướng. Hai regression mới: history cập nhật tại chỗ và form đang mở nhận bounds mới; in-flight receipt race409 vẫn fail-closed. Lint/typecheck/build PASS,17 unit +19 browser tests PASS (G01/G02 regression gồm trong suite). Chi tiết tại [F07 implementation](../design/F07_DONOR_IMPLEMENTATION.md). Không sửa backend/contract/dependencies; commit local theo user, không push/PR. Chưa group review/real integration, không Done.

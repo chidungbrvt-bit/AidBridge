@@ -39,6 +39,8 @@ contract AidRegistry is AccessControl {
 
     mapping(bytes32 => OrganizationRecord) private _organizations;
     mapping(address => uint256) private _activeOrgCountByRelayer;
+    // Explicit global withdrawal survives all organization lifecycle operations.
+    mapping(address => bool) private _relayerPermissionWithdrawn;
     mapping(bytes32 => EventRecord) private _events;
     mapping(bytes32 => CaseRecord) private _cases;
 
@@ -83,6 +85,29 @@ contract AidRegistry is AccessControl {
             revert InvalidZeroInput();
         }
         _grantRole(DEFAULT_ADMIN_ROLE, initialAdmin);
+    }
+
+    function grantRole(bytes32 role, address account) public override {
+        // AccessControl checks the role admin even when the role already exists.
+        super.grantRole(role, account);
+        if (role == RELAYER_ROLE) {
+            _relayerPermissionWithdrawn[account] = false;
+        }
+    }
+
+    function revokeRole(bytes32 role, address account) public override {
+        super.revokeRole(role, account);
+        if (role == RELAYER_ROLE) {
+            // Record intent even if lifecycle cleanup already removed the role.
+            _relayerPermissionWithdrawn[account] = true;
+        }
+    }
+
+    function renounceRole(bytes32 role, address callerConfirmation) public override {
+        super.renounceRole(role, callerConfirmation);
+        if (role == RELAYER_ROLE) {
+            _relayerPermissionWithdrawn[callerConfirmation] = true;
+        }
     }
 
     function registerOrganization(
@@ -348,7 +373,7 @@ contract AidRegistry is AccessControl {
     function _incrementActiveRelayer(address relayer) private {
         uint256 currentCount = _activeOrgCountByRelayer[relayer];
         _activeOrgCountByRelayer[relayer] = currentCount + 1;
-        if (currentCount == 0) {
+        if (currentCount == 0 && !_relayerPermissionWithdrawn[relayer]) {
             _grantRole(RELAYER_ROLE, relayer);
         }
     }
