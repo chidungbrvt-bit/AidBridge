@@ -133,8 +133,10 @@ public class CampaignService {
         Map<UUID, List<CampaignItem>> itemsByCampaign = campaignItems
                 .findByCampaign_IdInOrderByCreatedAtAscIdAsc(content.stream().map(Campaign::getId).toList())
                 .stream().collect(Collectors.groupingBy(i -> i.getCampaign().getId()));
+        Map<UUID, Long> pledged = pledgedTotals(
+                itemsByCampaign.values().stream().flatMap(List::stream).toList());
         var dtos = content.stream()
-                .map(c -> mapper.toResponse(c, itemsByCampaign.getOrDefault(c.getId(), List.of()))).toList();
+                .map(c -> mapper.toResponse(c, itemsByCampaign.getOrDefault(c.getId(), List.of()), pledged)).toList();
         return new CampaignPage(dtos, page, size, result.getTotalElements());
     }
 
@@ -146,8 +148,19 @@ public class CampaignService {
         if (campaign.getStatus() != Campaign.Status.DRAFT && !PUBLIC_STATUSES.contains(campaign.getStatus())) {
             throw BusinessException.missing();
         }
-        return mapper.toResponse(campaign,
-                campaignItems.findByCampaign_IdAndOrganizationIdOrderByCreatedAtAscIdAsc(id, orgId));
+        var items = campaignItems.findByCampaign_IdAndOrganizationIdOrderByCreatedAtAscIdAsc(id, orgId);
+        return mapper.toResponse(campaign, items, pledgedTotals(items));
+    }
+
+    /** One aggregate query for any number of items (no N+1). Public reads only, so no lock is taken. */
+    private Map<UUID, Long> pledgedTotals(List<CampaignItem> items) {
+        if (items.isEmpty()) {
+            return Map.of();
+        }
+        return campaignItems.activePledgedTotals(items.stream().map(CampaignItem::getId).toList()).stream()
+                .collect(Collectors.toMap(
+                        CampaignItemRepository.ItemTotal::getItemId,
+                        CampaignItemRepository.ItemTotal::getQuantity));
     }
 
     private List<CaseNeedItem> validateApprovedCase(AidCase c, UUID orgId) {

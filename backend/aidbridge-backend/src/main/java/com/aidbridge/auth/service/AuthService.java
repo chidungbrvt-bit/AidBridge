@@ -101,6 +101,6 @@ public class AuthService {
                         OrganizationMembership.Status.ACTIVE,
                         Organization.Status.APPROVED
                 );
-        return authMapper.toMeResponse(user, memberships, false);
+        return authMapper.toMeResponse(user, memberships, user.isDonorEnabled());
     }
 }

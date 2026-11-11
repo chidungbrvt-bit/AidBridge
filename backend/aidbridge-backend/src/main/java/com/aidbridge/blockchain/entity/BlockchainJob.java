@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -60,10 +61,27 @@ public class BlockchainJob {
     @Column(name = "lease_until")
     private Instant leaseUntil;
 
+    // V12: case milestones are ordered per case; null only for future organization-level jobs.
+    @Column(name = "aid_case_id", updatable = false)
+    private UUID caseId;
+
+    /** First milestone of a case (CASE_VERIFIED). Behaviour unchanged for B05. */
     public BlockchainJob(AuditEvent auditEvent) {
-        this.auditEvent = auditEvent;
+        this(auditEvent, 1L);
+    }
+
+    /**
+     * Later milestones. The case comes from the event itself so it cannot disagree with it;
+     * the caller assigns the sequence while holding the case row lock.
+     */
+    public BlockchainJob(AuditEvent auditEvent, long chainSequence) {
+        if (chainSequence < 1) {
+            throw new IllegalArgumentException("chainSequence must be at least 1");
+        }
+        this.auditEvent = Objects.requireNonNull(auditEvent);
+        this.caseId = auditEvent.getCaseId();
         this.logicalEventId = ChainRefs.randomBytes32();
-        this.chainSequence = 1L;
+        this.chainSequence = chainSequence;
         this.schemaVersion = 1;
     }
 }
