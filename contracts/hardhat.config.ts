@@ -44,6 +44,15 @@ validateExternalNetworkEnv(process.env);
 
 const config: HardhatUserConfig = {
   plugins: [hardhatToolboxMochaEthers],
+  networks: {
+    fuji: {
+      type: "http",
+      chainType: "l1",
+      url: "https://api.avax-test.network/ext/bc/C/rpc",
+      chainId: EXPECTED_FUJI_CHAIN_ID,
+      accounts: [], // Deployment uses the DPAPI runner, never unlocked RPC accounts.
+    },
+  },
   solidity: {
     version: EXPECTED_SOLIDITY_VERSION,
     settings: {

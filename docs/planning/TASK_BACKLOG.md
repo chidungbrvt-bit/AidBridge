@@ -345,7 +345,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Acceptance criteria:** Actual43113 deployment receipt/code/address/block/compiler/ABI saved, org role readback; explorer source status accurate.
 - **Required tests:** Wrong-chain preflight, authorization readback, actual deploy receipt.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Progress (11/11/2026, giai đoạn 1 preflight). Contract/local checks PASS, readiness deploy BLOCKED: thiếu funding Fuji (0 AVAX); runner/network/DPAPI wallets đã hoàn thiện, chờ xác nhận cuối sau funding. Xem [C04 preflight](../reviews/C04_PREFLIGHT.md). Chưa deploy/receipt Fuji, chưa Done; giữ estimate/deadline gốc. Actual effort chưa có dữ liệu.
 
 ### C05 - Java adapter/minimal audit slice
 
@@ -732,3 +732,13 @@ C03 giữ In Review; gate hiện tại BLOCKED chỉ còn R1 lifecycle authoriza
 ### C03 — nghiệm thu kỹ thuật lifecycle fix 11/11/2026
 
 Gate PASS, R1 RESOLVED theo policy USER_CONFIRMED: revoke/renounce bền vững qua lifecycle, chỉ explicit authorized grant khôi phục. C03 giữ In Review cho review nhóm bản sửa, chưa Done/Fuji. Đã sửa AidRegistry.sol và chuyển review tests sang regression: compile PASS, toàn suite 55 passing (44 cũ + 11 review); C01 --ethers/SHA-256/Keccak PASS, full ABI trước/sau không đổi, draft 4/4 và current compiler source/settings PASS; diff check PASS. Chi tiết [C03 review gate](../reviews/C03_REVIEW_GATE.md). Đủ điều kiện contract chuẩn bị C04 khi được giao; Fuji/Java/C06 NOT RUN. Commit local C03 theo yêu cầu user; không push/PR/merge hoặc đổi task khác. Actual human effort chưa có số liệu. Các ghi chú BLOCKED trước đó là lịch sử đã được thay thế bởi mục này.
+
+
+### C04 — preflight 11/11/2026
+
+In Progress, preflight readiness BLOCKED; baseline 61cc738 bảo toàn. Official Fuji read-only RPC chainId 43113 tại block 60883114; compile/current artifact/source/settings và D49 ABI PASS, suite 56/56 (55 cũ + 1 local deployment dry-run) PASS, C01 --ethers PASS. Chưa public wallet addresses nên balance NOT RUN; chưa deploy runner/config Fuji. Chi tiết fingerprint, lệnh chạy, giới hạn và checklist tại [C04 preflight](../reviews/C04_PREFLIGHT.md). Không ký/gửi Fuji, không commit/push/PR, không C05/F07 hoặc đổi task khác.
+
+
+### C04 preparation — runner/signers hoàn thiện 11/11/2026
+
+C04 In Progress; software preparation PASS (61 tests, compile/checker/DPAPI roundtrip PASS), deploy readiness BLOCKED chỉ funding. Runner mặc định read-only, explicit Fuji chain guard/bytecode pin/gas-fee caps/nonce journal, local deploy+org registration dry-run PASS. Hai ví riêng DPAPI ngoài repo đã tạo, public addresses/plan ở contracts/deployment; balances 0, live gas estimate 1134741. User cần test AVAX vào deployer >=0.1; relayer funding cho business events sau. Faucet hiện cần account/wallet user quản lý. Chưa ký/broadcast; chưa full C04 acceptance/Done. Xem [C04 preflight](../reviews/C04_PREFLIGHT.md). Cho phép commit local preparation theo yêu cầu user, không push/PR/merge/C05/F07.

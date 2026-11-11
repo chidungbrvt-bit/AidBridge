@@ -6,3 +6,8 @@ coverage/
 .env
 .env.*
 *.log
+
+# Never version Windows encrypted wallet material or private key exports.
+*.clixml
+*.key
+*.pem
