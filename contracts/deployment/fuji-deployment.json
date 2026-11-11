@@ -14,7 +14,7 @@
   "relayer": "0x559994839f19F40ac704918C3FF1a913AC02dC01",
   "runtimeHash": "0x4c778ba83052da23d357828dca603bddb14c6e26a0fdbda94143cafb2a39e7ad",
   "creationHash": "0x595854a953b927a241515105022d9aa15f4ebb3eee41daa482d9e59c3f5642fb",
-  "explorerSourceStatus": "NOT_VERIFIED",
+  "explorerSourceStatus": "VERIFIED_EXACT_MATCH",
   "sourceCommit": "61cc738385e8b374d38996e8a725a9da6fa7f12b",
   "compiler": {
     "version": "0.8.28",
@@ -761,5 +761,7 @@
   "registrationGasUsed": "100000",
   "abiVersion": "D49 / schemaVersion 1",
   "backendOrganizationBinding": "NOT_CONFIGURED_IN_C04",
-  "organizationReferenceSource": "Existing fuji-plan.public.json committed in 480913b; pilot on-chain orgRef, not a guessed backend UUID"
+  "organizationReferenceSource": "Existing fuji-plan.public.json committed in 480913b; pilot on-chain orgRef, not a guessed backend UUID",
+  "explorerSourceUrl": "https://testnet.snowtrace.io/address/0x015D941c679b0c402c8262BE237adAD36cEf6726/contract/43113/code",
+  "sourceVerificationEvidence": "fuji-verification.result.json"
 }

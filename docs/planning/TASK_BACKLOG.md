@@ -345,7 +345,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Acceptance criteria:** Actual43113 deployment receipt/code/address/block/compiler/ABI saved, org role readback; explorer source status accurate.
 - **Required tests:** Wrong-chain preflight, authorization readback, actual deploy receipt.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** In Review (11/11/2026), actual Fuji C04 runtime PASS: registry 0x015D941c679b0c402c8262BE237adAD36cEf6726; deploy/registration receipts status=1, bytecode/admin/org/relayer readback PASS; 61 local tests và C01 --ethers PASS. ABI D49/schema1. Explorer source NOT_VERIFIED. Console Wallet NOT_DELETED vì inventory chưa đủ do RPC rate limit; tách khỏi runtime acceptance. Xem [C04 deployment](../reviews/C04_DEPLOYMENT.md). Giữ estimate/deadline, actual effort chưa có dữ liệu; chờ review nhóm, không tự Done.
+- **Status / evidence:** In Review (11/11/2026), actual Fuji C04 runtime PASS: registry 0x015D941c679b0c402c8262BE237adAD36cEf6726; deploy/registration receipts status=1, bytecode/admin/org/relayer readback PASS; 61 local tests và C01 --ethers PASS. ABI D49/schema1. Explorer source VERIFIED Exact Match (Snowtrace/Routescan, API + UI). Console Wallet NOT_DELETED vì inventory X/P/token chưa đầy đủ; tách khỏi runtime acceptance. Xem [C04 deployment](../reviews/C04_DEPLOYMENT.md). Giữ estimate/deadline, actual effort chưa có dữ liệu; chờ review nhóm, không tự Done.
 
 
 ### C05 - Java adapter/minimal audit slice
@@ -748,3 +748,8 @@ C04 In Progress; software preparation PASS (61 tests, compile/checker/DPAPI roun
 ### C04 — actual Fuji pilot 11/11/2026
 
 In Progress -> In Review; runtime PASS trên Fuji43113, manifest/ABI/receipts/independent authorization readback tại contracts/deployment và [C04 deployment](../reviews/C04_DEPLOYMENT.md). Không tự cấu hình backend UUID binding/C05. Explorer NOT_VERIFIED; Console Wallet chưa xóa do asset inventory bị RPC rate-limit, không xóa dữ liệu khác. User cho phép commit local completion; không push/PR/C05/F07.
+
+
+### C04 — source verification và đối chiếu acceptance 11/11/2026
+
+In Review, **4/4 đầu ra phân công 11/11 đạt**, source VERIFIED Exact Match trên Fuji Snowtrace/Routescan sau user cho phép dịch vụ; compiler/input/ABI parity PASS, independent readback PASS, suite61 PASS. Evidence tại contracts/deployment/fuji-verification.*.json; mapping DB chưa triển khai và thuộc Dũng, hướng dẫn cụ thể tại [C04 backend handoff](../reviews/C04_BACKEND_HANDOFF.md). Console Wallet NOT_DELETED do chưa đủ asset inventory, không ghi PASS cleanup. Không redeploy, không đọc keys, không C05/F07; commit local bổ sung theo user, không push/PR. Còn group review trước Done.

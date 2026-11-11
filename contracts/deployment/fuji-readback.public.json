@@ -104,5 +104,7 @@
       "to": "0x015D941c679b0c402c8262BE237adAD36cEf6726"
     }
   ],
-  "explorerSourceStatus": "NOT_VERIFIED"
+  "explorerSourceStatus": "VERIFIED_EXACT_MATCH",
+  "explorerSourceUrl": "https://testnet.snowtrace.io/address/0x015D941c679b0c402c8262BE237adAD36cEf6726/contract/43113/code",
+  "sourceVerificationEvidence": "fuji-verification.result.json"
 }
