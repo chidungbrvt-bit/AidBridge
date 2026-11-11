@@ -55,9 +55,11 @@ AI matching, ML fraud detection, offline-first mobile, SMS/hotline, cross-organi
 
 Chỉ reconsider sau hackathon khi NGO pilot chứng minh nhu cầu: offline cần field connectivity observations; matching/ML cần lawful representative data và human appeal; SMS cần verified service/cost/consent; multi-org cần governance và independent participants; escrow cần legal/security/financial review riêng. Không thu phí beneficiary trong MVP.
 
+**Ngoại lệ có phạm vi (D51, 11/11/2026):** một bản demo ML offline được phép nộp kèm hồ sơ nhưng không thuộc sáu P0, không thuộc Definition of Done của P0 và không nằm trong 168h. Demo chạy ổn định trên dữ liệu giả lập quy mô rộng, chỉ gợi ý thứ tự xem xét, không nối vào luồng duyệt hoặc phân bổ, không ghi lên chain, không dùng PII; mọi nơi hiển thị ghi rõ "bản demo, cần thời gian huấn luyện với dữ liệu thật để thành bản chính thức". Nếu đến 17/11 P0 chưa đúng tiến độ thì cắt phần giao diện (ML-4), giữ báo cáo offline. Chi tiết tại [gói demo ML](DAILY_ROADMAP.md#gói-demo-ml-d51--tính-riêng-ngoài-168h) và ML-1..ML-5 trong [Task Backlog](TASK_BACKLOG.md).
+
 ## Early-completion gates (D26/D27)
 
-18/11 all P0 integrated with feature tests/reviews,20/11 stable public demo/full regression,22/11 video/runbooks/package.25/11 chỉ contingency/submission. Xong sớm thì pull task ready/hardening ngay, không đợi ngày và không thêm P1/ML. Giữ all BR/multi-item/privacy, không cắt quality để đạt mốc.
+18/11 all P0 integrated with feature tests/reviews,20/11 stable public demo/full regression,22/11 video/runbooks/package.25/11 chỉ contingency/submission. Xong sớm thì pull task ready/hardening ngay, không đợi ngày và không thêm P1; ML chỉ theo ngoại lệ demo D51. Giữ all BR/multi-item/privacy, không cắt quality để đạt mốc.
 
 ## Scope-cut triggers
 
