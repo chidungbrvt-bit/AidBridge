@@ -28,6 +28,11 @@ export class ApiError extends Error {
   problem: ProblemDetail;
   constructor(problem: Omit<ProblemDetail, 'fieldErrors'> & { fieldErrors?: ProblemDetail['fieldErrors'] }) { super(problem.detail); this.name = 'ApiError'; this.problem = { ...problem, fieldErrors: problem.fieldErrors ?? [] }; }
 }
+// Only documented client/business rejections prove this cancellation was rejected.
+// Gateways and timeouts may respond after commit; unknown statuses stay conservative.
+export function cancellationOutcomeUnknown(error: unknown): boolean {
+  return !(error instanceof ApiError && [400, 401, 403, 404, 409, 422].includes(error.problem.status));
+}
 export type Draft = Record<string, { selected: boolean; quantity: string }>;
 export function validateDraft(campaign: CampaignResponse, draft: Draft) {
   const errors: Record<string, string> = {};

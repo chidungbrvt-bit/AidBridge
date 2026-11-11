@@ -2,7 +2,7 @@
 
 Người thực hiện: Khoa/Codex. Status: **In Review**. Đã chạy giao diện thật trong trình duyệt, sử dụng mock data; chưa tích hợp backend hoặc blockchain thật. Commit F01 cd5d88d38b971134e3a23ba5ba999b68e2711271 được giữ nguyên.
 
-**Cập nhật 11/11:** G03 đã triển khai và nghiệm thu nội bộ ở mức mock, xem mục cuối tài liệu. Các counts/phạm vi ngày10 bên dưới là lịch sử; kết quả hiện hành là 17 unit +19 browser tests. F07 vẫn In Review, không đồng nghĩa backend/Next integration đã đạt.
+**Cập nhật 11/11:** G03 đã triển khai và nghiệm thu nội bộ ở mức mock, xem mục cuối tài liệu. Các counts/phạm vi ngày10 bên dưới là lịch sử; kết quả hiện hành là 18 unit +21 browser tests. F07 vẫn In Review, không đồng nghĩa backend/Next integration đã đạt.
 
 ## Phạm vi nghiệm thu
 
@@ -156,3 +156,10 @@ Ghi chú cho PR cuối ngày: [C05 review](../reviews/C05_FUJI_RECEIPT_REVIEW.md
 Browser test tái hiện FAIL trước sửa: history còn received5/outstanding3 thay vì8/0. Mock trả DTO copies, nên mutation nội bộ không cập nhật state React; effects trước đây chỉ đọc lại khi view/page/refresh đổi. Preview nay tăng optional `dataRevision` sau receipt; DonorApp đưa revision vào dependencies đọc campaign/history, bỏ late responses qua effect cleanup. Không reload/đổi route/remount key hoặc xóa draft/pending. cancelTarget nhận history mới, form chặn mutation khi refresh và khóa hủy khi hết outstanding. Request đã gửi trước receipt vẫn bị mock latest-state validation từ chối409.
 
 Hai regression mới kiểm tra My pledges cập nhật tại chỗ và form giữ quantity/reason nhưng nhận bounds mới. Test race đổi thứ tự submit -> receipt, không dựa vào UI giữ stale state. Kết quả cuối: lint/typecheck/build PASS,17 unit +19 browser Edge tests PASS; kiểm tra desktop1440 và screenshot `test-results/g03-receipt-refresh-desktop.png` (ignored). Warning Vite standalone use client như trước; build exit0. Không thay backend/dependencies/business rules. Optional revision mặc định0 là tín hiệu invalidation từ host, không polling hoặc mock import trong production component. Next/DB integration chưa chạy.
+
+
+### High QA fix — outcome chưa xác định sau gateway504 (11/11)
+
+Đã sửa riêng G03: trước đây mọi ApiError đều xóa pending request/key, nên 504 sau commit có thể hủy trùng khi người dùng thử lại. `cancellationOutcomeUnknown` chỉ xem các status400/401/403/404/409/422 là từ chối xác định; timeout/mất response/5xx và status chưa phân loại giữ outcome unknown. Giữ exact body/key, khóa draft/reason/đóng form/navigation và chỉ cho Retry same cancellation. Không thay chính sách G01/backend.
+
+Regression fault injection chạy trong trình duyệt, chỉ thay transport mock trong bộ nhớ: lưu cancellation1kg rồi trả504; lần replay tiếp theo lại trả504; lần thứ ba trả original response. Cả ba calls có cùng body/key, cancelled vẫn1 (không thành2). Biến thể nhận hết hàng còn lại trong lúc recovery vẫn replay đúng, giữ received mới và cancelled1. Existing400/403/409, races/double-submit và G01/G02 regression vẫn PASS. Kết quả hiện hành: lint/typecheck/build PASS, **18 unit +21 browser Edge tests PASS**; fault injection từng FAIL nay2/2 PASS. Backend/DB/Next chưa tích hợp; F07 In Review, C05 PARTIAL như đã ghi nhận. Không chạy lại C03/C04/C05 hoặc dùng signer. Dòng tổng C04 backlog đã đồng bộ In Review, không Done.

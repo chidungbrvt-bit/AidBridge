@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { ApiError, validateCancellation } from './model';
+import { ApiError, cancellationOutcomeUnknown, validateCancellation } from './model';
 import type { CampaignResponse, CancellationRequest, CommitmentResponse, DonorApi, Draft } from './model';
 
 interface Props {
@@ -41,7 +41,7 @@ export function CancellationForm({ api, commitment, campaign, ready, onChanged, 
       setMessage('Cancellation saved. Received goods are unchanged. Pending on-chain.'); onChanged(saved); onLock(false);
     } catch (error) {
       if (!alive.current) return;
-      if (error instanceof ApiError) {
+      if (error instanceof ApiError && !cancellationOutcomeUnknown(error)) {
         pending.current = null; setUnknown(false); onLock(false);
         setMessage(`${error.problem.status === 409 ? '409 Conflict' : error.problem.status} ${error.problem.code}: ${error.problem.detail}`);
         const fieldErrors: Record<string, string> = {};
@@ -53,7 +53,10 @@ export function CancellationForm({ api, commitment, campaign, ready, onChanged, 
         }
         setErrors(fieldErrors);
         if (error.problem.status === 409) onChanged();
-      } else { setUnknown(true); setMessage('Cancellation outcome is unknown. Retry the same cancellation to recover safely.'); }
+      } else {
+        setUnknown(true);
+        setMessage(`${error instanceof ApiError ? `${error.problem.status} ${error.problem.code}: ` : ''}Cancellation outcome is unknown. Retry the same cancellation to recover safely.`);
+      }
     } finally { locked.current = false; if (alive.current) setBusy(false); }
   }
   const disabled = busy || unknown || !ready;

@@ -61,3 +61,36 @@ test('receipt refresh updates open G03 bounds while retaining its draft',async({
  await page.setViewportSize({width:1440,height:1100});
  await page.screenshot({path:'test-results/g03-receipt-refresh-desktop.png',fullPage:true});
 });
+
+
+for(const receiptDuringRecovery of [false,true])test(`G03 504 after saving 1kg retries exact key repeatedly (receipt=${receiptDuringRecovery})`,async({page})=>{
+ let injected=0;
+ await page.route('**/mock.ts*',async route=>{
+  const response=await route.fetch();let body=await response.text();
+  const start=body.indexOf('async cancel(');expect(start).toBeGreaterThan(0);
+  const prefix=body.slice(0,start);let cancel=body.slice(start);
+  const gateway='throw new ApiError({type:"about:blank",title:"Gateway timeout",status:504,code:"GATEWAY_TIMEOUT",detail:"Response lost after save",instance:"/api/mock",traceId:"qa",fieldErrors:[]})';
+  cancel=cancel.replace(/async cancel\(id, body, key\) \{/,match=>match+' (window.__qaCancellations ??= []).push({key,body:JSON.stringify(body)});');
+  cancel=cancel.replace(/throw new TypeError\(["']Mock network response lost after saving\.["']\)/g,()=>{injected++;return gateway;});
+  cancel=cancel.replace('return structuredClone(saved.response);','if(window.__qaCancellations.length <= 2) { '+gateway+'; } return structuredClone(saved.response);');
+  body=prefix+cancel;await route.fulfill({response,body});
+ });
+ await fixture(page);const panel=await fill(page,'1');
+ await page.getByLabel('Mock response').selectOption('timeout-after-save');
+ await panel.getByRole('button',{name:'Cancel selected goods',exact:true}).click();
+ await expect(panel.getByRole('alert')).toContainText('504 GATEWAY_TIMEOUT');
+ expect(injected).toBeGreaterThan(0);
+ await expect(panel.getByLabel('Cancel quantity (kg)',{exact:true})).toBeDisabled();
+ await expect(panel.getByLabel('Cancellation reason')).toBeDisabled();
+ await expect(page.getByRole('button',{name:'Explore campaign',exact:true})).toBeDisabled();
+ await expect(panel.getByRole('button',{name:'Close cancellation'})).toBeDisabled();
+ if(receiptDuringRecovery){await page.getByRole('button',{name:'Mock receipt: receive remaining goods'}).click();await expect(rice(page).getByRole('cell')).toHaveText(['8','1','7','0']);}
+ await panel.getByRole('button',{name:'Retry same cancellation'}).click();
+ await expect(panel.getByRole('alert')).toContainText('504 GATEWAY_TIMEOUT');
+ await expect(panel.getByRole('button',{name:'Retry same cancellation'})).toBeEnabled();
+ await panel.getByRole('button',{name:'Retry same cancellation'}).click();
+ await expect(panel.getByRole('status').filter({hasText:'Cancellation saved'})).toBeVisible();
+ await expect(rice(page).getByRole('cell')).toHaveText(receiptDuringRecovery?['8','1','7','0']:['8','1','5','2']);
+ const calls=await page.evaluate(()=>(window as unknown as {__qaCancellations:{key:string;body:string}[]}).__qaCancellations);
+ expect(calls).toHaveLength(3);expect(new Set(calls.map(x=>x.key)).size).toBe(1);expect(new Set(calls.map(x=>x.body)).size).toBe(1);
+});

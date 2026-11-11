@@ -39,7 +39,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | C01 | Design | Khoa (C) | Dũng / Minh | L | 4 | B01 | 2026-11-04 | 2026-11-04 | In Review |
 | C02 | Foundation | Khoa (C) | Dũng / Minh | M | 3 | C01 | 2026-11-05 | 2026-11-05 | In Review |
 | C03 | P0-03/P0-06 | Khoa (C) | Dũng / Minh | L | 5 | C01, C02 | 2026-11-07 | 2026-11-07 | In Review |
-| C04 | P0-06 | Khoa (C) | Dũng / Minh | M | 2 | C03 | 2026-11-07 | 2026-11-07 | Not Started |
+| C04 | P0-06 | Khoa (C) | Dũng / Minh | M | 2 | C03 | 2026-11-07 | 2026-11-07 | In Review |
 | C05 | P0-03/P0-06 | Khoa (C) | Dũng / Minh | L | 6 | B05, C04 | 2026-11-09 | 2026-11-08 | Blocked |
 | C06 | P0-04/P0-05/P0-06 | Khoa (C) | Dũng / Minh | L | 6 | C03 | 2026-11-11 | 2026-11-11 | Not Started |
 | C07 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C05 | 2026-11-14 | 2026-11-14 | Not Started |

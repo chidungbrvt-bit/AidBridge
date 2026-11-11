@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createMockDonorApi, DEMO_CAMPAIGN_ID } from './mock.ts';
-import { validateDraft, validateCancellation, ApiError } from './model.ts';
+import { validateDraft, validateCancellation, cancellationOutcomeUnknown, ApiError } from './model.ts';
 const id=DEMO_CAMPAIGN_ID;
 test('form rejects empty, fraction, zero and overflow; accepts multi-item integer request',async()=>{
  const {api}=createMockDonorApi(0);const c=await api.getCampaign(id);const [a,b]=c.items;
@@ -112,4 +112,12 @@ test('G03 lost response recovery uses original request/key, no duplicate cancell
 test('G03 reset invalidates an in-flight cancellation',async()=>{
  const mock=createMockDonorApi(20);mock.loadPartialReceiptFixture();const p=(await mock.api.getCommitments(0)).items[0];
  const request=mock.api.cancel(p.id,{items:[{contributionItemId:p.items[0].id,quantity:1}],reason:'Reset'},'reset');mock.reset();await assert.rejects(request);assert.equal((await mock.api.getCommitments(0)).totalElements,0);
+});
+
+
+test('G03 keeps request outcome unknown for gateway/timeouts and undocumented errors, but not definite 4xx',()=>{
+ const error=(status:number)=>new ApiError({type:'about:blank',title:'Test',status,code:'TEST',detail:'Test',instance:'/api/test',traceId:'qa'});
+ for(const status of [408,429,500,502,503,504])assert.equal(cancellationOutcomeUnknown(error(status)),true);
+ for(const status of [400,401,403,404,409,422])assert.equal(cancellationOutcomeUnknown(error(status)),false);
+ assert.equal(cancellationOutcomeUnknown(new TypeError('Lost response')),true);
 });
