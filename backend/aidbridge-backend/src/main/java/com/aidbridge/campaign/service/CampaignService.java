@@ -102,8 +102,11 @@ public class CampaignService {
             if (campaign.getStatus() != Campaign.Status.DRAFT) throw BusinessException.state();
             List<CaseNeedItem> needs = validateApprovedCase(aidCase, orgId);
             List<CampaignItem> items = campaignItems.findByCampaign_IdAndOrganizationIdOrderByCreatedAtAscIdAsc(id, orgId);
-            if (items.isEmpty() || !items.stream().map(ItemSpec::fromCampaign).toList()
-                    .equals(needs.stream().map(ItemSpec::fromNeed).toList())) {
+            // Item order carries no business meaning and is not stable (equal created_at, random UUID ids),
+            // so compare the copied snapshot with the current approved needs as sets.
+            Set<ItemSpec> copied = items.stream().map(ItemSpec::fromCampaign).collect(Collectors.toSet());
+            Set<ItemSpec> current = needs.stream().map(ItemSpec::fromNeed).collect(Collectors.toSet());
+            if (items.isEmpty() || items.size() != needs.size() || !copied.equals(current)) {
                 throw BusinessException.stale();
             }
             sanitize(campaign.getTitle(), 160);
@@ -158,7 +161,7 @@ public class CampaignService {
         var review = verifications.findLatestByCase(c.getId(), orgId, Limit.of(1)).stream()
                 .findFirst().orElseThrow(BusinessException::state);
         if (!"APPROVED".equals(review.getDecision())) throw BusinessException.state();
-        if (review.getReviewedCaseVersion() == null || review.getReviewedCaseVersion() != c.getVersion()) {
+        if (review.getReviewedCaseVersion() == null || review.getReviewedCaseVersion() + 1 != c.getVersion()) {
             throw BusinessException.stale();
         }
         var needs = caseNeeds.findByAidCase_IdAndAidCase_Organization_IdAndRetiredAtVersionIsNullOrderByCreatedAtAscIdAsc(c.getId(), orgId);

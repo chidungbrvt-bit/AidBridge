@@ -1,0 +1,9 @@
+package com.aidbridge.shared.idempotency;
+
+import java.util.Optional;
+import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface IdempotencyRepository extends JpaRepository<IdempotencyRecord, UUID> {
+    Optional<IdempotencyRecord> findByActorIdAndOperationAndRequestKey(UUID actorId, String operation, String requestKey);
+}
