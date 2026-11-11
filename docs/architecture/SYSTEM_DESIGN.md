@@ -1,6 +1,6 @@
 # System Design
 
-Ngày tạo: 03/11/2026. Owner: B. Status: **proposed architecture**, chưa scaffold. Sources: PDF pp.11-13, user choices và [Decision Log](../planning/DECISION_LOG.md).
+Ngày tạo: 03/11/2026. Cập nhật:04/11/2026. Owner: B. Status: architecture baseline **In Review** theo [B01](B01_BASELINE.md); backend skeleton và một phần user/auth đã có, chưa có integrated P0 workflow. Sources: PDF pp.11-13, user choices và [Decision Log](../planning/DECISION_LOG.md).
 
 ## Architecture và request flow
 
@@ -36,7 +36,7 @@ PostgreSQL là operational source of truth. Chain là external anchor của sele
 |---|---|---|
 | Java | JDK 21 LTS, Maven Wrapper | Ít thay đổi, framework-compatible |
 | Backend | Spring Boot 4.1.x, Spring Security/JPA/Validation/Actuator, springdoc 3.x | Patch compatible được khóa tại B02; không prerelease |
-| Database | PostgreSQL 17, Flyway do Boot dependency management | Docker Compose chỉ sau coding approval; migrations forward-only |
+| Database | PostgreSQL do user quản lý, Flyway do Boot dependency management | Xác nhận version/host/port/database/account ở B02; automation/instance workspace đã gỡ theo yêu cầu. Chưa có datasource/full-app health evidence. Hosted version/Compose quyết định riêng; migrations forward-only |
 | Frontend | Next.js 16.x, React 19.x, TypeScript, Tailwind 4.x | npm lockfile; no Redux/global state library mặc định |
 | Contract | Hardhat 3.x, TypeScript tests, Solidity 0.8.28, OpenZeppelin 5.x | Pin exact compiler + optimizer; target `evmVersion: paris` để tránh opcode mới không cần thiết |
 | Java chain | Web3j 4.14.x | Java compatibility, ABI parity test và explicit signing chain ID |
@@ -53,7 +53,8 @@ Frontend installation requirements đối chiếu tại [Next.js installation](h
 
 | Module | Components cần thiết | Owns / dependencies | Verification |
 |---|---|---|---|
-| auth | AuthController, SecurityConfig, account lookup/password service, UserRepository, LoginRequest/MeResponse | users + global roles; queries organization memberships | AuthApiIT: login/logout/CSRF/session fixation, disabled account |
+| auth | AuthController/Service, SecurityConfig, CustomUserDetailsService, LoginRequest/MeResponse | Dùng UserRepository từ user feature để authenticate; queries organization memberships; không tạo User entity thứ hai | AuthApiIT: login/logout/CSRF/session fixation, disabled account |
+| user | User, UserRepository/Service/Mapper, UserResponse | Global account identity: fullName/email/status/platformRole; donor capability là planned extension, không org roles | Account lookup/mapping tests; donor grant/revocation tests khi có extension |
 | organization | OrganizationController/Service/Repository, MembershipRepository, Organization/Membership entities, org DTOs, membership guard | org state/roles; không direct chain signing | MembershipIsolationIT và inactive-member tests |
 | casefile | CaseController/Service/Repository, AidCase/Beneficiary/ConsentRecord, create/patch/detail DTOs, evidence access/version service | cases/evidence/consent; organization guard + audit | CaseServiceTest, CaseApiIT, EvidenceAccessIT |
 | verification | VerificationController/Service/Repository, Verification, DecisionRequest/Response | immutable review attempts; casefile + audit | SelfApprovalTest, VerificationApiIT |
@@ -65,6 +66,8 @@ Frontend installation requirements đối chiếu tại [Next.js installation](h
 | shared | ProblemDetails handler, clock/ID/config beans, small reusable permission/idempotency types | Không business entity dumping ground | ErrorContractTest |
 
 Không tạo class cho mỗi tên trong bảng nếu có thể là method/value object trong feature tương ứng. Tránh module service cycles: delivery gọi query/service về goods balances; campaign không gọi ngược delivery. Audit nhận immutable business event từ service; blockchain đọc event snapshot, không gọi business controller.
+
+Có11 package cấp cao theo baseline hiện hành (9 feature user/auth/organization/casefile/verification/campaign/contribution/delivery/audit, cùng blockchain/shared). Phần lớn package mới chỉ có thư mục hoặc class skeleton. GlobalExceptionHandler hiện ở com.aidbridge.exception; shared.exception là vị trí đích theo kiến trúc, chưa move code trong B01. Tên package không quyết định quyền: ORG_ADMIN/VOLUNTEER/VERIFIER/DELIVERY_CONFIRMER phải lấy từ active membership, PLATFORM_ADMIN từ user.platformRole; Spring ROLE_USER/FACTOR_PASSWORD không tự cấp org/donor quyền.
 
 ## Transaction và concurrency boundaries
 

@@ -9,10 +9,19 @@ AidBridge giúp tổ chức thiện nguyện quản lý nhu cầu, xác minh h�
 ## Trạng thái hiện tại
 
 - Ngày lập baseline: **03/11/2026**, timezone `Asia/Bangkok`.
-- Workspace mới có tài liệu planning; **chưa có ứng dụng hoặc Git repository**.
-- Application development, dependencies, database migrations, Docker và deployment **chưa được thực hiện**.
-- Mục tiêu MVP: **25/11/2026**; ba developers, khoảng 20 giờ/người/tuần.
+- Workspace có planning, backend skeleton và một phần user/security có focused tests; **chưa có integrated P0 workflow/deployment**.
+- B01 In Review; B02/B03 In Progress. V1 đã có focused PostgreSQL test; V2–V5 đã có SQL, chưa chạy kiểm thử migration toàn bộ. V3–V5 ghi theo SQL user cung cấp ngày04/11. Theo yêu cầu user, đã gỡ instance PostgreSQL riêng cùng script/data/credential trong workspace. Database/account trên PostgreSQL do user cài đặt cần được xác nhận lại trước khi nối Spring Boot.
+- Mốc nội bộ: **18/11 đủ P0;20/11 demo ổn định;22/11 video/hồ sơ sẵn sàng**.25/11 là hạn nộp ngoài cùng, không phải ngày chờ làm xong.
+- Ba developers,56h task+8h reserve/người. Dồn2.5h/ngày thường và5h/cuối tuần đến20/11;21-22/11 x3h;23-25/11 x1h reserve. Tổng64h/người không đổi.
 - Bộ tài liệu là implementation specification đề xuất; không phải bằng chứng các tính năng đã hoàn thành.
+
+## Nhóm phát triển
+
+- **Dũng:** Backend.
+- **Khoa:** Blockchain & Integration; phối hợp với Dũng ở phần Java/database/REST nối blockchain.
+- **Minh:** Frontend & Product.
+
+Xem [phân công chi tiết và checklist bàn giao Dũng ↔ Khoa](docs/planning/TEAM_RESPONSIBILITIES.md). Task IDs B/C/F giữ nguyên; hỗ trợ không làm tăng scope hoặc mặc định tăng quỹ giờ.
 
 ## Đọc theo thứ tự
 
@@ -46,17 +55,17 @@ Mỗi campaign có nhiều dòng hàng, số lượng nguyên và đơn vị ri�
 | `docs/architecture` | Workflow, schema, APIs và blockchain contracts |
 | `docs/quality` | Test specification, security và risks |
 | `docs/demo` | Script và submission gates |
-| `backend` | Dự kiến Spring Boot modular monolith; hiện trống |
+| `backend` | Spring Boot modular monolith tại backend/aidbridge-backend; mới triển khai một phần user/auth |
 | `frontend` | Dự kiến Next.js; hiện trống |
 | `contracts` | Dự kiến Solidity/Hardhat; hiện trống |
-| `infra` | Dự kiến Compose/deployment configuration; hiện trống |
+| `infra` | Dành cho cấu hình môi trường/deploy; hiện chưa có Compose hoặc PostgreSQL automation |
 
-## Setup dự kiến, chưa phải hướng dẫn chạy đã kiểm chứng
+## Local database và setup còn lại
 
-Sau khi coding được phê duyệt: JDK 21, Maven Wrapper, Node.js 22.13.0+ thuộc nhánh được Hardhat hỗ trợ, npm lockfiles, Docker Desktop/Compose và PostgreSQL 17. Chốt patch versions và compatibility trước khi scaffold; không dùng prerelease. Baseline đề xuất: Spring Boot 4.1.x + springdoc 3.x, Next.js 16.x + React 19.x, Tailwind 4.x, Hardhat 3.x + Solidity 0.8.28 + OpenZeppelin 5.x, Web3j 4.14.x. Kiểm tra dependency/security compatibility tại task setup thay vì tự nâng major trong quá trình làm.
+User quản lý PostgreSQL qua installation/pgAdmin của mình. Không còn instance riêng, script startup hoặc data PostgreSQL trong workspace. B02 tiếp tục từ việc xác nhận version/host/port/database/account trên server user chọn, rồi cấu hình datasource bằng environment, kiểm tra Flyway và full app health. Việc server PostgreSQL đang chạy chưa chứng minh app đã kết nối đúng database/account.
 
-Không có build/run command khả dụng ở thời điểm planning. Environment variables và quy trình setup tương lai nằm trong Master Plan; không commit secrets. Git/GitHub workflow chỉ là đề xuất cho giai đoạn sau, không phải Git đã được khởi tạo.
+JDK21 là target compile; các technology proposals còn lại ở System Design. Version public-hosted database và compatibility với provider phải chốt riêng trước deploy; không suy ra từ version local. Secrets application dùng environment/secret store; không hardcode/commit credentials. Xong task sớm thì pull task tiếp theo đã đủ dependencies trong approved scope, không chờ mốc ngày.
 
 ## Quyền thực thi tiếp theo
 
-Bộ tài liệu này được tạo theo phê duyệt chuẩn bị workspace. Chỉ bắt đầu application implementation khi người dùng chỉ định/phê duyệt các task coding; không suy diễn rằng việc duyệt documentation cho phép deploy hoặc mua dịch vụ.
+User đã cho phép từng phần user/security, B01 consolidation và B02 phần1. Chỉ tiếp tục application work trong scope tương ứng; không suy diễn thành quyền full CRUD/deploy/purchase.

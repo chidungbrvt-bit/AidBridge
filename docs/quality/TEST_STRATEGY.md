@@ -1,13 +1,13 @@
 # Test Strategy
 
-Ngày tạo: 03/11/2026. Owner: C, B/F review. Status: **test specification; tests chưa được chạy**, vì chưa có application source. Không có pass rate/coverage result giả lập.
+Ngày tạo: 03/11/2026. Cập nhật:04/11/2026. Owner: C, B/F review. Status: **P0 test specification**; một số focused user/auth tests đã chạy, evidence ở Task Backlog; chưa có full P0/E2E/contract acceptance. Không coi spec IDs dưới đây tự động Pass vì các focused tests pass.
 
 ## Levels, tools và entry/exit
 
 | Level | Tool proposal / scope | Owner | Entry -> exit |
 |---|---|---|---|
 | Unit | JUnit service/domain guards, canonical manifest vectors | B/C | Agreed rules -> success/failure boundary assertions |
-| API/DB integration | Spring tests + PostgreSQL17 (Testcontainers nếu Docker available; otherwise isolated Compose test DB) | B | Migrated schema -> auth/isolation/state/concurrency/rollback verified |
+| API/DB integration | Spring tests + PostgreSQL đúng version B02 xác nhận;18.6/instance tests trước chỉ là lịch sử, instance workspace đã gỡ. Testcontainers/Compose chỉ khi được chọn và khả dụng | B | Migrated schema -> auth/isolation/state/concurrency/rollback verified trên target DB mới; không chuyển kết quả instance đã gỡ thành P0/full-app acceptance |
 | Contract | Hardhat3 TypeScript, local isolated accounts, decoded event assertions | C | Frozen ABI -> all access/state/replay tests pass |
 | Adapter integration | Web3j -> local Hardhat node; controlled RPC stubs for faults | C | Compiled ABI -> receipt/restart/reconciliation verified |
 | E2E | Playwright core workflows, seeded fictional fixtures | F | Stable local/shared API -> UI totals/roles/statuses correct |
@@ -18,6 +18,8 @@ Use real PostgreSQL for locking/unique constraints, không H2 thay behavior conc
 ## Complete BR traceability matrix
 
 Mỗi test ID dưới đây là specification ID; task phải bổ sung test path/command/result khi implement.
+
+[B01 baseline](../architecture/B01_BASELINE.md) thống nhất OA=ORG_ADMIN, FV=VOLUNTEER, CV=VERIFIER, DC=DELIVERY_CONFIRMER, PA=PLATFORM_ADMIN; donor cần ACTIVE account + explicit donorEnabled grant (schema extension chưa triển khai). Role aliases chỉ để đọc matrix, không là enum khác trong fixtures. B01 đã viết các tình huống review BR01/BR02/BR03; runtime tests cho các BR này vẫn chờ implementation/integration. Cập nhật 11/11/2026: BR03 đã có runtime tests PostgreSQL/HTTP qua `CampaignApiIT` (B06). Test login/role revocation phải kiểm tra DISABLED user, non-ACTIVE membership, non-APPROVED org và donor grant bị thu hồi, kể cả replay idempotency.
 
 | Rule / failure consequence | Module / enforcement | Positive test / action -> expected | Negative test / action -> expected | Owner / tasks / priority |
 |---|---|---|---|---|
@@ -65,6 +67,55 @@ E2E01 happy multi-item lifecycle with distinct FV/CV/DC/OA/donor accounts; E2E02
 
 ## Test data and results discipline
 
+D42–D45 và B05 (09/11/2026) bổ sung kiểm thử cho V7, V8, outbox và các endpoints thẩm định độc lập:
+- `casefile/B04MigrationIT`: kiểm tra clean đến V8, upgrade V6 → V7 chuẩn hóa `NEEDS_INFO` sang `CHANGES_REQUESTED`, và upgrade V7 → V8 liên kết `verifications.reviewed_case_version` với `case_revisions` của đúng hồ sơ.
+- `casefile/VerificationOutboxIT` (4 tests): lưu 1 `CASE_VERIFIED` audit + 1 `PENDING` job cho mỗi approval, chống trùng `event_key`, rollback nguyên tử cùng quyết định, từ chối khác org / khác trạng thái `APPROVED` / thiếu `reviewed_case_version`, và bắt buộc có transaction hiện hành.
+- `casefile/VerificationApiIT` (10 tests): bao phủ `POST /api/cases/{id}/verify`, `/reject`, `/request-changes`; kiểm tra duyệt/từ chối/yêu cầu sửa đúng revision, bắt buộc và làm sạch `reason` cho `/reject` và `/request-changes`, idempotency replay (`200` + `Idempotent-Replayed: true`) và conflict (`409 IDEMPOTENCY_CONFLICT`), chặn tự thẩm định kể cả khi có đồng thời `VOLUNTEER` + `VERIFIER` (`403 FORBIDDEN`), chặn khác tổ chức (`404`), thu hồi membership trước replay (`404`), từ chối stale version (`409`) hoặc bộ bằng chứng thiếu/trùng/đã supersede (`400`), cạnh tranh đồng thời giữa 2 `VERIFIER` (duyệt-duyệt và duyệt-từ chối chỉ commit đúng 1 quyết định), rollback khi lỗi sau khi ghi outbox, và vòng đời tích hợp `request-changes → PATCH + thêm evidence version → resubmit → independent verify`.
+- `casefile/CaseRequestValidationTest` (5 tests): bổ sung kiểm thử chuẩn hóa và giới hạn của `DecisionRequest`.
+
+B06 (11/11/2026) bổ sung kiểm thử campaign draft/publish (P01–P04):
+- `casefile/CampaignApiIT` (15 tests, đặt trong package `casefile` vì kế thừa `AbstractCaseHttpIT` package-private): BR03-P (copy đủ need line/đơn vị/số lượng, `201` + `Location`, replay `201` + `Idempotent-Replayed: true`); BR11-P (publish `200`, case `IN_PROGRESS`, replay publish); BR03-N (case SUBMITTED/REJECTED/CHANGES_REQUESTED, campaign trùng, consent không cho public summary, dispute `OPEN`/`UNDER_REVIEW` chặn còn `RESOLVED` không chặn, `VOLUNTEER`/`VERIFIER` `403`, OA khác org `404`, đổi payload cùng key `409 IDEMPOTENCY_CONFLICT`, case sửa sau khi duyệt và need đổi sau khi tạo draft `409 VERSION_CONFLICT`); BR08-P/N (list loại DRAFT và org `SUSPENDED`, phân trang `page`/`size`, DRAFT chỉ OA sở hữu thấy, payload public không chứa case ID/alias/tiêu đề nội bộ/email/user ID/fixture key/org ID nội bộ); hồi quy thứ tự item với 5 need line. Kiểm tra `CAMPAIGN_*` không tạo `blockchain_jobs`.
+- `campaign/CampaignRequestValidationTest` (4 tests): bắt buộc `caseId`, trim và blank → `null`, biên 160/2000 ký tự.
+- Giới hạn: quy tắc BR-08 về `<`, `>`, `://`, NUL nằm trong `CampaignService` nên chỉ test được qua HTTP; nhánh backfill dữ liệu cũ của V10 chưa được test (schema test luôn rỗng).
+
+B04 tests07/11 (D41/A): `casefile/CaseApiIT`, `EvidenceAccessIT`, `B04MigrationIT` chạy production HTTP + installed PostgreSQL trong schemas riêng của aidbridge_test; guards từ chối dev URL hoặc account khác aidbridge_app. Không clean/drop/provision DB. Coverage BR01/08/09/11, IT09/15: two-line create/read, tenant/role/creator/revocation, consent/public consent/validation, session/CSRF, version/concurrent edit, idempotency same-key/payload/org conflicts, audit-failure rollback, evidence byte/hash/history/access audit/traversal, immutable overwrite rejection và private log markers. B04MigrationIT có clean V6, upgrade-preserve và legacy guard tests. Đây là tests đã viết và compile, chưa ghi Pass cho PostgreSQL khi thiếu env. `CaseRequestValidationTest`/`EvidenceFixtureCatalogTest` kiểm tra DTO constraints, actual resource hashes/bytes và property binding không dùng DB. Latest commands/results tại Task Backlog; [B04 runbook](../architecture/B04_CASE_WORKFLOW.md) chỉ cách chạy IntelliJ. B05 review states trong fixtures là SQL simulation, không B05 API implementation.
+
 Fictional household `Demo Household A`, org `AidBridge Demo Organization`, need food package2 and hygiene kit2; alternate second org; users each own identity plus dual-role negative account. Private evidence markers are synthetic strings used to assert no leak, not real people data. Each test creates isolated IDs; test transaction/snapshots must not obscure separate-thread locking tests.
 
 Results template to append after execution: `Test ID | date | environment/build | command | expected | actual | pass/fail | owner | evidence link | defect/task`. Không đánh dấu Pass/Done trước khi command thực sự chạy. Fuji evidence: actual chain/address/hash/block/log arguments; local passing tests không thay Fuji gate. Không broaden/repeat suites sau khi pass nếu không có change/failure mới.
+
+### Kết quả contract C03 (10/11/2026)
+
+Môi trường: local Hardhat `3.21.2` (EDR), Solidity `0.8.28`, `paris`, optimizer 200; Windows, thư mục `contracts/`. Lệnh: `npm run compile` ("No contracts to compile" — artifact hiện có đã khớp source); `npm test`; `node docs/fixtures/c01/verify-c01.mjs --ethers` (repo root, PASS). Tổng: 44 passing (`ToolchainSmoke.test.ts` 3, `AidRegistry.test.ts` 5, `AidRegistry.negative.test.ts` 36). Kết quả local, không thay Fuji gate.
+
+| Test ID | date | environment/build | command | expected | actual | pass/fail | owner | evidence link | defect/task |
+|---|---|---|---|---|---|---|---|---|---|
+| C01-T01 (SC01/02/03/10, BR12-P) | 10/11/2026 | local Hardhat | `npm test` | 1 CaseVerified, 4 topics, 128 data bytes, golden digest | như kỳ vọng | Pass | Dũng / Khoa review | `contracts/test/AidRegistry.test.ts` | C03 |
+| C01-T02..T06 (SC01/SC02, BR12-N) | 10/11/2026 | local Hardhat | `npm test` | Unknown/admin/inactive/wrong-org/revoked/rotated caller revert trước lookup `eventId`; không đổi state/event | như kỳ vọng | Pass | Dũng / Khoa review | `contracts/test/AidRegistry.negative.test.ts` | C03 |
+| C01-T07, T08 (SC03/SC09) | 10/11/2026 | local Hardhat | `npm test` | Sequence 0 → `InvalidZeroInput`; 2 → `InvalidChainSequence(1,2)`; case đã verified → `CaseAlreadyVerified` | như kỳ vọng | Pass | Dũng / Khoa review | `AidRegistry.negative.test.ts` | C03 |
+| C01-T09, T10, T11 (SC04, BR11-N) | 10/11/2026 | local Hardhat | `npm test` | Replay → `EventAlreadyRecorded`; đổi payload → `EventIdConflict` trước case guards; khác org không có quyền → authorization error; record gốc giữ nguyên | như kỳ vọng | Pass | Dũng / Khoa review | `AidRegistry.negative.test.ts` | C03 |
+| C01-T12 (SC01/SC03/SC10) | 10/11/2026 | local Hardhat | `npm test` | Zero refs/commitment → `InvalidZeroInput`; schema 0/2 → `UnsupportedSchemaVersion`; uint tràn bị ethers encoder chặn, không gửi tx | như kỳ vọng; `orgRef = 0` → `OrganizationNotActive(0x0)` theo D49 | Pass (có deviation) | Dũng / Khoa review | `AidRegistry.negative.test.ts` | C03 – Khoa xác nhận deviation |
+| C01-T13 (SC10/SC11, BR08-P/N) | 10/11/2026 | local Hardhat | `npm test` | ABI chỉ có fixed-size types, không payable/receive/fallback; gửi AVAX revert; calldata/log không chứa PII/URL/salt marker | như kỳ vọng | Pass | Dũng / Khoa review | `AidRegistry.test.ts` | C03 |
+| ABI parity | 10/11/2026 | compiler artifact | so khớp `AidRegistry.json` với `AidRegistry.abi.draft.json` | 4/4 entry khớp | 4/4 khớp | Pass | Dũng / Khoa review | `docs/fixtures/c01/` | C03 → C05 |
+
+Not Run: C01-T14..T17 (C05/C07/C08/C06), Fuji smoke (C04).
+
+## C05 — Bổ sung bằng chứng ngày 11/11/2026
+
+Ghi chú Not Run phía trên là snapshot kết quả C03 ngày 10/11, không phải kết quả hiện hành cho mọi phần việc. C04 đã có deployment/readback/source verification; C05 nay có **CaseVerified thật trên Fuji** ở block60893112, tx `0xc3b02934afb1f29816836fb22146dbc350202d3b2a9e8dbbb19c2fd2e7e8c00f`. Scope **independent contract smoke**, không phải job B05 hoặc backend HTTP/DB end-to-end.
+
+- `node --test contracts/review-tests/c05-proof.test.mjs`: **46/46 PASS**. BR10-P/N và C01-T14 ở mức Node verifier: receipt null/reverted, sai chain/hash/contract/signer/calldata/event/sequence/schema/commitment, removed/noncanonical/log mismatch và getter mismatch đều không được confirmed. Các negative inputs là test doubles, không phải cố tình gửi các giao dịch lỗi lên Fuji.
+- Actual Fuji positive: đúng receipt/event/calldata/canonical block, stored payload digest/case state readback PASS. Raw JSON-RPC `removed=false` được đối chiếu với log ethers, không mặc định trường bị thiếu là false. Chạy lại read-only không ghi proof và nonce latest=pending vẫn1.
+- Compile PASS; Hardhat **61/61 PASS**; C01 static/SHA-256/Keccak/ABI checks và C04 readback PASS. Contract source/ABI không đổi; không cài/nâng dependencies.
+- **NOT RUN / BLOCKED:** job DB B05 thật, Java/TypeScript vector agreement, worker/SQL recovery/concurrency/HTTP audit API/UI integration. Không gán kết quả Node/Fuji độc lập cho các tests IT01/03 hoặc C01-T15/T16. IT13 chỉ được chứng minh ở Node verifier, chưa adapter Java/DB.
+
+Chi tiết lệnh, kết quả, giới hạn và bàn giao: [C05 review](../reviews/C05_FUJI_RECEIPT_REVIEW.md); [machine-readable proof](../fixtures/c05/fuji-case-verified.proof.json). C05 full backlog Blocked, chưa Done; kết quả ngày 11/11 PARTIAL có bằng chứng thật và lý do chưa ghép B05.
+
+### Kết quả backend B06 (11/11/2026)
+
+Môi trường: PostgreSQL local `aidbridge_test`, account `aidbridge_app`, schema riêng mỗi test class (Flyway V1–V10); chạy trong IntelliJ trên Windows. Kết quả do Dũng chạy và xác nhận.
+
+| Test ID | date | environment/build | command | expected | actual | pass/fail | owner | evidence link | defect/task |
+|---|---|---|---|---|---|---|---|---|---|
+| B06-UT `CampaignRequestValidationTest` | 11/11/2026 | JDK 21, Maven offline | `.\mvnw.cmd -o test -Dtest=CampaignRequestValidationTest` | 4 tests pass | 4/4 | Pass | Dũng / Khoa, Minh review | `src/test/java/com/aidbridge/campaign/CampaignRequestValidationTest.java` | B06 |
+| B06-IT `CampaignApiIT` (BR03-P/N, BR08-P/N, BR11-P) | 11/11/2026 | `aidbridge_test`, IntelliJ JUnit | `.\mvnw.cmd -o test -Dtest=CampaignApiIT` | 15 tests pass | 15/15 | Pass | Dũng / Khoa, Minh review | `src/test/java/com/aidbridge/casefile/CampaignApiIT.java` | B06; trước khi pass đã phát hiện và sửa 2 lỗi trong `CampaignService` (off-by-one reviewed version; so sánh item phụ thuộc thứ tự gây `409` ngẫu nhiên) |

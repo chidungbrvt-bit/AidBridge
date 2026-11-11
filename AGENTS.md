@@ -4,9 +4,13 @@ Ngày tạo: 03/11/2026. Owner duy trì: Backend Engineer. Status: documentation
 
 ## Objective và nguồn sự thật
 
-Deliver một workflow hỗ trợ nhu yếu phẩm có kiểm soát và audit trên Avalanche Fuji trước 25/11/2026. Người thụ hưởng không cần thiết bị hoặc wallet. Đọc `docs/planning/MASTER_PLAN.md`, `MVP_SCOPE.md`, `DECISION_LOG.md` và task liên quan trước khi thay đổi. PDF nguồn tại `docs/source/AidBridge_Product_Blueprint_v1.1_Complete.pdf` là product source of truth; user instructions và các lựa chọn được xác nhận trong Decision Log có ưu tiên hiện hành.
+Deliver một workflow hỗ trợ nhu yếu phẩm có kiểm soát và audit trên Avalanche Fuji: đủ P0 trước hoặc trong18/11/2026, demo ổn định20/11, video/hồ sơ sẵn sàng22/11;25/11 chỉ là hạn nộp ngoài cùng. Người thụ hưởng không cần thiết bị hoặc wallet. Đọc `docs/planning/MASTER_PLAN.md`, `MVP_SCOPE.md`, `DECISION_LOG.md` và task liên quan trước khi thay đổi. PDF nguồn tại `docs/source/AidBridge_Product_Blueprint_v1.1_Complete.pdf` là product source of truth; user instructions và các lựa chọn được xác nhận trong Decision Log có ưu tiên hiện hành.
 
 Không mô tả thiết kế là tính năng đã chạy. Phân biệt SOURCE, USER_CONFIRMED, PROPOSED, ASSUMPTION và OPEN. Hiện chỉ documentation preparation được phê duyệt. Chưa có quyền scaffold, cài dependencies, init Git, chạy containers, tạo remote, commit/push, deploy hoặc mua dịch vụ. Chỉ bắt đầu các việc đó khi có yêu cầu tương ứng của người dùng; authorization đã có không cần hỏi lại.
+
+## Thành viên và phối hợp
+
+Dũng = B/Backend; Khoa = C/Blockchain & Integration; Minh = F/Frontend & Product. Dũng và Khoa cùng làm integration theo TEAM_RESPONSIBILITIES: Dũng nghiệp vụ/SQL/audit/outbox/REST và hỗ trợ Java; Khoa contract/Fuji/ABI/events/signing/nonce/receipt/log; Minh UI/E2E. Không giao mọi đoạn Java liên quan blockchain cho một mình Khoa. Giữ một primary owner/task, ghi rõ phần/người/giờ hỗ trợ và không double-count hoặc tự cộng việc vào lịch kín. Hỗ trợ sâu hơn dùng actual saved time hoặc điều chỉnh capacity trước. Chia việc không phải coding/deploy authorization mới.
 
 ## Approved MVP boundaries
 
@@ -22,6 +26,7 @@ Modular monolith: Next.js/TypeScript/Tailwind -> Spring Boot/Spring Security -> 
 
 - `backend`: `com.aidbridge.auth`, `organization`, `casefile`, `verification`, `campaign`, `contribution`, `delivery`, `audit`, `blockchain`, `shared`.
 - Mỗi feature chứa controller/service/repository/entity/DTO cần dùng. Không global packages gom mọi DTO/controllers/services, không demo package trong `src/main`.
+- Repository của entity dùng Spring Data `JpaRepository` theo D45. Service điều phối nghiệp vụ và transaction. Khóa idempotency dùng native query của JPA vì cần cơ chế riêng của PostgreSQL. Test tích hợp có thể dùng JDBC để dựng và kiểm tra dữ liệu.
 - Controller chỉ xử lý HTTP; service thực thi ownership, state, identity checks và transaction boundary; repository luôn query theo organization khi resource private.
 - `frontend`: App Router; components theo feature; một API client; không business rule chỉ tồn tại trong UI.
 - `contracts`: một registry không upgradeable, reusable authorization từ OpenZeppelin; không tự viết cryptography.
@@ -52,7 +57,7 @@ Trước khi Done: expected behavior + DB effects + permission rejection + error
 
 ## Task progress và thay đổi kiến trúc
 
-Chỉ làm approved task; đọc dependencies và acceptance trước khi sửa. Cập nhật `TASK_BACKLOG.md` theo Not Started -> In Progress -> In Review -> Testing -> Done; Blocked phải có reason/owner/next action. Record test command, result, artifact/transaction evidence, actual effort và ngày hoàn thành; roadmap dùng dữ liệu này để điều chỉnh.
+Chỉ làm approved task; đọc dependencies và acceptance trước khi sửa. Xong task sớm thì handoff/pull task tiếp theo đã đủ dependencies ngay, không đợi ngày trong roadmap. Khi blocked, hỗ trợ critical path/review/tests thay vì thêm scope. Giữ56h task+8h reserve/người với phân bổ dồn giờ đã được user chọn tại D27; không giảm estimates/quality để tạo cảm giác hoàn thành nhanh. Cập nhật `TASK_BACKLOG.md` theo Not Started -> In Progress -> In Review -> Testing -> Done; Blocked phải có reason/owner/next action. Record test command, result, artifact/transaction evidence, actual effort và ngày hoàn thành; roadmap dùng dữ liệu này để điều chỉnh.
 
 Một primary owner/task; support và reviewer không thay owner. Không tự sửa estimate/date để che trễ. Khi nguồn task chưa được phê duyệt coding, chỉ làm documentation/review đã được yêu cầu.
 

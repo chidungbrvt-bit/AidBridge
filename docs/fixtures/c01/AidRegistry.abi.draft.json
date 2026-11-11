@@ -1,0 +1,146 @@
+[
+  {
+    "type": "function",
+    "name": "recordCaseVerification",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      {
+        "name": "orgRef",
+        "type": "bytes32"
+      },
+      {
+        "name": "caseRef",
+        "type": "bytes32"
+      },
+      {
+        "name": "eventId",
+        "type": "bytes32"
+      },
+      {
+        "name": "chainSequence",
+        "type": "uint64"
+      },
+      {
+        "name": "evidenceCommitment",
+        "type": "bytes32"
+      },
+      {
+        "name": "schemaVersion",
+        "type": "uint16"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "event",
+    "name": "CaseVerified",
+    "anonymous": false,
+    "inputs": [
+      {
+        "name": "orgRef",
+        "type": "bytes32",
+        "indexed": true
+      },
+      {
+        "name": "caseRef",
+        "type": "bytes32",
+        "indexed": true
+      },
+      {
+        "name": "eventId",
+        "type": "bytes32",
+        "indexed": true
+      },
+      {
+        "name": "chainSequence",
+        "type": "uint64",
+        "indexed": false
+      },
+      {
+        "name": "evidenceCommitment",
+        "type": "bytes32",
+        "indexed": false
+      },
+      {
+        "name": "schemaVersion",
+        "type": "uint16",
+        "indexed": false
+      },
+      {
+        "name": "timestamp",
+        "type": "uint64",
+        "indexed": false
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getEventRecord",
+    "stateMutability": "view",
+    "inputs": [
+      {
+        "name": "eventId",
+        "type": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "exists",
+        "type": "bool"
+      },
+      {
+        "name": "operation",
+        "type": "bytes4"
+      },
+      {
+        "name": "orgRef",
+        "type": "bytes32"
+      },
+      {
+        "name": "caseRef",
+        "type": "bytes32"
+      },
+      {
+        "name": "chainSequence",
+        "type": "uint64"
+      },
+      {
+        "name": "evidenceCommitment",
+        "type": "bytes32"
+      },
+      {
+        "name": "schemaVersion",
+        "type": "uint16"
+      },
+      {
+        "name": "payloadDigest",
+        "type": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getCaseSummary",
+    "stateMutability": "view",
+    "inputs": [
+      {
+        "name": "caseRef",
+        "type": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "verified",
+        "type": "bool"
+      },
+      {
+        "name": "openDisputeCount",
+        "type": "uint256"
+      },
+      {
+        "name": "lastChainSequence",
+        "type": "uint64"
+      }
+    ]
+  }
+]

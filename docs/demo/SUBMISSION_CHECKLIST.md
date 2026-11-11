@@ -1,6 +1,6 @@
 # Submission Checklist
 
-Ngày tạo: 03/11/2026. Owner: F. Status: future execution checklist. **Unchecked application items are intentional: implementation/tests/deployment have not started.** Date target25/11/2026; official submission time/timezone/platform rules must be verified.
+Ngày tạo: 03/11/2026. Owner: F. Status: future execution checklist. **Unchecked application items are intentional: implementation/tests/deployment have not started.** Internal targets: P0 complete18/11, stable20/11, package ready22/11.25/11/2026 is external submission limit only; official time/timezone/platform rules must be verified.
 
 ## Planning workspace
 
@@ -23,6 +23,13 @@ These planning checks may be marked complete only after actual filesystem/docume
 - [ ]Toolchain patches compatible and pinning plan accepted.
 - [ ]Demo account/key custodians chosen; no shared staff account.
 - [ ]NGO interview results or explicit unvalidated assumptions recorded.
+
+## Early-delivery schedule
+
+- [ ]18/11 all P0 integrated with feature-level tests/reviews, actual Fuji milestone flow and public first smoke.
+- [ ]20/11 mandatory full regression/security/failure/E2E and public demo stable, no critical defects.
+- [ ]22/11 video/pitch/runbooks/README/package complete and rehearsed.
+- [ ]23-25/11 kept for actual contingencies/submission only; pull ready tasks earlier whenever possible.
 
 ## Functional / integrity gate
 

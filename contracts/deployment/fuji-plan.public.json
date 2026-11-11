@@ -1,0 +1,10 @@
+{
+  "chainId": 43113,
+  "sourceCommit": "61cc738385e8b374d38996e8a725a9da6fa7f12b",
+  "orgRef": "0x2395bfe7f91467046a39bd8440313164c6442839b2be6698832b7b4941b80a46",
+  "creationHash": "0x595854a953b927a241515105022d9aa15f4ebb3eee41daa482d9e59c3f5642fb",
+  "actions": [
+    "deploy AidRegistry(admin=deployer)",
+    "registerOrganization(orgRef, relayer)"
+  ]
+}

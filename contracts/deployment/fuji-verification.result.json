@@ -1,0 +1,15 @@
+{
+  "status": "VERIFIED",
+  "match": "EXACT_MATCH",
+  "chainId": 43113,
+  "contract": "0x015D941c679b0c402c8262BE237adAD36cEf6726",
+  "compilerVersion": "v0.8.28+commit.7893614a",
+  "sourceParity": "PASS",
+  "bytecodeAffectingSettingsParity": "PASS",
+  "outputSelectionNote": "Explorer normalizes outputSelection to target contract; original submitted Standard JSON retained unchanged. Output selection does not change deployed semantics.",
+  "abiParity": "PASS",
+  "checkedUtc": "2026-11-11T10:27:06.143976+00:00",
+  "explorerUrl": "https://testnet.snowtrace.io/address/0x015D941c679b0c402c8262BE237adAD36cEf6726/contract/43113/code",
+  "inputSha256": "f6168074eb8fef8c8e8e23acec65ca6f1e3979d05034b161b0bcc8daa91ede97",
+  "uiObserved": "Contract Source Code Verified (Exact Match), optimizer 200, evm paris; initialAdmin matches manifest"
+}

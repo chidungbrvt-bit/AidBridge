@@ -1,0 +1,3 @@
+SIMULATED DATA ONLY
+Demo Household A requests food packages and hygiene kits.
+Synthetic private marker: AIDBRIDGE_PRIVATE_FIXTURE_V1.

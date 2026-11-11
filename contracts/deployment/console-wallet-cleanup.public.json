@@ -1,0 +1,12 @@
+{
+  "wallet": "0x59458713c6a0DCEB4718f8fe707e564D0E882172",
+  "deletionStatus": "NOT_DELETED",
+  "checkedUtc": "2026-11-11T10:24:19.465003+00:00",
+  "scope": "Fuji C/P/X; intermediate created only for this session",
+  "balanceWei": "0",
+  "latestNonce": 2,
+  "pendingNonce": 2,
+  "assetInventory": "INCOMPLETE",
+  "safeToDelete": false,
+  "reason": "C native balance=0, latest=pending nonce=2 checked again. Public-key recovery cross-check did not reproduce the sender address, so derived X/P addresses must not be trusted; full asset inventory remains unverified. Preserve wallet; no keys read."
+}

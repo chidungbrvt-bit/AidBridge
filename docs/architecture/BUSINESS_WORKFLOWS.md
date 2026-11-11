@@ -1,10 +1,10 @@
 # Business Workflows
 
-Ngày tạo: 03/11/2026. Owner: B. Status: proposed states/transitions. SOURCE bắt buộc: PDF pp.5-8,13-16,20. Các state ngoài PLEDGED/RECEIVED/DELIVERED/CONFIRMED và SUBMITTED/COMPLETED là thiết kế đề xuất, không phải schema đã có.
+Ngày tạo: 03/11/2026. Cập nhật:04/11/2026. Owner: B. Status: baseline thống nhất, In Review theo [B01](B01_BASELINE.md). SOURCE bắt buộc: PDF pp.5-8,13-16,20. State diagrams là target behavior; không coi placeholders V2–V5 là schema đã có.
 
 ## Actors, ownership và invariants
 
-Abbreviations: FV=FIELD_VOLUNTEER, CV=CASE_VERIFIER, OA=ORGANIZATION_ADMIN, DC=DELIVERY_CONFIRMER, PA=PLATFORM_ADMIN. Tất cả organization actors cần active membership ở owning org. PA không bypass BR-02/06 hoặc đọc PII mặc định. Donor chỉ mutation contribution của mình; public reads qua sanitized projection.
+Abbreviations: FV=VOLUNTEER, CV=VERIFIER, OA=ORG_ADMIN, DC=DELIVERY_CONFIRMER, PA=PLATFORM_ADMIN. OA/FV/CV/DC là membership roles đúng tên CHECK trong V1; PA là platform role. Tất cả organization actors cần user.status=ACTIVE và membership.status=ACTIVE ở owning org. Donor cần account ACTIVE và explicit donorEnabled grant; chỉ mutation contribution của mình. donor_enabled chưa có trong V1/User, cần forward migration/mapping trước donor endpoints. PA không bypass donor grant, BR-02/06 hoặc đọc PII mặc định; public reads qua sanitized projection.
 
 Organization phải APPROVED cho operational writes. SUSPENDED org không nhận pledge/mutation mới và được loại khỏi public browse; historical public audit vẫn có thể đọc theo sanitized policy. Platform Admin suspension phải phối hợp revoke relayer; backend guard chặn trước cả khi chain revocation chưa hoàn tất.
 
@@ -30,6 +30,8 @@ Mỗi item: `0 <= confirmed <= delivered <= received <= activePledged <= target`
 Lock order chung: case -> campaign -> campaign items sorted UUID -> contribution/delivery rows. Dùng cùng order cho pledge/receipt/cancel/delivery/confirm/close/dispute. Không dùng read-then-write không lock cho totals.
 
 ## Aid Case
+
+B04/B05 implementation09/11/2026 theo D41–D45: create luôn SUBMITTED; patch/evidence update chỉ creator FV ở SUBMITTED/CHANGES_REQUESTED với expectedVersion; resubmit chỉ CHANGES_REQUESTED sau revision mới hơn latest request-changes review và đủ consent/needs/evidence. Old need lines/links được retire, old evidence/case snapshots giữ nguyên. V6 chuẩn hóa case status, V7 chuẩn hóa verification decision theo D42 và V8 liên kết `verifications.reviewed_case_version` với `case_revisions`. `VerificationService` thực thi `verify`, `reject`, `request-changes` với khóa dòng case, kiểm tra `VERIFIER` độc lập (`reviewerId != creatorId`), kiểm tra tập bằng chứng hiện hành, ghi local audit cho `CASE_REJECTED`/`CASE_CHANGES_REQUESTED` và ghi outbox `CASE_VERIFIED` + `PENDING` job cho approval. Xem [B04/B05 runbook](B04_CASE_WORKFLOW.md).
 
 ```mermaid
 stateDiagram-v2

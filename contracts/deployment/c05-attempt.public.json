@@ -1,0 +1,31 @@
+{
+  "scope": "INDEPENDENT_CONTRACT_SMOKE_NOT_B05_JOB",
+  "backendJobId": null,
+  "preparedAt": "2026-11-11T13:24:37.391Z",
+  "state": "PREPARED",
+  "expected": {
+    "chainId": 43113,
+    "contractAddress": "0x015D941c679b0c402c8262BE237adAD36cEf6726",
+    "relayer": "0x559994839f19F40ac704918C3FF1a913AC02dC01",
+    "nonce": 0,
+    "orgRef": "0x2395bfe7f91467046a39bd8440313164c6442839b2be6698832b7b4941b80a46",
+    "caseRef": "0x9667486a2b4613986fab8955798abe2ac28f337549e622c29d2058d4c6b64494",
+    "eventId": "0x13c87e35c29891a05f4daf06fca618b2647cb486fe4edc7a7ec336f6d84addc9",
+    "chainSequence": "1",
+    "schemaVersion": 1,
+    "evidenceCommitment": "0x6d48585ce429c7129e2ef8f24ef1bf84fdd440d7123b09f0a31ab907fbb8cac8",
+    "transactionHash": "0xc3b02934afb1f29816836fb22146dbc350202d3b2a9e8dbbb19c2fd2e7e8c00f"
+  },
+  "request": {
+    "type": 0,
+    "chainId": 43113,
+    "nonce": 0,
+    "to": "0x015D941c679b0c402c8262BE237adAD36cEf6726",
+    "data": "0x1bd1fadf2395bfe7f91467046a39bd8440313164c6442839b2be6698832b7b4941b80a469667486a2b4613986fab8955798abe2ac28f337549e622c29d2058d4c6b6449413c87e35c29891a05f4daf06fca618b2647cb486fe4edc7a7ec336f6d84addc900000000000000000000000000000000000000000000000000000000000000016d48585ce429c7129e2ef8f24ef1bf84fdd440d7123b09f0a31ab907fbb8cac80000000000000000000000000000000000000000000000000000000000000001",
+    "value": 0,
+    "gasLimit": "312821",
+    "gasPrice": "1000000000"
+  },
+  "gasEstimate": "260684",
+  "balanceBeforeWei": "149958000000000000"
+}

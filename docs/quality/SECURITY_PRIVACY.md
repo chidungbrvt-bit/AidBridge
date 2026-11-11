@@ -10,6 +10,8 @@ Boundaries: browser->same-origin API; API->org-scoped DB; API->private fixtures;
 
 ## Controls và evidence cần kiểm tra
 
+B04 update07/11: scoped case/evidence services kiểm tra lại ACTIVE user/membership, APPROVED org, creator/action role; platform admin không tự có quyền riêng tư. Server fixture keys được grant theo org, default deny; không resolve caller path/URL. Content có attachment/no-store/nosniff, hash/size check và access audit; old versions/snapshots append-only. V6 không tự suy diễn public consent từ dữ liệu legacy. Đây là code controls đã thêm, chưa là PostgreSQL/HTTP acceptance hoặc human security review. Tests/privacy checks và cách cấp fixture grants tại [B04 runbook](../architecture/B04_CASE_WORKFLOW.md).
+
 | Area | P0 technical control | Test / evidence | Future operational requirement |
 |---|---|---|---|
 | Authentication | Separate seeded accounts; BCrypt via Spring; disabled account; generic login error; bounded login attempts | Login/CSRF/session tests, secrets scan | Identity verification, offboarding, password recovery trước real pilot |

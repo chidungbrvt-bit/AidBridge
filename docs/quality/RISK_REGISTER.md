@@ -16,12 +16,12 @@ Ngày tạo: 03/11/2026. Owner: F; each risk owner below. Status: prospective ri
 | R10 | FE/BE contract drift / H/M | Frequent ad hoc response field changes | DTO/error examples and mocks agreed05/11 | Update contract+mocks+tests together; integration checkpoint | B/F |
 | R11 | Deployment/cost/eligibility / M/H | Spring OOM, card requirement, projected cost>$20 | Early budget check, one replica/project, usage controls | Local/video fallback, no overspend without user instruction | F |
 | R12 | One member behind / H/H | Critical task blocked>1 daily checkpoint | Single owner + support/reviewer, small tasks | Reassign support work; freeze unrelated tasks, pair critical path | All, B coordinates |
-| R13 | Incomplete demo / M/H | 22/11 cannot run all roles end-to-end | Script early, vertical slice11/11 | Minimum Demo, record gaps honestly, stable build/video | F |
+| R13 | Incomplete demo / M/H | 18/11 cannot run all roles end-to-end | Script early, vertical slice09/11 | Minimum Demo, record gaps honestly, stable build/video | F |
 | R14 | Insufficient testing / H/H | Feature Done only means code compiles | Positive/negative tests within every task | Cut polish/features outside P0, preserve BR and regression gates | C |
 | R15 | Overengineering / M/H | Generic framework/infra before workflow | Modular monolith, no queue/warehouse | Delete proposal from backlog before implementation; plain services | B |
 | R16 | Quantity/concurrency bugs / H/H | Multi-item progress totals inconsistent | Per-line constraints, shared lock order, PostgreSQL tests | Freeze goods writes, reconcile records, no manual data fabrication | B |
 | R17 | Private-key compromise / L/H | Key in logs/git or unknown chain events | Dedicated test keys, separate admin, secrets scan | Revoke/rotate/suspend/reconcile; preserve incident history | C |
-| R18 | Time/estimates too optimistic / H/H | Burned buffer before18/11 | 56h task +8h reserve/person, JIT learning included | Reforecast actual remaining hours; Minimum Demo instead of false Target claim | F |
+| R18 | Time/estimates too optimistic / H/H | Burned buffer before16/11 | 56h task +8h reserve/person, JIT learning included | Reforecast actual remaining hours; Minimum Demo instead of false Target claim | F |
 | R19 | No-show donor/no confirmer / M/M | Pledge stale, delivery waiting review | Distinct statuses, actionable pending queue | Manual contact; cancel outstanding via donor; no auto-complete | B/F |
 | R20 | Competition requirements unknown / M/H | No official submission URL/time by06/11 | Owner verifies organizer instructions | Mark planning deadline tentative; prepare core assets early | F |
 | R21 | Insider collusion / M/H | Same small group controls all reviews | Separation, append-only audit, disputes | Explicit trust limitation; real pilot independent sampling/governance | F |
@@ -30,7 +30,7 @@ Ngày tạo: 03/11/2026. Owner: F; each risk owner below. Status: prospective ri
 
 ```mermaid
 flowchart TD
-  A[Daily actual progress] --> B{Vertical slice passed by 11/11?}
+  A[Daily actual progress] --> B{Vertical slice passed by 09/11?}
   B -- No --> C[Freeze new screens; all owners unblock create/verify/Fuji/audit]
   B -- Yes --> D{Delay at least 3 days?}
   C --> D
@@ -46,7 +46,7 @@ flowchart TD
   J -- Yes --> L[Stabilize, rehearse, record actual evidence]
 ```
 
-Nếu blockchain unstable18/11: freeze enhancements, use one organization/signer, one sequential worker, minimal milestone set for Minimum Demo; Target MVP thiếu anchors phải được ghi rõ. Không bỏ durable IDs, authorization, receipt checks hoặc separation guards. Trước25/11 có thể trình bày actual historical verification tx và live pending action; phân biệt trạng thái rõ.
+Nếu blockchain unstable16/11: freeze enhancements, use one organization/signer, one sequential worker, minimal milestone set for Minimum Demo; Target MVP thiếu anchors phải được ghi rõ. Không bỏ durable IDs, authorization, receipt checks hoặc separation guards. Trước25/11 có thể trình bày actual historical verification tx và live pending action; phân biệt trạng thái rõ.
 
 ## Invariants không được cắt
 
@@ -55,3 +55,11 @@ Distinct creator/verifier và delivery recorder/confirmer; case verified trướ
 ## Escalation và monitoring
 
 Daily standup ghi blocked task/reason/next action. Critical dependency blocked>1 ngày hoặc buffer consumption>50% trước18/11 -> checkpoint cả nhóm, assign helper và scope cut. Authentication/privacy/false-confirmation bug -> release blocker ngay, không chờ threshold. Forecast budget>$20 -> dừng purchase/scale và review; không có authorization tự tăng budget. Ngoài nhóm không tự gửi messages khi chưa được user yêu cầu.
+
+## Early-completion escalation
+
+D26/D27: P0 feature gate18/11, stable20/11, package22/11. Critical dependency blocked one checkpoint ->pair immediately, không chờ ngày cuối.23-25/11 dự phòng thật, không lịch coding mặc định. Nếu dùng fallback phải báo forecast và gap minh bạch, không âm thầm dời mọi task về25/11. Full estimates/multi-item/BR/quality giữ nguyên.
+
+## F01 - bằng chứng validation ngày 10/11/2026
+
+R01 vẫn OPEN: chưa có danh sách ứng viên thật/lịch hẹn/ghi chú consent được cung cấp trong repo; không có liên hệ bên ngoài trong phiên F01. Owner thực hiện research: Khoa/nhóm; next action: xác định 2-3 người có kinh nghiệm và xin consent trước ghi notes. R02 vẫn UNVALIDATED: scenario/assumptions không phải phản hồi người dùng; chưa claim adoption, partner hoặc impact. [F01 Product/Validation](../product/validation/F01_DEMO_AND_ASSUMPTIONS.md) ghi 10 giả định, tác động và cách kiểm chứng. Không thay probability/impact, owner lịch sử hoặc đóng risk vì hoàn thành tài liệu.

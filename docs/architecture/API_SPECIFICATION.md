@@ -1,8 +1,10 @@
 # API Specification
 
-Ngày tạo: 03/11/2026. Owner: B, reviewer F/C. Status: contract proposal, chưa có endpoints chạy. Routes gốc từ PDF p.13 được giữ; routes bổ sung cần thiết cho receipt, retries, changes, disputes và multi-item UI được ghi rõ.
+Ngày tạo: 03/11/2026. Cập nhật:07/11/2026. Owner: B, reviewer F/C. Status: contract baseline **In Review** theo [B01](B01_BASELINE.md); auth endpoints và error handler đã có tests, runtime evidence và review gates được phân biệt bên dưới. Routes gốc từ PDF p.13 được giữ; routes bổ sung cần thiết cho receipt, retries, changes, disputes và multi-item UI được ghi rõ.
 
 ## Common contract
+
+B04/B05 update09/11/2026 (D41–D45): case/evidence endpoints C01–C05/E01–E03 và verification endpoints V01–V03 (`POST /api/cases/{id}/verify`, `/reject`, `/request-changes`) đã có controllers/services/DTOs và migrations V6–V8. [B04/B05 implementation/runbook](B04_CASE_WORKFLOW.md) liệt kê projection hiện có, fixture grants, idempotency, outbox và C05 handoff. Goods/chain endpoints còn là target contract. User đã báo B02/B03 hoàn tất và báo các bộ test PostgreSQL của B04/B05 (`B04MigrationIT`, `CaseApiIT`, `EvidenceAccessIT`, `VerificationOutboxIT`, `VerificationApiIT`) pass trên IntelliJ.
 
 Base `/api`; JSON UTF-8; fields camelCase; UUID strings; ISO-8601 UTC timestamps; quantities integer 1..1,000,000. List pagination `page=0&size=20`, max100, stable sort `(createdAt,id)`; response `{items,page,size,totalElements}`. Resource IDs ngoài quyền trả 404, không reveal tồn tại; action role thiếu trên resource đã được phép đọc trả 403. Body không cho actorId/org override.
 
@@ -29,23 +31,35 @@ Status/code: 400 VALIDATION_ERROR; 401 UNAUTHENTICATED/INVALID_CREDENTIALS; 403 
 
 CSRF required cho mọi browser mutation kể cả login; GET csrf trả token/headerName, no-store. Cookie JSESSIONID HttpOnly/Secure production/SameSite=Lax; session rotate login, invalidate logout, idle timeout30m. Frontend proxy pass cookies + CSRF header, không log chúng. FE clear private state khi logout/401. Same-origin production; CORS mặc định deny external origins.
 
+Implementation status07/11: production csrf/login/me/logout đã có. User báo auth integration bản mới pass hết và review/HTTPS checks đã xong trước khi giao B04; đây là user-reported completion của B02/B03. Tool reports còn bản AuthApiIntegrationTest16 methods SKIPPED do thiếu env, không dùng nó để phủ nhận báo cáo user hoặc tự ghi agent đã chạy18 invocations. B04 đã thêm current scoped membership/staff checks và protected case/evidence endpoints; CaseApiIT/EvidenceAccessIT dùng actual HTTP nhưng PostgreSQL execution còn pending. B04 regression đã chạy21 SecurityConfigTest +12 GlobalExceptionHandlerTest pass. Các test probes dùng TestComponent, không vào application scan.
+
+Theo D40, login giữ AuthResponse(user), /me trả MeResponse. GlobalExceptionHandler đã chuẩn hóa error envelope/fieldErrors, concurrency409 và database-unavailable503 an toàn. Pending của lượt B04 là PostgreSQL/HTTP regression sau thay đổi và cross-owner acceptance B04; không restart B02/B03 đã được user báo hoàn tất. B01 vẫn In Review.
+
+JSON login gọi `AuthenticationManager.authenticate`, sau đó `SessionAuthenticationStrategy.onAuthentication` để đổi session ID/xóa CSRF cũ; tạo SecurityContext rồi lưu qua bean `SecurityContextRepository`. Trả AuthResponse `{user:UserResponse}`; frontend lấy memberships/quyền hiện tại qua GET /api/auth/me trả MeResponse. Credentials/account state không hợp lệ trả generic401 `INVALID_CREDENTIALS`; frontend lấy CSRF mới sau login/logout. Controller phải đặt no-store cho csrf/me/login. Các yêu cầu lưu context và gọi strategy khi tự xử lý login được giải thích trong [Spring Security session management](https://docs.spring.io/spring-security/reference/7.0/servlet/authentication/session-management.html).
+
+`application.properties` đặt session timeout30m, cookie-only tracking, JSESSIONID HttpOnly/SameSite=Lax/Secure mặc định và health details không public. Chạy local bằng HTTP: đặt environment `SESSION_COOKIE_SECURE=false` trước khi khởi động backend (PowerShell: `$env:SESSION_COOKIE_SECURE = "false"`); môi trường HTTPS giữ true. Chưa kiểm thử cookie flags bằng browser/embedded servlet container hoặc proxy thật trong lượt kiểm thử MockMvc này. Không đổi tên session cookie riêng lẻ vì logout đang xóa JSESSIONID.
+
 Business POST/PATCH ngoài login/logout yêu cầu `Idempotency-Key` 16..128 chars opaque UUID recommended. Scope `(actorId, operation including resourceId, key)`; digest canonical validated payload. Trong transaction claim unique key, execute, persist resource response. Concurrent same request đợi commit rồi replay; rollback không để permanent IN_PROGRESS row. Same key/different digest 409; request retry same key trả original status/body/Location, thêm `Idempotent-Replayed: true`. Retain keys suốt demo lifetime. DB unknown outcome: frontend retry cùng key, không tạo key mới. Case PATCH/resubmit/review actions dùng `expectedVersion` của case; optimistic mismatch 409. Current actor/ownership được kiểm tra cả khi replay để không rò data sau revoke.
 
 Bất kỳ command có nhiều item: unique item IDs, >=1 line, không zero/negative, no duplicate line, atomic all-or-nothing. Thời điểm do actor ghi (`receivedAt`, `handedOverAt`) không tương lai quá5 phút và không trước case/campaign tương ứng; server `recordedAt` là audit time độc lập. Text trim, length limits, không nhận HTML.
 
 ## DTO dictionary
 
+Implementation B04 hiện trả CaseDetailResponse với current needs/consent/evidence, creator, private/public case fields và version/timestamps; reviewHistory/campaign/dispute/goods projections trong target dictionary thuộc task sau, chưa được thêm vào response hiện tại. PATCH không nhận actor/org/creator reassignment. Public fields có thể clear bằng empty string; null/omitted giữ nguyên. Sau V7 (D42), resubmit cần revision mới hơn `verified_at` của decision `CHANGES_REQUESTED` gần nhất. B05 đã triển khai V01–V03 trả `DecisionResponse` (`blockchainStatus = "PENDING_ON_CHAIN"` cho `verify` và `"NOT_APPLICABLE"` cho `reject`/`request-changes`).
+
 | DTO | Fields và visibility |
 |---|---|
-| LoginRequest | email:string<=254, password:string; không log/persist request |
-| MeResponse | userId, displayName, donorEnabled, platformAdmin, memberships[{organizationId,roles,active}] |
-| CreateOrganizationRequest | name<=160, relayerAddress?:EVM address; server random publicRef; demo admin provisioning only |
-| OrganizationResponse | id,name,status,rolesOfCurrentUser; relayer public address khi admin, no secrets |
+| LoginRequest | email:string<=255, password:string; không log/persist request |
+| UserResponse | id,fullName,email,status:ACTIVE/DISABLED,platformRole:USER/PLATFORM_ADMIN,createdAt; DTO Java đã có, chỉ dùng authorized account responses, không passwordHash |
+| AuthResponse | user:UserResponse; response login dùng session cookie; không accessToken/tokenType/expiresIn hoặc passwordHash; D40 |
+| MeResponse | userId,fullName,status,platformRole,donorEnabled,memberships[{organizationId,roles,status}]; DTO auth đã có; chỉ trả memberships ACTIVE trong org APPROVED; roles ORG_ADMIN/VOLUNTEER/VERIFIER/DELIVERY_CONFIRMER |
+| CreateOrganizationRequest | name<=200,description?:<=2000,relayerAddress?:EVM address; server random publicRef; demo admin provisioning only, không public onboarding |
+| OrganizationResponse | id,name,description,status:PENDING/APPROVED/SUSPENDED,rolesOfCurrentUser; relayer/publicRef chỉ khi đã có extension data và authorization, no secrets |
 | NeedInput | name<=120, unit<=40, quantity:int; no duplicate(name,unit); 1..20 need lines/case |
 | ConsentInput | basis:CONSENT/REPRESENTATIVE, scope<=200, capturedAt, publicSummaryAllowed:boolean; simulated record |
 | CreateCaseRequest | organizationId (chỉ chọn active membership), beneficiaryAlias<=120, approximateArea<=160, internalTitle<=160, publicTitle<=160?, publicSummary<=2000?, priority:NORMAL/URGENT, consent:ConsentInput, needs:NeedInput[], evidenceFixtureKeys:string[1..10], supersedesCaseId?:UUID cùng org |
 | PatchCaseRequest | expectedVersion, internalTitle?, publicTitle?, publicSummary?, approximateArea?, priority?, needs?:NeedInput[]; replace needs chỉ khi editable; evidence qua endpoint riêng |
-| CaseDetailResponse | id,organizationId,creator{id,displayName},status,version,needs[{id,name,unit,quantity}],consent summary, evidenceVersions[],reviewHistory[],campaignId?,disputeSummary,goodsTotals,createdAt; internal only |
+| CaseDetailResponse | id,organizationId,creator{id,fullName},status,version,needs[{id,name,unit,quantity}],consent summary, evidenceVersions[],reviewHistory[],campaignId?,disputeSummary,goodsTotals,createdAt; internal only |
 | DecisionRequest | expectedVersion, reason?:<=2000, reviewedEvidenceVersionIds:UUID[]; reason required reject/request-changes; approval phải exact current selected versions |
 | DecisionResponse | verificationId,caseId,decision,caseStatus,caseVersion,reviewerId,reviewedAt,auditEventId,blockchainStatus |
 | EvidenceVersionRequest | expectedCaseVersion,evidenceFileId?:UUID,fixtureKey:allowlisted key,supersedesVersionId?:UUID; new file nếu no fileId; versionNo server assigned |
@@ -68,6 +82,8 @@ Bất kỳ command có nhiều item: unique item IDs, >=1 line, không zero/nega
 
 Public and internal responses dùng DTO classes khác nhau; public timeline không trả original evidence digest/version keys nếu có thể link file. Commitment response thuộc donor; staff trong org có receipt-related projection. Không trả historical sensitive HTTP request body từ idempotency table.
 
+MeResponse.userId ánh xạ users.id; fullName/status/platformRole theo V1 hiện có. Không dùng displayName/platformAdmin hoặc membership.active boolean làm nguồn quyền song song. donorEnabled giữ explicit donor capability theo thiết kế trước, mặc định false khi chưa được cấp; cần donor_enabled forward migration + mapping trước khi bật contribution endpoints, không lấy USER/PLATFORM_ADMIN thay donor grant. GlobalExceptionHandler trả đủ type/title/status/detail/instance/code/traceId, no-store và fieldErrors array `{field,code}` khi validation thất bại. Không echo rejected values, parser messages hoặc exception details. Các lỗi framework400/405/406/409/413/415 cũng được chuẩn hóa; generic500 dùng INTERNAL_SERVER_ERROR.11 MockMvc tests đã pass; PostgreSQL integration bổ sung cần rerun.
+
 ## Endpoint specification
 
 Abbreviations: FV/CV/OA/DC/PA như Business Workflows; Auth=enabled authenticated account. Common validation/errors/idempotency áp dụng trừ chỗ nêu khác. `local` nghĩa audit không cần chain job, không phải mutation không audit. Các endpoint bổ sung blueprint được đánh dấu `+`.
@@ -75,7 +91,7 @@ Abbreviations: FV/CV/OA/DC/PA như Business Workflows; Auth=enabled authenticate
 | ID / method / URL | Purpose / role | Request -> response / success | Business validation & DB effects | Chain effect | Acceptance / required tests |
 |---|---|---|---|---|---|
 | A01 GET /api/auth/csrf + | Anonymous/Auth, bootstrap CSRF | none -> {token,headerName},200 | No-store, establish/refresh token | none | Token usable for login; token refresh after login/logout |
-| A02 POST /api/auth/login | Anonymous | LoginRequest -> MeResponse,200 | CSRF, password hash, enabled account; rotate session; generic failure | none | Valid credentials set secure session; invalid->401; CSRF->403; no Idempotency-Key |
+| A02 POST /api/auth/login | Anonymous | LoginRequest -> AuthResponse,200 | CSRF, password hash, enabled account; rotate session; generic failure | none | Valid credentials set secure session; invalid->401; CSRF->403; no Idempotency-Key; current memberships qua A04 |
 | A03 POST /api/auth/logout + | Auth | none ->204 | CSRF; invalidate session; no body stored | none | Old session unusable; logout UI clears private state |
 | A04 GET /api/auth/me + | Auth | none -> MeResponse,200 | Current account/memberships reloaded or invalidated after role changes | none | 401 no session; suspended membership not returned as active |
 | O01 POST /api/organizations | PA | CreateOrganizationRequest -> OrganizationResponse,201 | Valid name/address, approved demo org + audit; no public onboarding | Admin registration job if relayer provided | Non-PA403; duplicate idempotent create once |
@@ -110,6 +126,23 @@ Abbreviations: FV/CV/OA/DC/PA như Business Workflows; Auth=enabled authenticate
 | T03 POST /api/audit-events/{eventId}/retry + | PA/operator authenticated internal tooling | {} -> {eventId,blockchainStatus},200 | FAILED only or manual reconcile; preserve ID, snapshot, tx attempts; no user business mutation | Requeue after reconcile | Already confirmed no rebroadcast; missing receipt pending not forced fail |
 
 All endpoint failures: 401 for required auth; 403 role/CSRF; 404 scope; 400 fields; 409 state/quantity/replay conflict as applicable. Dependency downtime trước SQL commit503. GET binary errors vẫn problem+json, không trả arbitrary file bytes.
+
+### B06 campaign implementation notes (11/11/2026)
+
+Implemented and covered by `CampaignApiIT` (15 tests) and `CampaignRequestValidationTest` (4 tests).
+
+- **P01 `POST /api/campaigns`**: active `ORG_ADMIN` of the owning `APPROVED` organization, CSRF + `Idempotency-Key`. Lock order `AidCase` -> `Campaign`. Returns `201` + `Location: /api/campaigns/{id}` + `Cache-Control: no-store`; replay returns the stored response with `Idempotent-Replayed: true`. Copies every current (unretired) need line with exact name/unit/quantity.
+  - `403 FORBIDDEN`: caller is a member of the owning org without `ORG_ADMIN` (e.g. `VOLUNTEER`, `VERIFIER`).
+  - `404 RESOURCE_NOT_FOUND`: case belongs to another organization.
+  - `409 INVALID_STATE`: case not `VERIFIED`; campaign already exists for the case; dispute `OPEN`/`UNDER_REVIEW` (a `RESOLVED` dispute does not block); consent not `GRANTED` or `publicSummaryAllowed=false`; no approved review.
+  - `409 VERSION_CONFLICT`: case changed after approval. Rule: the latest review is `APPROVED` and `reviewedCaseVersion + 1 == case.version` (approval itself increments the case version by one).
+  - `409 IDEMPOTENCY_CONFLICT`: same key with a different payload.
+  - `400 VALIDATION_ERROR`: missing `caseId`, blank/oversized `title` (160) or `publicSummary` (2000), or text containing `<`, `>`, `://` or NUL.
+- **P02 `POST /api/campaigns/{id}/publish`**: same caller/CSRF/idempotency rules as P01; body must be empty or `{}`. Requires campaign `DRAFT` and re-checks every P01 case/consent/dispute/review rule. Copied items are compared with the current approved needs as a set (order-independent); mismatch -> `409 VERSION_CONFLICT`. On success campaign `PUBLISHED` (+ `publishedAt`), case `IN_PROGRESS`, local audit `CAMPAIGN_PUBLISHED`; no blockchain job is enqueued.
+- **P03 `GET /api/campaigns?page=0&size=20`**: public. `page >= 0`, `size` in `1..100`, otherwise `400 VALIDATION_ERROR`. Returns only `PUBLISHED`/`FULFILLED`/`CLOSED` campaigns of `APPROVED` organizations (`PENDING`/`SUSPENDED` excluded). Response `CampaignPage {items, page, size, totalElements}`.
+- **P04 `GET /api/campaigns/{id}`**: public for `PUBLISHED`/`FULFILLED`/`CLOSED` of `APPROVED` organizations. A `DRAFT` is returned only to an active `ORG_ADMIN` of the owning organization; anonymous callers, other roles of the same organization and admins of other organizations receive `404 RESOURCE_NOT_FOUND`. A suspended organization's campaigns return `404` to everyone.
+- **`CampaignResponse`**: `{id, status, title, publicSummary, approximateArea, organization {name, publicRef}, items[{id, name, unit, targetQty, pledgedQty, receivedQty, deliveredQty, confirmedQty, remainingPledgeQty}], auditUrl}`. `publicRef` is `0x` + 64 lowercase hex. Until B07–B10 the progress fields are `0` and `remainingPledgeQty = targetQty`. Never exposes case ID, beneficiary alias, internal title, user IDs/emails, evidence keys or the internal organization ID.
+- **OPEN (D50)**: the order of `items[]` is currently not guaranteed.
 
 ## End-to-end request example
 
