@@ -718,3 +718,17 @@ Khoa cần kiểm tra trước khi bắt đầu C04 (Fuji pilot, 11/11):
 5. Decoder Java/Web3j (C05) dùng ABI đã khớp draft: 3 topic indexed `orgRef/caseRef/eventId`, data 128 bytes `uint64, bytes32, uint16, uint64`.
 
 Not Run: Fuji, golden vector Java/TS, C06. Không đánh dấu C03 Done trước khi Khoa review xong.
+
+### C03 review gate - 11/11/2026
+
+C03 giữ In Review. Khoa review tại baseline 053b0f5, contract 51d97be. Gate BLOCKED: chưa có dependencies/runtime để compile và chạy độc lập Hardhat, chưa có compiler artifact, chưa đọc được PR #7 conversation qua các kênh hiện có; cần xác nhận/test lifecycle direct AccessControl revoke/renounce so với org relayer counters. Static C01 checker PASS; ethers/Hardhat/Fuji NOT RUN. Xem [C03 review gate](../reviews/C03_REVIEW_GATE.md) để có checklist, bằng chứng và điều kiện chuyển C04. Không đổi status task Dũng/Minh, không deploy/commit/push/PR.
+
+
+### C03 review gate — cập nhật tiếp nối 11/11/2026
+
+C03 giữ In Review; gate hiện tại BLOCKED chỉ còn R1 lifecycle authorization chờ Dũng/nhóm chốt policy hoặc sửa contract. Đã cài dependencies đúng package-lock với ủy quyền user (không đổi lockfile), compile mới PASS, 51 tests PASS (44 cũ + 7 characterization review), C01 --ethers PASS, compiler ABI parity 4/4 và source/settings build-info PASS. Đã đối chiếu 3 ảnh bàn giao PR #7 do Khoa cung cấp; không cần truy cập PR lại. Lifecycle direct revoke/renounce được tái hiện: active assigned multi-org relayer không tự phục hồi qua một org, single-org có thể tự regrant; không có bypass org scope trong tests. PASS characterization không phê duyệt policy. Điều kiện C04 và phản hồi từng điểm Dũng tại [C03 review gate](../reviews/C03_REVIEW_GATE.md). Không sửa contract/task khác; Fuji/Java/C06 NOT RUN; chưa commit/push/PR. Actual human effort chưa có dữ liệu. Ghi chú lượt trước được giữ làm lịch sử, không phải trạng thái môi trường hiện tại.
+
+
+### C03 — nghiệm thu kỹ thuật lifecycle fix 11/11/2026
+
+Gate PASS, R1 RESOLVED theo policy USER_CONFIRMED: revoke/renounce bền vững qua lifecycle, chỉ explicit authorized grant khôi phục. C03 giữ In Review cho review nhóm bản sửa, chưa Done/Fuji. Đã sửa AidRegistry.sol và chuyển review tests sang regression: compile PASS, toàn suite 55 passing (44 cũ + 11 review); C01 --ethers/SHA-256/Keccak PASS, full ABI trước/sau không đổi, draft 4/4 và current compiler source/settings PASS; diff check PASS. Chi tiết [C03 review gate](../reviews/C03_REVIEW_GATE.md). Đủ điều kiện contract chuẩn bị C04 khi được giao; Fuji/Java/C06 NOT RUN. Commit local C03 theo yêu cầu user; không push/PR/merge hoặc đổi task khác. Actual human effort chưa có số liệu. Các ghi chú BLOCKED trước đó là lịch sử đã được thay thế bởi mục này.
