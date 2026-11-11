@@ -26,6 +26,12 @@ export function unlockWallets() {
  const keys=JSON.parse(raw);
  return {deployer:new Wallet(keys.deployer),relayer:new Wallet(keys.relayer)};
 }
+// C05 needs only the relayer signer. Never instantiate an admin Wallet here.
+export function unlockRelayer() {
+ if(!existsSync(storePath)) throw Error('MISSING_DPAPI_SIGNER');
+ const key=ps(`$ErrorActionPreference='Stop'; $s=Import-Clixml -LiteralPath $env:AIDBRIDGE_WALLET_STORE; $b=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($s); try{$v=([Runtime.InteropServices.Marshal]::PtrToStringBSTR($b) | ConvertFrom-Json); [Console]::Out.Write($v.relayer)}finally{[Runtime.InteropServices.Marshal]::ZeroFreeBSTR($b)}`);
+ return new Wallet(key);
+}
 export function publicWallets() {
  const w=unlockWallets();
  return {deployer:w.deployer.address,admin:w.deployer.address,relayer:w.relayer.address};

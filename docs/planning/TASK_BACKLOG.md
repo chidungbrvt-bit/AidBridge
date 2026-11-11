@@ -40,7 +40,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | C02 | Foundation | Khoa (C) | Dũng / Minh | M | 3 | C01 | 2026-11-05 | 2026-11-05 | In Review |
 | C03 | P0-03/P0-06 | Khoa (C) | Dũng / Minh | L | 5 | C01, C02 | 2026-11-07 | 2026-11-07 | In Review |
 | C04 | P0-06 | Khoa (C) | Dũng / Minh | M | 2 | C03 | 2026-11-07 | 2026-11-07 | Not Started |
-| C05 | P0-03/P0-06 | Khoa (C) | Dũng / Minh | L | 6 | B05, C04 | 2026-11-09 | 2026-11-08 | Not Started |
+| C05 | P0-03/P0-06 | Khoa (C) | Dũng / Minh | L | 6 | B05, C04 | 2026-11-09 | 2026-11-08 | Blocked |
 | C06 | P0-04/P0-05/P0-06 | Khoa (C) | Dũng / Minh | L | 6 | C03 | 2026-11-11 | 2026-11-11 | Not Started |
 | C07 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C05 | 2026-11-14 | 2026-11-14 | Not Started |
 | C08 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C06, C07 | 2026-11-15 | 2026-11-15 | Not Started |
@@ -362,7 +362,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
 - **Phối hợp cụ thể:** Dũng làm phần backend verify+SQL audit/job và hỗ trợ trực tiếp DTO/repository/REST/Java glue; Khoa làm Web3j/ABI/signing/Fuji/exact receipt-event verification. Ghép ngay sau B03–B05, không chờ backend hoàn tất.
 - **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence (11/11/2026):** Blocked cho nghiệm thu full C05; kết quả ngày 11/11 **PARTIAL**, proof contract Fuji độc lập PASS. [C05 receipt review](../reviews/C05_FUJI_RECEIPT_REVIEW.md) và [proof JSON](../fixtures/c05/fuji-case-verified.proof.json): tx `0xc3b02934afb1f29816836fb22146dbc350202d3b2a9e8dbbb19c2fd2e7e8c00f`, block60893112/status1, đúng chain43113/registry/Relayer/CaseVerified envelope, calldata/canonical block/getters khớp. Compile và61 Hardhat tests PASS;46 verifier tests PASS; C01 --ethers và C04 readback PASS. Không sửa contract/backend hoặc ghi SQL CONFIRMED. `backendJobId=null`: chưa xác minh số job B05 thật vì không có DB env; worker/API projection chưa có trong checkout, organization binding chưa xác nhận. Dũng xác nhận DB/job/refs và phối hợp Java/DB/REST; Khoa tiếp tục adapter/receipt integration khi đầu vào sẵn sàng, Minh giữ trạng thái UI theo API thật. Chưa Java parity/DB crash/concurrency/HTTP E2E, chưa full acceptance/cross-owner review hoặc Done. Estimate/deadline gốc giữ nguyên; actual human effort chưa được cung cấp. Commit local được user cho phép, không push/PR/F07.
 
 ### C06 - Full milestone contract
 
