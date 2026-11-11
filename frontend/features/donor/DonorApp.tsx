@@ -13,11 +13,13 @@ export interface DonorAppProps {
   // Supply real capability from the existing session client; never infer from staff roles.
   donorEnabled: boolean;
   mode: 'mock' | 'real';
+  // Host invalidation signal for changes made outside this component. No remount.
+  dataRevision?: number;
 }
 export function DonorApp(props: DonorAppProps) {
   return <DonorWorkspace key={props.campaignId} {...props}/>;
 }
-function DonorWorkspace({ api, campaignId, view, navigate, donorEnabled, mode }: DonorAppProps) {
+function DonorWorkspace({ api, campaignId, view, navigate, donorEnabled, mode, dataRevision = 0 }: DonorAppProps) {
   const [campaign, setCampaign] = useState<CampaignResponse>();
   const [loadError, setLoadError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -44,13 +46,13 @@ function DonorWorkspace({ api, campaignId, view, navigate, donorEnabled, mode }:
     let active = true; setLoading(true); setLoadError(''); setCampaign(undefined);
     api.getCampaign(campaignId).then(value => { if (active) setCampaign(value); }).catch(() => { if (active) setLoadError('Unable to load campaign information.'); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [api, campaignId, refresh]);
+  }, [api, campaignId, refresh, dataRevision]);
   useEffect(() => {
     if (view !== 'history' || !donorEnabled) { setHistory(undefined); return; }
     let active = true; setHistoryLoading(true); setHistoryError(''); setHistory(undefined);
     api.getCommitments(page).then(value => { if (active) { setHistory(value); setCancelTarget(old => old ? value.items.find(item => item.id === old.id) ?? old : undefined); } }).catch(() => { if (active) setHistoryError('Unable to load your pledge history.'); }).finally(() => { if (active) setHistoryLoading(false); });
     return () => { active = false; };
-  }, [api, view, page, refresh, donorEnabled, historyRevision]);
+  }, [api, view, page, refresh, donorEnabled, historyRevision, dataRevision]);
   useEffect(() => { if (message) summary.current?.focus(); }, [message, errors]);
   useEffect(() => { if (result) resultRef.current?.focus(); }, [result]);
   useEffect(() => { if (!donorEnabled) { setHistory(undefined); setDraft({}); setResult(undefined); pending.current = null; setUnknown(false); } }, [donorEnabled]);

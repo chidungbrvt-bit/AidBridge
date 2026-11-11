@@ -753,3 +753,8 @@ In Progress -> In Review; runtime PASS trên Fuji43113, manifest/ABI/receipts/in
 ### C04 — source verification và đối chiếu acceptance 11/11/2026
 
 In Review, **4/4 đầu ra phân công 11/11 đạt**, source VERIFIED Exact Match trên Fuji Snowtrace/Routescan sau user cho phép dịch vụ; compiler/input/ABI parity PASS, independent readback PASS, suite61 PASS. Evidence tại contracts/deployment/fuji-verification.*.json; mapping DB chưa triển khai và thuộc Dũng, hướng dẫn cụ thể tại [C04 backend handoff](../reviews/C04_BACKEND_HANDOFF.md). Console Wallet NOT_DELETED do chưa đủ asset inventory, không ghi PASS cleanup. Không redeploy, không đọc keys, không C05/F07; commit local bổ sung theo user, không push/PR. Còn group review trước Done.
+
+
+### F07 G03 — receipt refresh bugfix 11/11/2026
+
+Giữ In Review. Browser regression FAIL trước sửa; thêm host dataRevision để refetch history/campaign sau mock receipt, giữ draft/pending thay vì reload/remount/điều hướng. Hai regression mới: history cập nhật tại chỗ và form đang mở nhận bounds mới; in-flight receipt race409 vẫn fail-closed. Lint/typecheck/build PASS,17 unit +19 browser tests PASS (G01/G02 regression gồm trong suite). Chi tiết tại [F07 implementation](../design/F07_DONOR_IMPLEMENTATION.md). Không sửa backend/contract/dependencies; commit local theo user, không push/PR. Chưa group review/real integration, không Done.

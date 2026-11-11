@@ -2,7 +2,7 @@
 
 Người thực hiện: Khoa/Codex. Status: **In Review**. Đã chạy giao diện thật trong trình duyệt, sử dụng mock data; chưa tích hợp backend hoặc blockchain thật. Commit F01 cd5d88d38b971134e3a23ba5ba999b68e2711271 được giữ nguyên.
 
-**Cập nhật 11/11:** G03 đã triển khai và nghiệm thu nội bộ ở mức mock, xem mục cuối tài liệu. Các counts/phạm vi ngày10 bên dưới là lịch sử; kết quả hiện hành là 17 unit +17 browser tests. F07 vẫn In Review, không đồng nghĩa backend/Next integration đã đạt.
+**Cập nhật 11/11:** G03 đã triển khai và nghiệm thu nội bộ ở mức mock, xem mục cuối tài liệu. Các counts/phạm vi ngày10 bên dưới là lịch sử; kết quả hiện hành là 17 unit +19 browser tests. F07 vẫn In Review, không đồng nghĩa backend/Next integration đã đạt.
 
 ## Phạm vi nghiệm thu
 
@@ -128,7 +128,7 @@ Xem [báo cáo QA F01/F07](../reviews/F01_F07_QA_REVIEW.md): đã sửa 4 regres
 
 Trong preview đang có, bấm **Load partial receipt fixture** để dùng nguyên `goods-flow.mock.json.states.S2`: Rice8 pledged/5 received/3 outstanding, Water2/1/1. Nút này reset demo generation và mở history; không phải API production. Chọn cam kết, hủy Rice2 + Water1: history thành Rice8/2/5/1 và Water2/1/1/0 theo thứ tự pledged/cancelled/received/outstanding; campaign pledged12/2, received7/1 giữ nguyên. Hủy tiếp Rice1 -> `RECEIVED`, không phải `CANCELLED`.
 
-**Mock receipt: receive remaining goods** là developer control giả lập receipt từ bên ngoài mà không refresh form. Dùng để trình diễn stale state: mở form chọn Rice3, bấm control receipt, submit ->409 và đọc lại received8/outstanding0/cancelled0. Đây không phải triển khai R01 hoặc cấp quyền nhận hàng cho donor. Các fault400/403/409/timeout-after-save dùng lại controls sẵn có.
+**Mock receipt: receive remaining goods** giả lập receipt từ bên ngoài và báo host refetch history/campaign ngay, giữ form/draft. Nếu nhận hết hàng thì submit bị khóa; để thử race409, submit Rice3 trước rồi bấm receipt khi request còn pending. Cancellation bị từ chối, received8/outstanding0/cancelled0. Đây không phải triển khai R01 hoặc cấp quyền nhận hàng cho donor. Các fault400/403/409/timeout-after-save dùng lại controls sẵn có.
 
 ### Kiểm tra và giới hạn
 
@@ -138,7 +138,7 @@ Lệnh từ `frontend/dev/donor-preview`: `pnpm lint`, `pnpm typecheck`, `pnpm b
 |---|---|
 | Lint / strict typecheck / preview build | PASS; không cài/nâng dependency hoặc đổi lockfile |
 | Unit tests | **17/17 PASS**: 7 regression cũ +10 G03; validation, atomic rejection, 400/403/409, status arithmetic, same/different-key race, replay, lost response, receipt race, reset |
-| Browser Edge headless | **17/17 PASS**: 10 regression G01/G02 +7 G03; success/refetch/capacity reuse, keyboard validation, 400/403/409, stale receipt conflict, unknown retry, mobile/double-submit, capability revoked |
+| Browser Edge headless | **19/19 PASS**: 10 regression G01/G02 +9 G03; success/refetch/capacity reuse, keyboard validation, 400/403/409, stale receipt conflict, unknown retry, mobile/double-submit, capability revoked |
 | Network isolation | Browser tests xác nhận không phát `/api/` requests; mock mode không có HTTP/Fuji transport |
 | Desktop/mobile | Screenshot trong `test-results/` bị ignore; form/table sử dụng được ở390px, không page overflow. Không phải full accessibility audit |
 | `git diff --check` / references | PASS trước commit local |
@@ -149,3 +149,10 @@ Vite cảnh báo bỏ qua `use client`/không resolve sourcemap khi bundle stand
 Minh tiếp nhận component/model/mock qua các file trong `frontend/features/donor`; production component không import mock. Chỉ preview/tests dùng fixture/control receipt. Dũng tiếp tục backend B07 cancellation/auth/quantity locks/idempotency; donorEnabled thật và shared client/session vẫn là điều kiện tích hợp, không được hardcode quyền donor. Chưa nhóm review/integration nên không Done hoặc đổi owner/estimate/lịch baseline.
 
 Ghi chú cho PR cuối ngày: [C05 review](../reviews/C05_FUJI_RECEIPT_REVIEW.md) vẫn **PARTIAL** — B05 có outbox/integration tests, máy Khoa chưa có DB hợp lệ/job để đối chiếu, backend thiếu worker/adapter; proof CaseVerified Fuji độc lập PASS không phải B05 end-to-end. Phối hợp Dũng/Khoa về worker, org mapping/job thật/audit projection. Lượt G03 chỉ bổ sung một ghi chú làm rõ C05, không sửa backend hoặc chạy blockchain.
+
+
+### Sửa receipt invalidation — 11/11/2026
+
+Browser test tái hiện FAIL trước sửa: history còn received5/outstanding3 thay vì8/0. Mock trả DTO copies, nên mutation nội bộ không cập nhật state React; effects trước đây chỉ đọc lại khi view/page/refresh đổi. Preview nay tăng optional `dataRevision` sau receipt; DonorApp đưa revision vào dependencies đọc campaign/history, bỏ late responses qua effect cleanup. Không reload/đổi route/remount key hoặc xóa draft/pending. cancelTarget nhận history mới, form chặn mutation khi refresh và khóa hủy khi hết outstanding. Request đã gửi trước receipt vẫn bị mock latest-state validation từ chối409.
+
+Hai regression mới kiểm tra My pledges cập nhật tại chỗ và form giữ quantity/reason nhưng nhận bounds mới. Test race đổi thứ tự submit -> receipt, không dựa vào UI giữ stale state. Kết quả cuối: lint/typecheck/build PASS,17 unit +19 browser Edge tests PASS; kiểm tra desktop1440 và screenshot `test-results/g03-receipt-refresh-desktop.png` (ignored). Warning Vite standalone use client như trước; build exit0. Không thay backend/dependencies/business rules. Optional revision mặc định0 là tín hiệu invalidation từ host, không polling hoặc mock import trong production component. Next/DB integration chưa chạy.

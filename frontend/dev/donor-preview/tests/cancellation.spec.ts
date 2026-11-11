@@ -24,7 +24,7 @@ test('G03 400, 403 and injected 409 preserve quantities; 409 refreshes state',as
  const panel=await fill(page);for(const fault of ['400','403','409']){await page.getByLabel('Mock response').selectOption(fault);const submit=panel.getByRole('button',{name:'Cancel selected goods',exact:true});await expect(submit).toBeEnabled();await submit.click();await expect(panel.getByRole('alert')).toContainText(fault==='409'?'409 Conflict':fault);await expect(rice(page).getByRole('cell')).toHaveText(['8','0','5','3']);}
 });
 test('G03 stale receipt conflict does not cancel goods received in the meantime',async({page})=>{
- const panel=await fill(page,'3');await page.getByRole('button',{name:'Mock receipt: receive remaining goods'}).click();await panel.getByRole('button',{name:'Cancel selected goods',exact:true}).click();await expect(panel.getByRole('alert')).toContainText('409 Conflict');
+ const panel=await fill(page,'3');await panel.getByRole('button',{name:'Cancel selected goods',exact:true}).click();await page.getByRole('button',{name:'Mock receipt: receive remaining goods'}).click();await expect(panel.getByRole('alert')).toContainText('409 Conflict');
  await expect(rice(page).getByRole('cell')).toHaveText(['8','0','8','0']);await expect(page.locator('article').getByText('RECEIVED',{exact:true})).toBeVisible();await expect(page.locator('article').getByRole('button',{name:'Cancel unreceived goods'})).toBeDisabled();
 });
 test('G03 response loss blocks edits/navigation and safely replays once',async({page})=>{
@@ -40,4 +40,24 @@ test('G03 mobile full remainder cancellation keeps received history and prevents
 test('G03 capability revocation hides form/history and suppresses late success',async({page})=>{
  const panel=await fill(page);await panel.getByRole('button',{name:'Cancel selected goods',exact:true}).click();await page.getByLabel('Mock donor enabled').uncheck();await expect(page.getByRole('region',{name:'Cancel unreceived goods',exact:true})).toHaveCount(0);
  await page.waitForTimeout(700);await expect(page.getByText('Cancellation saved. Received goods are unchanged. Pending on-chain.',{exact:true})).toHaveCount(0);await expect(page.locator('article')).toHaveCount(0);
+});
+
+
+test('receipt control refreshes My pledges without navigation or remount',async({page})=>{
+ await page.getByRole('button',{name:'Close cancellation'}).click();
+ await page.getByRole('button',{name:'Mock receipt: receive remaining goods'}).click();
+ await expect(rice(page).getByRole('cell')).toHaveText(['8','0','8','0']);
+ await expect(page).toHaveURL(/me\/commitments/);
+});
+
+test('receipt refresh updates open G03 bounds while retaining its draft',async({page})=>{
+ const panel=await fill(page,'3');
+ await page.getByRole('button',{name:'Mock receipt: receive remaining goods'}).click();
+ await expect(rice(page).getByRole('cell')).toHaveText(['8','0','8','0']);
+ await expect(panel.getByLabel('Cancel quantity (kg)',{exact:true})).toHaveValue('3');
+ await expect(panel.getByLabel('Cancellation reason')).toHaveValue('Availability changed');
+ await expect(panel.getByRole('button',{name:'Cancel selected goods',exact:true})).toBeDisabled();
+ await expect(panel.getByText('No unreceived goods remain for cancellation.')).toBeVisible();
+ await page.setViewportSize({width:1440,height:1100});
+ await page.screenshot({path:'test-results/g03-receipt-refresh-desktop.png',fullPage:true});
 });
