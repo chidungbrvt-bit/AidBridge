@@ -1,10 +1,12 @@
-# F07 - G01/G02 donor UI: triển khai và bàn giao ngày 10/11/2026
+# F07 — G01/G02/G03 donor UI: triển khai và bàn giao
 
 Người thực hiện: Khoa/Codex. Status: **In Review**. Đã chạy giao diện thật trong trình duyệt, sử dụng mock data; chưa tích hợp backend hoặc blockchain thật. Commit F01 cd5d88d38b971134e3a23ba5ba999b68e2711271 được giữ nguyên.
 
+**Cập nhật 11/11:** G03 đã triển khai và nghiệm thu nội bộ ở mức mock, xem mục cuối tài liệu. Các counts/phạm vi ngày10 bên dưới là lịch sử; kết quả hiện hành là 17 unit +17 browser tests. F07 vẫn In Review, không đồng nghĩa backend/Next integration đã đạt.
+
 ## Phạm vi nghiệm thu
 
-Phân công 10/11 yêu cầu G01 multi-item pledge + G02 own pledge history, lỗi400/409, mock nhất quán, không làm task Minh/Dũng. Backlog baseline F07 còn có G03 cancellation và dependencies F06/B07: **G03 chưa triển khai**, không thuộc phạm vi được người dùng giao lượt này; dependencies tích hợp chưa đạt nên không đánh dấu Done. Không tự đổi owner/estimate/deadline hoặc status C01/F02/F01.
+Phân công 10/11 yêu cầu G01 multi-item pledge + G02 own pledge history, lỗi400/409, mock nhất quán, không làm task Minh/Dũng. Khi hoàn thành ngày10, G03 chưa triển khai; ngày11 đã được bổ sung theo phân công mới. Dependencies tích hợp F06/B07 và review nhóm chưa đạt nên không đánh dấu Done. Không tự đổi owner/estimate/deadline hoặc status C01/F02/F01.
 
 Đã fetch remote refs trước code: origin/main f676e41 (PR #4 merged), origin/minh d6efa49 không có frontend, origin/dung 84a042f chỉ C02. Checkout khoa ở cd5d88d sạch, chưa có frontend shell/shared components/styling/API client. Backend AuthService vẫn gọi toMeResponse(..., false); enum role vẫn ORG_ADMIN/VOLUNTEER/VERIFIER/DELIVERY_CONFIRMER. Không merge hay thay code của thành viên khác.
 
@@ -107,3 +109,43 @@ Status cuối: đạt nghiệm thu nội bộ phạm vi G01/G02 mock đã giao, 
 ## QA độc lập sau commit F07 - 10/11/2026
 
 Xem [báo cáo QA F01/F07](../reviews/F01_F07_QA_REVIEW.md): đã sửa 4 regression và field mapping409, kết quả mới nhất **7 unit +10 browser E2E PASS**, thay cho counts4/8 của ledger triển khai ban đầu. Test host race nằm riêng trong tests và không được import vào preview main/build. Adapter boundary và real integration vẫn OPEN; F07 In Review. Sửa QA chưa commit/push/PR.
+
+## G03 — Hủy phần chưa được tiếp nhận (11/11/2026, kết quả hiện hành)
+
+**Nghiệm thu nội bộ G03 PASS ở mức mock; F07 In Review.** Không sửa backend, contract, cấu hình Fuji hoặc ví. G03 nằm trong G02 `/me/commitments`: mỗi cam kết có outstanding dương có nút **Cancel unreceived goods**. Không thêm ứng dụng/router độc lập.
+
+### Luồng và hợp đồng
+
+- `CancellationForm.tsx` nhận commitment, public campaign metadata và injected `DonorApi`; chọn một/nhiều contribution item, số lượng nguyên1..1,000,000, không quá outstanding; nhập reason1..500 ký tự sau trim. Reason bắt buộc theo shape `CancellationRequest`; backend vẫn phải validate lại.
+- `DonorApi.cancel(commitmentId, body, key)` tương ứng **POST `/api/commitments/{id}/cancellations`**, body `{items:[{contributionItemId,quantity}],reason}`, `Idempotency-Key`, response200 `CommitmentResponse`. Minh nối method này qua shared HTTP/session/CSRF client hiện có; không dùng campaignItemId thay contributionItemId.
+- Mock kiểm tra tất cả lines trước khi thay đổi, dựa trên state mới nhất khi xử lý request. Giữ original `pledgedQty` và `receivedQty`; tăng `cancelledQty`, giảm `outstandingQty`. Campaign `pledgedQty` là lượng còn cam kết có hiệu lực, giảm đúng lượng hủy; `remainingPledgeQty` tăng tương ứng. Received/delivered/confirmed không thay đổi bởi cancellation.
+- Status theo workflow: còn outstanding và chưa nhận gì -> `PLEDGED`; còn outstanding và đã nhận một phần -> `PARTIALLY_RECEIVED`; hết outstanding nhưng có received -> `RECEIVED`; hết outstanding và chưa nhận gì -> `CANCELLED`. Không che lịch sử bằng cách giảm pledgedQty gốc trên donor response. Chain status sau mock save vẫn `PENDING_ON_CHAIN`.
+- Local invalid request không gửi mutation. Server400/403/409 không optimistic update. 409 hiển thị rõ **409 Conflict**, giữ draft/error và refetch history/campaign trước thao tác tiếp theo. Khi receipt thật trong mô phỏng xảy ra đồng thời, received có thể tăng do receipt đó; cancellation vẫn không thay cancelledQty hoặc giải phóng capacity sai.
+- Ref khóa double submit; trong lúc gửi hoặc chưa rõ outcome, khóa đóng/chuyển màn hình/phân trang bằng controls trong module. Mất response giữ exact body/key, chỉ cho **Retry same cancellation**; replay được mock scope theo operation+resource+key, không hủy hay giải phóng capacity hai lần. Sau success refetch dữ liệu authoritative; read failure vẫn báo cancellation đã lưu và chặn mutation mới đến khi context đọc lại được.
+- Capability bị thu hồi: form/history bị gỡ, response muộn không hiển thị private success. Host tiếp tục remount theo user identity như G01/G02. Mock in-memory không persist qua reload; đây không phải giải pháp durable recovery cho browser/DB production.
+
+### Preview và fixtures
+
+Trong preview đang có, bấm **Load partial receipt fixture** để dùng nguyên `goods-flow.mock.json.states.S2`: Rice8 pledged/5 received/3 outstanding, Water2/1/1. Nút này reset demo generation và mở history; không phải API production. Chọn cam kết, hủy Rice2 + Water1: history thành Rice8/2/5/1 và Water2/1/1/0 theo thứ tự pledged/cancelled/received/outstanding; campaign pledged12/2, received7/1 giữ nguyên. Hủy tiếp Rice1 -> `RECEIVED`, không phải `CANCELLED`.
+
+**Mock receipt: receive remaining goods** là developer control giả lập receipt từ bên ngoài mà không refresh form. Dùng để trình diễn stale state: mở form chọn Rice3, bấm control receipt, submit ->409 và đọc lại received8/outstanding0/cancelled0. Đây không phải triển khai R01 hoặc cấp quyền nhận hàng cho donor. Các fault400/403/409/timeout-after-save dùng lại controls sẵn có.
+
+### Kiểm tra và giới hạn
+
+Lệnh từ `frontend/dev/donor-preview`: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm test:e2e`.
+
+| Kiểm tra | Kết quả |
+|---|---|
+| Lint / strict typecheck / preview build | PASS; không cài/nâng dependency hoặc đổi lockfile |
+| Unit tests | **17/17 PASS**: 7 regression cũ +10 G03; validation, atomic rejection, 400/403/409, status arithmetic, same/different-key race, replay, lost response, receipt race, reset |
+| Browser Edge headless | **17/17 PASS**: 10 regression G01/G02 +7 G03; success/refetch/capacity reuse, keyboard validation, 400/403/409, stale receipt conflict, unknown retry, mobile/double-submit, capability revoked |
+| Network isolation | Browser tests xác nhận không phát `/api/` requests; mock mode không có HTTP/Fuji transport |
+| Desktop/mobile | Screenshot trong `test-results/` bị ignore; form/table sử dụng được ở390px, không page overflow. Không phải full accessibility audit |
+| `git diff --check` / references | PASS trước commit local |
+| Backend HTTP/DB locks/concurrency, Next shell/session/CSRF integration | **NOT RUN**; mock scheduling trong JS không chứng minh PostgreSQL locking |
+
+Vite cảnh báo bỏ qua `use client`/không resolve sourcemap khi bundle standalone; build exit0. Giữ directive cho client component khi Minh tích hợp Next; không coi preview build là Next build.
+
+Minh tiếp nhận component/model/mock qua các file trong `frontend/features/donor`; production component không import mock. Chỉ preview/tests dùng fixture/control receipt. Dũng tiếp tục backend B07 cancellation/auth/quantity locks/idempotency; donorEnabled thật và shared client/session vẫn là điều kiện tích hợp, không được hardcode quyền donor. Chưa nhóm review/integration nên không Done hoặc đổi owner/estimate/lịch baseline.
+
+Ghi chú cho PR cuối ngày: [C05 review](../reviews/C05_FUJI_RECEIPT_REVIEW.md) vẫn **PARTIAL** — B05 có outbox/integration tests, máy Khoa chưa có DB hợp lệ/job để đối chiếu, backend thiếu worker/adapter; proof CaseVerified Fuji độc lập PASS không phải B05 end-to-end. Phối hợp Dũng/Khoa về worker, org mapping/job thật/audit projection. Lượt G03 chỉ bổ sung một ghi chú làm rõ C05, không sửa backend hoặc chạy blockchain.

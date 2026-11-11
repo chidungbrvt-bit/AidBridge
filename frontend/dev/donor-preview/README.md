@@ -7,4 +7,6 @@ Trong thư mục này: `pnpm install --frozen-lockfile`, `pnpm dev`.
 G01: http://127.0.0.1:5173/campaigns/10000000-0000-4000-8000-000000000001
 G02: http://127.0.0.1:5173/me/commitments
 
+G03 (11/11): trong G02 chọn **Cancel unreceived goods** ở cam kết còn outstanding, chọn hàng/số lượng, nhập reason rồi submit. Để thử nhanh, bấm **Load partial receipt fixture**: Rice pledged8/received5/outstanding3 và Water2/1/1. Nút **Mock receipt: receive remaining goods** giả lập receipt từ bên ngoài mà không refresh form, dùng thử stale-state409. Mock response400/403/409/timeout-after-save cũng áp dụng cho G03. Đây là developer controls, không phải thao tác donor hoặc endpoint production.
+
 Không có HTTP backend, auth production hoặc blockchain trong preview. Reset/reload xóa dữ liệu mock.

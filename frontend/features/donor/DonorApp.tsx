@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CampaignResponse, CommitmentRequest, CommitmentResponse, DonorApi, Draft, Page } from './model';
 import { ApiError, validateDraft } from './model';
+import { CancellationForm } from './CancellationForm';
 import './donor.css';
 
 export interface DonorAppProps {
@@ -37,6 +38,8 @@ function DonorWorkspace({ api, campaignId, view, navigate, donorEnabled, mode }:
   const [page, setPage] = useState(0);
   const [historyRevision, setHistoryRevision] = useState(0);
   const [refresh, setRefresh] = useState(0);
+  const [cancelTarget, setCancelTarget] = useState<CommitmentResponse>();
+  const [cancelLocked, setCancelLocked] = useState(false);
   useEffect(() => {
     let active = true; setLoading(true); setLoadError(''); setCampaign(undefined);
     api.getCampaign(campaignId).then(value => { if (active) setCampaign(value); }).catch(() => { if (active) setLoadError('Unable to load campaign information.'); }).finally(() => { if (active) setLoading(false); });
@@ -45,12 +48,13 @@ function DonorWorkspace({ api, campaignId, view, navigate, donorEnabled, mode }:
   useEffect(() => {
     if (view !== 'history' || !donorEnabled) { setHistory(undefined); return; }
     let active = true; setHistoryLoading(true); setHistoryError(''); setHistory(undefined);
-    api.getCommitments(page).then(value => { if (active) setHistory(value); }).catch(() => { if (active) setHistoryError('Unable to load your pledge history.'); }).finally(() => { if (active) setHistoryLoading(false); });
+    api.getCommitments(page).then(value => { if (active) { setHistory(value); setCancelTarget(old => old ? value.items.find(item => item.id === old.id) ?? old : undefined); } }).catch(() => { if (active) setHistoryError('Unable to load your pledge history.'); }).finally(() => { if (active) setHistoryLoading(false); });
     return () => { active = false; };
   }, [api, view, page, refresh, donorEnabled, historyRevision]);
   useEffect(() => { if (message) summary.current?.focus(); }, [message, errors]);
   useEffect(() => { if (result) resultRef.current?.focus(); }, [result]);
   useEffect(() => { if (!donorEnabled) { setHistory(undefined); setDraft({}); setResult(undefined); pending.current = null; setUnknown(false); } }, [donorEnabled]);
+  useEffect(() => { if (!donorEnabled) { setCancelTarget(undefined); setCancelLocked(false); } }, [donorEnabled]);
   const update = (id: string, patch: Partial<Draft[string]>) => { setDraft(old => ({ ...old, [id]: { ...(old[id] ?? { selected: false, quantity: '' }), ...patch } })); setErrors(old => ({ ...old, [id]: '' })); setMessage(''); setResult(undefined); };
   async function submit(retry = false) {
     if (locked.current || !donorEnabled || !campaign) return;
@@ -89,7 +93,7 @@ function DonorWorkspace({ api, campaignId, view, navigate, donorEnabled, mode }:
   const totalPledges = history?.totalElements ?? 0;
   const actionable = campaign?.status === 'PUBLISHED' && campaign.items.some(x => x.remainingPledgeQty > 0);
   return <div className="ab-donor">
-    <header className="ab-header"><a href="#main" className="ab-brand">a<span>↗</span> AidBridge</a><nav aria-label="Donor navigation"><button aria-current={view === 'pledge' ? 'page' : undefined} onClick={() => navigate('pledge')}>Explore campaign</button><button aria-current={view === 'history' ? 'page' : undefined} onClick={() => navigate('history')}>My pledges</button></nav><span className="ab-user">Donor workspace</span></header>
+    <header className="ab-header"><a href="#main" className="ab-brand">a<span>↗</span> AidBridge</a><nav aria-label="Donor navigation"><button disabled={cancelLocked} aria-current={view === 'pledge' ? 'page' : undefined} onClick={() => { setCancelTarget(undefined); navigate('pledge'); }}>Explore campaign</button><button disabled={cancelLocked} aria-current={view === 'history' ? 'page' : undefined} onClick={() => navigate('history')}>My pledges</button></nav><span className="ab-user">Donor workspace</span></header>
     <div className="ab-mode">{mode === 'mock' ? 'MOCK DEMO · Simulated donor capability and goods. Changes reset on reload. No backend or blockchain calls.' : 'REAL API · Capability and data provided by the connected session client.'}</div>
     <main id="main">
       <p className="ab-eyebrow">ESSENTIAL GOODS · SHARED PROGRESS</p>
@@ -114,12 +118,13 @@ function DonorWorkspace({ api, campaignId, view, navigate, donorEnabled, mode }:
             <span className="ab-sr" role="status">{busy ? 'Pledge request in progress.' : ''}</span>
           </form>
         </section></div>}
-      </> : <section aria-label="Pledge history"><div className="ab-section-title"><h2>My pledges {history && <small>({totalPledges})</small>}</h2><button onClick={() => setRefresh(x => x + 1)} disabled={historyLoading || !donorEnabled}>Refresh history</button></div>
+      </> : <section aria-label="Pledge history"><div className="ab-section-title"><h2>My pledges {history && <small>({totalPledges})</small>}</h2><button onClick={() => setRefresh(x => x + 1)} disabled={historyLoading || !donorEnabled || cancelLocked}>Refresh history</button></div>
         {historyLoading && <div className="ab-panel" role="status">Loading your pledges...</div>}
         {historyError && <div className="ab-notice" role="alert"><p>{historyError}</p><button onClick={() => setRefresh(x => x + 1)}>Retry history loading</button></div>}
         {history && history.items.length === 0 && <div className="ab-panel ab-empty"><span aria-hidden="true">↗</span><h2>No pledges yet</h2><p>Make your first commitment to a verified campaign.</p><button className="ab-primary" onClick={() => navigate('pledge')}>Explore campaign →</button></div>}
-        {history?.items.map(pledge => <article className="ab-panel ab-history-card" key={pledge.id}><div className="ab-section-title"><div><p className="ab-caption">{new Date(pledge.createdAt).toLocaleString()}</p><h2>{campaign?.id === pledge.campaignId ? campaign.title : `Campaign ${pledge.campaignId}`}</h2></div><span className="ab-pill">{pledge.status.replaceAll('_', ' ')}</span></div><p className="ab-caption">Reference: {pledge.id}</p><div className="ab-table-scroll" tabIndex={0} role="region" aria-label="Goods quantities"><table><caption className="ab-sr">Your contribution quantities</caption><thead><tr><th scope="col">Item</th><th scope="col">Pledged</th><th scope="col">Cancelled</th><th scope="col">Received</th><th scope="col">Outstanding</th></tr></thead><tbody>{pledge.items.map(item => <tr key={item.id}><th scope="row">{campaign?.items.find(x => x.id === item.campaignItemId)?.name ?? item.campaignItemId}<small>{campaign?.items.find(x => x.id === item.campaignItemId)?.unit ?? 'Unit unavailable'}</small></th><td>{item.pledgedQty}</td><td>{item.cancelledQty}</td><td>{item.receivedQty}</td><td>{item.outstandingQty}</td></tr>)}</tbody></table></div><p className="ab-caption">Campaign-level delivery and confirmation: {campaign?.id === pledge.campaignId ? campaign.items.map(item => `${item.name}: ${item.deliveredQty} ${item.unit} delivered, ${item.confirmedQty} confirmed`).join('; ') : 'Campaign totals unavailable.'}</p><p className="ab-chain">{pledge.blockchainStatus.replaceAll('_', ' ')}</p><p className="ab-caption">Receipt quantities belong to your contribution. Delivery and confirmation totals are campaign-level only.</p></article>)}
-        {history && history.totalElements > history.size && <nav aria-label="History pages" className="ab-pagination"><button disabled={page === 0 || historyLoading} onClick={() => setPage(x => x - 1)}>Previous</button><span>Page {page + 1}</span><button disabled={(page + 1) * history.size >= history.totalElements || historyLoading} onClick={() => setPage(x => x + 1)}>Next</button></nav>}
+        {history?.items.map(pledge => <article className="ab-panel ab-history-card" key={pledge.id}><div className="ab-section-title"><div><p className="ab-caption">{new Date(pledge.createdAt).toLocaleString()}</p><h2>{campaign?.id === pledge.campaignId ? campaign.title : `Campaign ${pledge.campaignId}`}</h2></div><span className="ab-pill">{pledge.status.replaceAll('_', ' ')}</span></div><p className="ab-caption">Reference: {pledge.id}</p><div className="ab-table-scroll" tabIndex={0} role="region" aria-label="Goods quantities"><table><caption className="ab-sr">Your contribution quantities</caption><thead><tr><th scope="col">Item</th><th scope="col">Pledged</th><th scope="col">Cancelled</th><th scope="col">Received</th><th scope="col">Outstanding</th></tr></thead><tbody>{pledge.items.map(item => <tr key={item.id}><th scope="row">{campaign?.items.find(x => x.id === item.campaignItemId)?.name ?? item.campaignItemId}<small>{campaign?.items.find(x => x.id === item.campaignItemId)?.unit ?? 'Unit unavailable'}</small></th><td>{item.pledgedQty}</td><td>{item.cancelledQty}</td><td>{item.receivedQty}</td><td>{item.outstandingQty}</td></tr>)}</tbody></table></div><p className="ab-caption">Campaign-level delivery and confirmation: {campaign?.id === pledge.campaignId ? campaign.items.map(item => `${item.name}: ${item.deliveredQty} ${item.unit} delivered, ${item.confirmedQty} confirmed`).join('; ') : 'Campaign totals unavailable.'}</p><p className="ab-chain">{pledge.blockchainStatus.replaceAll('_', ' ')}</p><p className="ab-caption">Receipt quantities belong to your contribution. Delivery and confirmation totals are campaign-level only.</p><button disabled={cancelLocked || busy || unknown || !donorEnabled || !pledge.items.some(item => item.outstandingQty > 0)} onClick={() => setCancelTarget(pledge)}>Cancel unreceived goods</button></article>)}
+        {cancelTarget && donorEnabled && <CancellationForm key={cancelTarget.id} api={api} commitment={cancelTarget} campaign={campaign} ready={Boolean(history) && !historyLoading && !historyError && !loading && !loadError} onLock={setCancelLocked} onClose={() => setCancelTarget(undefined)} onChanged={saved => { if (saved) setCancelTarget(saved); setRefresh(x => x + 1); }}/>}
+        {history && history.totalElements > history.size && <nav aria-label="History pages" className="ab-pagination"><button disabled={page === 0 || historyLoading || cancelLocked} onClick={() => { setCancelTarget(undefined); setPage(x => x - 1); }}>Previous</button><span>Page {page + 1}</span><button disabled={(page + 1) * history.size >= history.totalElements || historyLoading || cancelLocked} onClick={() => { setCancelTarget(undefined); setPage(x => x + 1); }}>Next</button></nav>}
       </section>}
     </main><footer className="ab-footer">AidBridge · Bridging verified needs with transparent aid.<span>F07 · Goods commitments</span></footer>
   </div>;
