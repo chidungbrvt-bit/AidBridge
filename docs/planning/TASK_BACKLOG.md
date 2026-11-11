@@ -345,7 +345,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Acceptance criteria:** Actual43113 deployment receipt/code/address/block/compiler/ABI saved, org role readback; explorer source status accurate.
 - **Required tests:** Wrong-chain preflight, authorization readback, actual deploy receipt.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** In Progress (11/11/2026, giai đoạn 1 preflight). Contract/local checks PASS, readiness deploy BLOCKED: thiếu funding Fuji (0 AVAX); runner/network/DPAPI wallets đã hoàn thiện, chờ xác nhận cuối sau funding. Xem [C04 preflight](../reviews/C04_PREFLIGHT.md). Chưa deploy/receipt Fuji, chưa Done; giữ estimate/deadline gốc. Actual effort chưa có dữ liệu.
+- **Status / evidence:** In Review (11/11/2026), actual Fuji C04 runtime PASS: registry 0x015D941c679b0c402c8262BE237adAD36cEf6726; deploy/registration receipts status=1, bytecode/admin/org/relayer readback PASS; 61 local tests và C01 --ethers PASS. ABI D49/schema1. Explorer source NOT_VERIFIED. Console Wallet NOT_DELETED vì inventory chưa đủ do RPC rate limit; tách khỏi runtime acceptance. Xem [C04 deployment](../reviews/C04_DEPLOYMENT.md). Giữ estimate/deadline, actual effort chưa có dữ liệu; chờ review nhóm, không tự Done.
+
 
 ### C05 - Java adapter/minimal audit slice
 
@@ -742,3 +743,8 @@ In Progress, preflight readiness BLOCKED; baseline 61cc738 bảo toàn. Official
 ### C04 preparation — runner/signers hoàn thiện 11/11/2026
 
 C04 In Progress; software preparation PASS (61 tests, compile/checker/DPAPI roundtrip PASS), deploy readiness BLOCKED chỉ funding. Runner mặc định read-only, explicit Fuji chain guard/bytecode pin/gas-fee caps/nonce journal, local deploy+org registration dry-run PASS. Hai ví riêng DPAPI ngoài repo đã tạo, public addresses/plan ở contracts/deployment; balances 0, live gas estimate 1134741. User cần test AVAX vào deployer >=0.1; relayer funding cho business events sau. Faucet hiện cần account/wallet user quản lý. Chưa ký/broadcast; chưa full C04 acceptance/Done. Xem [C04 preflight](../reviews/C04_PREFLIGHT.md). Cho phép commit local preparation theo yêu cầu user, không push/PR/merge/C05/F07.
+
+
+### C04 — actual Fuji pilot 11/11/2026
+
+In Progress -> In Review; runtime PASS trên Fuji43113, manifest/ABI/receipts/independent authorization readback tại contracts/deployment và [C04 deployment](../reviews/C04_DEPLOYMENT.md). Không tự cấu hình backend UUID binding/C05. Explorer NOT_VERIFIED; Console Wallet chưa xóa do asset inventory bị RPC rate-limit, không xóa dữ liệu khác. User cho phép commit local completion; không push/PR/C05/F07.

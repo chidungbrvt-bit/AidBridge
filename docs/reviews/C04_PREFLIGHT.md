@@ -1,3 +1,9 @@
+# C04 — trạng thái sau deploy 11/11/2026
+
+**Đã deploy và đăng ký organization: runtime PASS, C04 In Review.** Các mục READY/BLOCKED bên dưới là lịch sử preflight. Kết quả hiện hành, manifest/receipts/readback và trạng thái Console Wallet chưa xóa tại [C04 deployment](C04_DEPLOYMENT.md). Không chạy lại broadcast; dùng verify-fuji.mjs chỉ đọc.
+
+---
+
 # C04 preparation — cập nhật 11/11/2026
 
 **Software preparation PASS; trạng thái deploy: BLOCKED chỉ còn funding và xác nhận cuối. Chưa READY TO DEPLOY vì deployer balance=0.** Phần preflight cũ bên dưới được giữ làm lịch sử; các nhận định chưa có runner/network/wallet đã được thay thế.

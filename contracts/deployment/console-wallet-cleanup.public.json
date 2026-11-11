@@ -1,0 +1,14 @@
+{
+  "wallet": "0x59458713c6a0DCEB4718f8fe707e564D0E882172",
+  "deletionStatus": "NOT_DELETED",
+  "confirmedEarlier": {
+    "CChainBalanceWei": "0",
+    "latestNonce": 2,
+    "pendingNonce": 2,
+    "evidence": "Funding receipts and RPC checks from preceding funding phase"
+  },
+  "assetInventory": "INCOMPLETE",
+  "reason": "eth_getLogs range limited to 100 blocks; chunked retry then RPC rate limited (429). X/P inventory and complete token inventory not established in this phase. Keep wallet and browser data; do not delete without proof.",
+  "DPAPIWallets": "UNCHANGED; never deleted",
+  "nextAction": "Retry read-only Fuji asset/pending/role inventory with backoff, then use individual Console Wallet DELETE UI only after safety checks."
+}
