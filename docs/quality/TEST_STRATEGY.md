@@ -100,6 +100,17 @@ Môi trường: local Hardhat `3.21.2` (EDR), Solidity `0.8.28`, `paris`, optimi
 
 Not Run: C01-T14..T17 (C05/C07/C08/C06), Fuji smoke (C04).
 
+## C05 — Bổ sung bằng chứng ngày 11/11/2026
+
+Ghi chú Not Run phía trên là snapshot kết quả C03 ngày 10/11, không phải kết quả hiện hành cho mọi phần việc. C04 đã có deployment/readback/source verification; C05 nay có **CaseVerified thật trên Fuji** ở block60893112, tx `0xc3b02934afb1f29816836fb22146dbc350202d3b2a9e8dbbb19c2fd2e7e8c00f`. Scope **independent contract smoke**, không phải job B05 hoặc backend HTTP/DB end-to-end.
+
+- `node --test contracts/review-tests/c05-proof.test.mjs`: **46/46 PASS**. BR10-P/N và C01-T14 ở mức Node verifier: receipt null/reverted, sai chain/hash/contract/signer/calldata/event/sequence/schema/commitment, removed/noncanonical/log mismatch và getter mismatch đều không được confirmed. Các negative inputs là test doubles, không phải cố tình gửi các giao dịch lỗi lên Fuji.
+- Actual Fuji positive: đúng receipt/event/calldata/canonical block, stored payload digest/case state readback PASS. Raw JSON-RPC `removed=false` được đối chiếu với log ethers, không mặc định trường bị thiếu là false. Chạy lại read-only không ghi proof và nonce latest=pending vẫn1.
+- Compile PASS; Hardhat **61/61 PASS**; C01 static/SHA-256/Keccak/ABI checks và C04 readback PASS. Contract source/ABI không đổi; không cài/nâng dependencies.
+- **NOT RUN / BLOCKED:** job DB B05 thật, Java/TypeScript vector agreement, worker/SQL recovery/concurrency/HTTP audit API/UI integration. Không gán kết quả Node/Fuji độc lập cho các tests IT01/03 hoặc C01-T15/T16. IT13 chỉ được chứng minh ở Node verifier, chưa adapter Java/DB.
+
+Chi tiết lệnh, kết quả, giới hạn và bàn giao: [C05 review](../reviews/C05_FUJI_RECEIPT_REVIEW.md); [machine-readable proof](../fixtures/c05/fuji-case-verified.proof.json). C05 full backlog Blocked, chưa Done; kết quả ngày 11/11 PARTIAL có bằng chứng thật và lý do chưa ghép B05.
+
 ### Kết quả backend B06 (11/11/2026)
 
 Môi trường: PostgreSQL local `aidbridge_test`, account `aidbridge_app`, schema riêng mỗi test class (Flyway V1–V10); chạy trong IntelliJ trên Windows. Kết quả do Dũng chạy và xác nhận.
