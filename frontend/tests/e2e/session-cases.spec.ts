@@ -19,7 +19,7 @@ async function login(page: Page, who: keyof typeof userEmail) {
 async function fillCreateForm(page: Page, suffix: string) {
   const token = `${Date.now()}-${Math.random().toString(16).slice(2, 7)}`;
   const title = `Smoke ${suffix} ${token}`;
-  await page.goto("/cases/new");
+  await page.getByRole("link", { name: "Create case", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Create a case", exact: true })).toBeVisible();
   await page.getByLabel("Fictional beneficiary alias", { exact: true }).fill(`Demo household ${token}`);
   await page.getByLabel("Approximate area", { exact: true }).fill("Fictional North district");
@@ -94,6 +94,9 @@ test("A creates two items; self review denied; B approves with distinct business
   expect(denied.status()).toBe(403);
   expect((await denied.json()).code).toBe("FORBIDDEN");
   await becomeReviewer(page, item);
+  const downloaded = page.waitForEvent("download");
+  await page.getByRole("link", { name: "Download evidence 1", exact: true }).click();
+  expect((await downloaded).suggestedFilename()).toBe("fictional-evidence.txt");
   await acknowledgeEvidence(page);
   await page.getByRole("button", { name: "Approve case", exact: true }).click();
   await expect(businessCard(page).getByText("VERIFIED", { exact: true })).toBeVisible();
@@ -157,7 +160,7 @@ test("server validation maps to the duplicate need row and focuses that input", 
   await expect(businessCard(page).getByText("SUBMITTED", { exact: true })).toBeVisible();
 });
 
-test("unknown create outcome retries the exact body and key without a second case", async ({ page }) => {
+test("unknown create outcome survives Back and transient session failure without a second case", async ({ page }) => {
   await login(page, "A");
   const title = await fillCreateForm(page, "unknown-outcome");
   await page.locator(".demo-tools summary").click();
@@ -170,11 +173,22 @@ test("unknown create outcome retries the exact body and key without a second cas
   await page.getByRole("button", { name: "Submit case", exact: true }).click();
   await expect(page.getByText("The outcome is unknown.", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Internal title", { exact: true })).toBeDisabled();
+  await page.goBack();
+  await expect(page.getByRole("heading", { name: "Organization cases", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Create case", exact: true }).click();
+  await expect(page.getByText("The outcome is unknown.", { exact: true })).toBeVisible();
+  await page.route("**/api/auth/me", route => route.fulfill({ status: 503, json: { code: "DEPENDENCY_UNAVAILABLE" } }), { times: 1 });
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(page.getByRole("button", { name: "Check session again" })).toBeVisible();
+  await page.getByRole("button", { name: "Check session again" }).click();
+  await expect(page.getByLabel("Internal title", { exact: true })).toHaveValue(title);
+  await page.route("**/api/cases", route => route.fulfill({ status: 403, json: { code: "CSRF_INVALID" } }), { times: 1 });
   await page.getByRole("button", { name: "Retry same request", exact: true }).click();
   await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
-  expect(captured).toHaveLength(2);
+  expect(captured).toHaveLength(3);
   expect(captured[0].key).toBeTruthy();
   expect(captured[1]).toEqual(captured[0]);
+  expect(captured[2]).toEqual(captured[0]);
   const response = await page.request.get(`/api/cases?organizationId=${organizationId}&page=0&size=100`);
   expect(response.status()).toBe(200);
   expect((await response.json()).items.filter((item: { internalTitle: string }) => item.internalTitle === title)).toHaveLength(1);

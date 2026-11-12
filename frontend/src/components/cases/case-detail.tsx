@@ -6,6 +6,7 @@ import { useSession } from "@/components/session-provider";
 import { canCreateCases } from "@/lib/api-client";
 import type { CaseDetailResponse, DecisionResponse } from "@/lib/types";
 import { describeError, ErrorNotice, LoadingCard, StatusBadge, type ErrorInfo } from "./shared";
+import { CampaignPanel } from "@/components/campaigns/campaign-panel";
 import { ReviewPanel } from "./review-panel";
 
 export function CaseDetail({ id }: { id: string }) {
@@ -22,6 +23,7 @@ function ScopedCaseDetail({ id }: { id: string }) {
   const [controlMessage, setControlMessage] = useState("");
   const [controlBusy, setControlBusy] = useState(false);
   const [reviewBusy, setReviewBusy] = useState(false);
+  const [campaignBusy, setCampaignBusy] = useState(false);
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => {
@@ -61,7 +63,7 @@ function ScopedCaseDetail({ id }: { id: string }) {
   const latestChanges = [...(detail.reviewHistory ?? [])].reverse().find(review => review.decision === "CHANGES_REQUESTED");
 
   return <div className="stack">
-    <header className="page-header"><div><Link href="/cases" className="back-link">← All cases</Link><p className="eyebrow">CASE · REVISION {detail.version}</p><h1>{detail.internalTitle}</h1><p className="muted">{detail.beneficiaryAlias} · {detail.approximateArea}</p></div><div className="actions">{canEdit && !reviewBusy && <Link className="button" href={`/cases/${detail.id}/edit`}>Edit case</Link>}<button type="button" className="button secondary" disabled={reviewBusy} onClick={() => setRefreshCount(value => value + 1)}>Refresh case</button></div></header>
+    <header className="page-header"><div><Link href="/cases" className="back-link">← All cases</Link><p className="eyebrow">CASE · REVISION {detail.version}</p><h1>{detail.internalTitle}</h1><p className="muted">{detail.beneficiaryAlias} · {detail.approximateArea}</p></div><div className="actions">{canEdit && !reviewBusy && <Link className="button" href={`/cases/${detail.id}/edit`}>Edit case</Link>}<button type="button" className="button secondary" disabled={reviewBusy || campaignBusy} onClick={() => setRefreshCount(value => value + 1)}>Refresh case</button></div></header>
     {detail.status === "CHANGES_REQUESTED" && <section className="notice"><strong>Reviewer requested changes</strong><p>{latestChanges?.reason || "Review feedback is not included in this API projection."}</p>{canEdit && <p>Open Edit case, save the requested revision, then explicitly resubmit for independent review.</p>}</section>}
     <div className="status-grid">
       <section className="card status-card"><span className="eyebrow">BUSINESS STATUS</span><StatusBadge status={detail.status} /><p className="muted">The current state of the aid request.</p></section>
@@ -71,10 +73,11 @@ function ScopedCaseDetail({ id }: { id: string }) {
       <div className="stack">
         <section className="card stack"><div className="toolbar"><div><p className="eyebrow">ESSENTIAL GOODS</p><h2>Requested support</h2></div><span className="badge">{detail.needs.length} items</span></div><div className="table-wrap"><table className="data-table"><caption className="sr-only">Requested goods</caption><thead><tr><th scope="col">Item</th><th scope="col">Unit</th><th scope="col">Quantity</th></tr></thead><tbody>{detail.needs.map(need => <tr key={need.id}><td>{need.name}</td><td>{need.unit}</td><td>{need.quantity.toLocaleString()}</td></tr>)}</tbody></table></div></section>
         <section className="card stack"><div><p className="eyebrow">PRIVATE RECORD</p><h2>Case context</h2></div><dl className="metadata"><div><dt>Created by</dt><dd>{detail.creator.displayName}</dd></div><div><dt>Priority</dt><dd>{detail.priority}</dd></div><div><dt>Created at</dt><dd><time dateTime={detail.createdAt}>{new Date(detail.createdAt).toLocaleString("en-GB", { timeZone: "UTC" })} UTC</time></dd></div><div><dt>Consent basis</dt><dd>{detail.consent.basis}</dd></div><div><dt>Consent scope</dt><dd>{detail.consent.scope}</dd></div><div><dt>Public summary permitted</dt><dd>{detail.consent.publicSummaryAllowed ? "Yes" : "No"}</dd></div><div><dt>Case ID</dt><dd className="mono">{detail.id}</dd></div></dl></section>
-        <section className="card stack"><div><p className="eyebrow">IMMUTABLE SNAPSHOT</p><h2>Evidence versions</h2><p className="muted">These version IDs form the exact snapshot for the current review.</p></div>{detail.evidenceVersions.length === 0 ? <p className="muted">No evidence versions are available. Review is unavailable.</p> : <ul className="evidence-list">{detail.evidenceVersions.map((evidence, index) => <li key={evidence.id}><div className="toolbar"><strong>Evidence {index + 1}</strong><span className="badge">Version {evidence.versionNo}</span></div><p className="mono">{evidence.id}</p><p className="muted">{evidence.mimeType} · {evidence.byteSize.toLocaleString()} bytes</p></li>)}</ul>}</section>
+        <section className="card stack"><div><p className="eyebrow">IMMUTABLE SNAPSHOT</p><h2>Evidence versions</h2><p className="muted">These version IDs form the exact snapshot for the current review.</p></div>{detail.evidenceVersions.length === 0 ? <p className="muted">No evidence versions are available. Review is unavailable.</p> : <ul className="evidence-list">{detail.evidenceVersions.map((evidence, index) => <li key={evidence.id}><div className="toolbar"><strong>Evidence {index + 1}</strong><span className="badge">Version {evidence.versionNo}</span></div><p className="mono">{evidence.id}</p><p className="muted">{evidence.mimeType} · {evidence.byteSize.toLocaleString()} bytes</p><a href={`/api/evidence-versions/${encodeURIComponent(evidence.id)}/content`} className="back-link">Download evidence {index + 1}</a></li>)}</ul>}</section>
       </div>
       <ReviewPanel detail={detail} onDecision={applyDecision} onRefresh={() => setRefreshCount(value => value + 1)} onBusyChange={setReviewBusy} />
     </div>
+    <CampaignPanel detail={detail} onBusyChange={setCampaignBusy} onPublished={() => setRefreshCount(value => value + 1)} />
     {mode === "mock" && <details className="card mock-controls"><summary>Mock review test controls</summary><p className="muted">These controls affect this local simulation only.</p><div className="actions"><button type="button" className="button secondary" disabled={controlBusy || reviewBusy || detail.status !== "SUBMITTED"} onClick={() => void mockAction("stale-case")}>Simulate a stale revision</button><button type="button" className="button secondary" disabled={controlBusy || reviewBusy || detail.status !== "SUBMITTED"} onClick={() => void mockAction("lose-next-response")}>Lose next mutation response</button></div>{controlMessage && <p role="status">{controlMessage}</p>}</details>}
   </div>;
 }

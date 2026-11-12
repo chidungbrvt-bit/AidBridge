@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useSession } from "@/components/session-provider";
-import { canCreateCases } from "@/lib/api-client";
+import { ApiError, canCreateCases } from "@/lib/api-client";
 import type { CreateCaseRequest, EvidenceFixture, NeedInput } from "@/lib/types";
+import type { PendingWrite } from "@/lib/session-work";
 import { describeError, ErrorNotice, FieldError, focusFirstError, LoadingCard, type ErrorInfo, type FieldIssue } from "./shared";
 
 type NeedRow = NeedInput & { rowKey: string };
-type Attempt = { key: string; body: CreateCaseRequest };
+type Attempt = PendingWrite<CreateCaseRequest>;
 
 export function CreateCase() {
   const { user, organizationId } = useSession();
@@ -17,12 +18,15 @@ export function CreateCase() {
 }
 
 function ScopedCreateCase() {
-  const { api, user, organizationId, setNavigationLocked } = useSession();
+  const { api, user, organizationId, setNavigationLocked, work } = useSession();
+  const actorId = user?.userId;
+  const attemptScope = `${actorId}:${organizationId}`;
+  const [initialAttempt] = useState(() => work.caseCreates.get(attemptScope));
+  const restored = initialAttempt?.body;
   const router = useRouter();
   const form = useRef<HTMLFormElement>(null);
   const mounted = useRef(true);
-  const pending = useRef<Attempt | null>(null);
-  const submitting = useRef(false);
+
   const [fixtures, setFixtures] = useState<EvidenceFixture[]>([]);
   const [fixtureLoading, setFixtureLoading] = useState(true);
   const [fixtureError, setFixtureError] = useState<ErrorInfo | null>(null);
@@ -30,11 +34,11 @@ function ScopedCreateCase() {
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [issues, setIssues] = useState<FieldIssue[]>([]);
   const [busy, setBusy] = useState(false);
-  const [uncertain, setUncertain] = useState(false);
-  const [beneficiaryAlias, setAlias] = useState("");
-  const [internalTitle, setTitle] = useState("");
-  const [approximateArea, setArea] = useState("");
-  const [priority, setPriority] = useState<"NORMAL" | "URGENT">("NORMAL");
+  const [uncertain, setUncertain] = useState(!!initialAttempt);
+  const [beneficiaryAlias, setAlias] = useState(restored?.beneficiaryAlias ?? "");
+  const [internalTitle, setTitle] = useState(restored?.internalTitle ?? "");
+  const [approximateArea, setArea] = useState(restored?.approximateArea ?? "");
+  const [priority, setPriority] = useState<"NORMAL" | "URGENT">(restored?.priority ?? "NORMAL");
   const [basis, setBasis] = useState<"CONSENT" | "REPRESENTATIVE">("CONSENT");
   const [scope, setScope] = useState("Use fictional household data to coordinate essential goods.");
   const [capturedAt, setCapturedAt] = useState(() => new Date().toISOString().slice(0, 16));
@@ -43,7 +47,7 @@ function ScopedCreateCase() {
   const [publicTitle, setPublicTitle] = useState("");
   const [publicSummary, setPublicSummary] = useState("");
   const [evidenceKeys, setEvidenceKeys] = useState<string[]>([]);
-  const [needs, setNeeds] = useState<NeedRow[]>([
+  const [needs, setNeeds] = useState<NeedRow[]>(restored?.needs.map((need, index) => ({ ...need, rowKey: String(index) })) ?? [
     { rowKey: "initial-food", name: "Rice", unit: "bag", quantity: 2 },
     { rowKey: "initial-hygiene", name: "Hygiene kit", unit: "kit", quantity: 2 },
   ]);
@@ -72,16 +76,28 @@ function ScopedCreateCase() {
   const describe = (name: string) => hasIssue(name) ? `error-${name}` : undefined;
 
   async function send(attempt: Attempt) {
-    if (submitting.current) return;
-    submitting.current = true;
-    pending.current = attempt;
+    if (work.caseCreates.get(attemptScope)?.inFlight) return;
+    const retry = work.caseCreates.get(attemptScope) === attempt;
+    attempt.inFlight = true;
+    work.caseCreates.set(attemptScope, attempt);
     setBusy(true);
     setError(null);
     setIssues([]);
     try {
-      const result = await api.createCase(attempt.body, attempt.key);
-      if (!mounted.current) return;
-      pending.current = null;
+      if (retry) {
+        const current = await api.me();
+        if (current.userId !== actorId || !canCreateCases(current, attempt.body.organizationId)) {
+          throw new ApiError({ type: "urn:aidbridge:error:forbidden", title: "Case creation permission changed", code: "FORBIDDEN", status: 403 });
+        }
+      }
+      const submitOnce = () => api.createCase(attempt.body, attempt.key);
+      const result = await submitOnce().catch(reason => {
+        // The backend rejected the token before the controller. Retry once with the original key and body.
+        if (reason instanceof ApiError && reason.code === "CSRF_INVALID") return submitOnce();
+        throw reason;
+      });
+      if (!mounted.current || work.caseCreates.get(attemptScope) !== attempt) return;
+      work.caseCreates.delete(attemptScope);
       setUncertain(false);
       router.push(`/cases/${result.id}`);
     } catch (reason) {
@@ -89,19 +105,19 @@ function ScopedCreateCase() {
       const info = describeError(reason);
       setError(info);
       setIssues(info.fieldErrors);
-      const unresolved = info.unknownOutcome || (uncertain && info.code === "CSRF_INVALID");
+      const unresolved = info.unknownOutcome || info.code === "CSRF_INVALID" || retry;
       setUncertain(unresolved);
-      if (!unresolved) pending.current = null;
+      if (!unresolved && work.caseCreates.get(attemptScope) === attempt) work.caseCreates.delete(attemptScope);
       focusFirstError(form, info.fieldErrors);
     } finally {
-      submitting.current = false;
+      attempt.inFlight = false;
       if (mounted.current) setBusy(false);
     }
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (uncertain || submitting.current) return;
+    if (uncertain || work.caseCreates.has(attemptScope)) return;
     const localIssues: FieldIssue[] = [];
     if (!consentConfirmed) localIssues.push({ field: "consentConfirmed", code: "CONFIRM_CONSENT" });
     if (evidenceKeys.length < 1) localIssues.push({ field: "evidenceFixtureKeys", code: "SELECT_EVIDENCE" });
@@ -126,7 +142,7 @@ function ScopedCreateCase() {
     <header className="page-header"><div><Link href="/cases" className="back-link">← All cases</Link><p className="eyebrow">NEW AID REQUEST</p><h1>Create a case</h1><p className="muted">Start with a fictional household, its needs, and the evidence to review.</p></div><span className="badge">Private organization record</span></header>
     <form ref={form} onSubmit={submit} className="stack">
       <ErrorNotice error={error} />
-      {uncertain && <div className="notice" role="status"><strong>The outcome is unknown.</strong><p>Your exact request and Idempotency-Key are kept in memory. Retry safely before leaving this page; the form stays locked to prevent a different submission.</p><button type="button" className="button" disabled={busy} onClick={() => { if (pending.current) void send(pending.current); }}>{busy ? "Resolving request…" : "Retry same request"}</button></div>}
+      {uncertain && <div className="notice" role="status"><strong>The outcome is unknown.</strong><p>Your exact request and Idempotency-Key are kept in memory. Retry safely before leaving this page; the form stays locked to prevent a different submission.</p><button type="button" className="button" disabled={busy} onClick={() => { const saved = work.caseCreates.get(attemptScope); if (saved) void send(saved); }}>{busy ? "Resolving request…" : "Retry same request"}</button></div>}
       <fieldset disabled={busy || uncertain} className="form-fieldset stack">
         <section className="card stack"><div><p className="eyebrow">01 · HOUSEHOLD</p><h2>The request</h2><p className="muted">Use aliases only. Do not enter real names, contact details, or precise addresses.</p></div>
           <div className="grid-2"><label className="field"><span>Fictional beneficiary alias</span><input name="beneficiaryAlias" value={beneficiaryAlias} onChange={event => setAlias(event.target.value)} placeholder="Demo household 18" required maxLength={120} aria-invalid={hasIssue("beneficiaryAlias")} aria-describedby={describe("beneficiaryAlias")} /><FieldError name="beneficiaryAlias" issues={issues} /></label>

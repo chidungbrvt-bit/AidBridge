@@ -1,6 +1,7 @@
 /** Server-only, process-memory simulation. No SQL/outbox/Fuji claim; never enabled by real transport mode. */
 import { createHash, randomUUID } from "node:crypto";
-import { MOCK_CASE_ID, MOCK_CREATE_CASE, MOCK_EVIDENCE, MOCK_IDENTITIES } from "./mock-fixtures";
+import type { CampaignResponse } from "../../features/donor/model";
+import { MOCK_CASE_ID, MOCK_CREATE_CASE, MOCK_EVIDENCE, MOCK_IDENTITIES, MOCK_ORGANIZATIONS } from "./mock-fixtures";
 import type { CaseDetailResponse, CaseStatus, CaseSummary, CreateCaseRequest, DecisionRequest, DecisionResponse, EvidenceVersion, FieldError, MeResponse, MockControlAction, PatchCaseRequest, ProblemDetail, ReviewAction } from "./types";
 
 const COOKIE = "AIDBRIDGE_MOCK_SESSION";
@@ -29,6 +30,7 @@ export function createMockBackend() {
   const sessions = new Map<string, Session>();
   const users = new Map(MOCK_IDENTITIES.map((identity) => [identity.user.userId, clone(identity.user)]));
   const cases = new Map<string, CaseDetailResponse>();
+  const campaigns = new Map<string, { caseId: string; organizationId: string; dto: CampaignResponse }>();
   const replay = new Map<string, StoredResponse>();
   const evidence = new Map<string, { caseId: string; bytes: string }>();
   const changesRequestedVersion = new Map<string, number>();
@@ -59,6 +61,27 @@ export function createMockBackend() {
     ownMembership(user, item.organizationId);
     return item;
   }
+  function requireCampaignAdmin(user: MeResponse, organizationId: string) {
+    if (!ownMembership(user, organizationId).roles.includes("ORG_ADMIN")) {
+      fail(403, "FORBIDDEN", "An organization administrator is required.");
+    }
+  }
+
+  function validateCampaignCase(item: CaseDetailResponse) {
+    if (item.status !== "VERIFIED" || !item.consent.publicSummaryAllowed ||
+        !item.needs.length || (item.disputeSummary?.openCount ?? 0) > 0) {
+      fail(409, "INVALID_STATE", "An approved case with public consent is required.");
+    }
+  }
+
+  function publicCopy(input: unknown, max: number, field: string): string {
+    const text = typeof input === "string" ? input.trim() : "";
+    if (!text || text.length > max || /[<>\u0000]|:\/\//.test(text)) {
+      fail(400, "VALIDATION_ERROR", "Invalid public text.", [{ field, code: "INVALID_PUBLIC_COPY" }]);
+    }
+    return text;
+  }
+
   function validateCreate(input: unknown): CreateCaseRequest {
     const body = object(input);
     const errors: FieldError[] = [];
@@ -160,6 +183,24 @@ export function createMockBackend() {
         return json({ user: { id: user.userId, fullName: user.fullName, email: identity.email, status: user.status, platformRole: user.platformRole, createdAt: "2026-11-01T00:00:00.000Z" } }, 200, { "Set-Cookie": cookieHeader(newId, secure) });
       }
       const user = session?.userId ? users.get(session.userId) : undefined;
+      const campaignMatch = path.match(/^\/api\/campaigns\/([^/]+)(\/publish)?$/);
+      if (method === "GET" && path === "/api/campaigns") {
+        const page = Number(url.searchParams.get("page") ?? 0);
+        const size = Number(url.searchParams.get("size") ?? 20);
+        if (!Number.isInteger(page) || page < 0 || !Number.isInteger(size) || size < 1 || size > 100) {
+          fail(400, "VALIDATION_ERROR", "Invalid list filter.");
+        }
+        const visible = [...campaigns.values()].map(entry => entry.dto).filter(campaign => campaign.status !== "DRAFT");
+        return json({ items: visible.slice(page * size, (page + 1) * size), page, size, totalElements: visible.length });
+      }
+      if (method === "GET" && campaignMatch && !campaignMatch[2]) {
+        const entry = campaigns.get(campaignMatch[1]);
+        if (!entry || (entry.dto.status === "DRAFT" && (user?.status !== "ACTIVE" ||
+            !user.memberships.some(m => m.status === "ACTIVE" && m.organizationId === entry.organizationId && m.roles.includes("ORG_ADMIN"))))) {
+          fail(404, "RESOURCE_NOT_FOUND", "Resource not found.");
+        }
+        return json({ ...entry.dto, items: [...entry.dto.items].reverse() });
+      }
       if (!user || user.status !== "ACTIVE") fail(401, "UNAUTHENTICATED", "Your session has expired. Sign in again.");
       if (method === "GET" && path === "/api/auth/me") return json(user);
       if (method === "POST" && path === "/api/auth/logout") {
@@ -176,6 +217,49 @@ export function createMockBackend() {
         return json(undefined, 204);
       }
       if (method === "GET" && session!.nextError) { session!.nextError = false; fail(503, "DEPENDENCY_UNAVAILABLE", "Simulated service interruption. Try again."); }
+      if (method === "POST" && path === "/api/campaigns") {
+        if (Object.keys(body).some(key => !["caseId", "title", "publicSummary"].includes(key)) || typeof body.caseId !== "string") {
+          fail(400, "VALIDATION_ERROR", "Invalid draft request.");
+        }
+        const item = ownCase(user, body.caseId);
+        requireCampaignAdmin(user, item.organizationId);
+        const title = publicCopy(body.title, 160, "title");
+        const publicSummary = publicCopy(body.publicSummary, 2000, "publicSummary");
+        return idempotent(request, user, { caseId: item.id, title, publicSummary }, () => {
+          validateCampaignCase(item);
+          if ([...campaigns.values()].some(entry => entry.caseId === item.id)) fail(409, "INVALID_STATE", "A campaign already exists for this case.");
+          const id = randomUUID();
+          const organization = MOCK_ORGANIZATIONS.find(org => org.id === item.organizationId)!;
+          const dto: CampaignResponse = {
+            id, status: "DRAFT", title, publicSummary,
+            approximateArea: publicCopy(item.approximateArea, 160, "approximateArea"),
+            organization: { name: organization.name, publicRef: `0x${createHash("sha256").update(organization.id).digest("hex")}` },
+            auditUrl: `/api/campaigns/${id}/audit-trail`,
+            items: item.needs.map(need => ({
+              id: randomUUID(), name: need.name, unit: need.unit, targetQty: need.quantity,
+              pledgedQty: 0, receivedQty: 0, deliveredQty: 0, confirmedQty: 0, remainingPledgeQty: need.quantity,
+            })),
+          };
+          campaigns.set(id, { caseId: item.id, organizationId: item.organizationId, dto });
+          return { body: dto, status: 201, headers: { Location: `/api/campaigns/${id}` }, digest: "" };
+        }, session!);
+      }
+      if (method === "POST" && campaignMatch?.[2]) {
+        const entry = campaigns.get(campaignMatch[1]);
+        if (!entry) fail(404, "RESOURCE_NOT_FOUND", "Resource not found.");
+        const item = ownCase(user, entry.caseId);
+        requireCampaignAdmin(user, entry.organizationId);
+        if (Object.keys(body).length) fail(400, "VALIDATION_ERROR", "Publish takes an empty JSON object.");
+        return idempotent(request, user, {}, () => {
+          if (entry.dto.status !== "DRAFT") fail(409, "INVALID_STATE", "Only a draft can be published.");
+          validateCampaignCase(item);
+          item.status = "IN_PROGRESS";
+          item.version += 1;
+          saveRevision(item);
+          entry.dto = { ...entry.dto, status: "PUBLISHED", items: [...entry.dto.items].reverse() };
+          return { body: entry.dto, status: 200, headers: {}, digest: "" };
+        }, session!);
+      }
       if (method === "GET" && path === "/api/evidence-fixtures") {
         const organizationId = url.searchParams.get("organizationId") ?? ""; ownMembership(user, organizationId);
         return json((MOCK_EVIDENCE[organizationId] ?? []).map(({ label, ...fixture }) => {

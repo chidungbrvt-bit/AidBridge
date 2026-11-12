@@ -14,7 +14,8 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const donorPath = pathname === '/campaigns' || pathname.startsWith('/campaigns/') || pathname === '/me/commitments';
   const [actionError, setActionError] = useState('');
   const [busy, setBusy] = useState(false);
-  useEffect(() => { if (!loading && !user) router.replace('/login'); }, [loading, user, router]);
+  useEffect(() => { if (!loading && !user && !session.checkingFailed) router.replace('/login'); }, [loading, user, session.checkingFailed, router]);
+  if (session.checkingFailed && !user) return <main className="center-state"><div className="card stack"><p role="alert">{session.error}</p><button className="button" onClick={() => void session.refreshUser()}>Check session again</button></div></main>;
   if (loading || !user) return <main className="center-state" aria-live="polite">Opening your workspace…</main>;
   const memberships = activeMemberships(user);
   const membership = memberships.find(item => item.organizationId === organizationId);
@@ -42,6 +43,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
         {user.donorEnabled && <Link className={pathname === '/me/commitments' ? 'nav-active' : ''} href="/me/commitments">My pledges</Link>}
         {canReadCases(user, organizationId) && <Link className={pathname === '/cases' ? 'nav-active' : ''} href="/cases"><span aria-hidden="true">▦</span> Cases</Link>}
         {canCreateCases(user, organizationId) && <Link className={pathname === '/cases/new' ? 'nav-active' : ''} href="/cases/new"><span aria-hidden="true">＋</span> Create case</Link>}
+        {canReadCases(user, organizationId) && <Link className={pathname === '/audit-preview' ? 'nav-active' : ''} href="/audit-preview">Audit preview</Link>}
         {canReviewCases(user, organizationId) && <Link href="/cases?status=SUBMITTED"><span aria-hidden="true">✓</span> Review queue</Link>}
       </nav>
       <div className="sidebar-note"><span className="eyebrow">INDEPENDENT REVIEW</span><p>Every case starts with a need.<br/>Every approval needs a second person.</p></div>
