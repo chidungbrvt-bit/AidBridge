@@ -1,5 +1,7 @@
 # F07 — G01/G02/G03 donor UI: triển khai và bàn giao
 
+**Cập nhật 12/11:** G01–G03 đã nối vào Next routes và shared API client B07; 57 unit +14 browser HTTP-contract tests và21 preview regressions PASS, build PASS. Nghiệm thu real backend/DB còn PARTIAL, không coi HTTP fixtures là backend E2E. Xem [F07 B07 integration](../reviews/F07_B07_API_INTEGRATION.md); các nội dung mock và chưa Next integration bên dưới là lịch sử ngày10–11.
+
 Người thực hiện: Khoa/Codex. Status: **In Review**. Đã chạy giao diện thật trong trình duyệt, sử dụng mock data; chưa tích hợp backend hoặc blockchain thật. Commit F01 cd5d88d38b971134e3a23ba5ba999b68e2711271 được giữ nguyên.
 
 **Cập nhật 11/11:** G03 đã triển khai và nghiệm thu nội bộ ở mức mock, xem mục cuối tài liệu. Các counts/phạm vi ngày10 bên dưới là lịch sử; kết quả hiện hành là 18 unit +21 browser tests. F07 vẫn In Review, không đồng nghĩa backend/Next integration đã đạt.

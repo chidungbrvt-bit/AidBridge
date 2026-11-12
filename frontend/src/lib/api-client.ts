@@ -1,3 +1,4 @@
+import type { CampaignResponse, CommitmentRequest, CommitmentResponse, CancellationRequest, Page } from "../../features/donor/model";
 import type { BlockchainStatus, CaseDetailResponse, CaseListQuery, CaseSummary, CreateCaseRequest, CsrfResponse, DecisionRequest, DecisionResponse, EvidenceFixture, FieldError, LoginRequest, LoginResponse, MeResponse, Membership, MockControlAction, OrganizationRole, PageResponse, PatchCaseRequest, ProblemDetail, ResubmitCaseRequest, ReviewAction } from "./types";
 
 export type Transport = (path: string, init?: RequestInit) => Promise<Response>;
@@ -137,5 +138,10 @@ export class ApiClient {
   async patchCase(id: string, body: PatchCaseRequest, key: string): Promise<CaseDetailResponse> { return normalizeCaseDetail(await this.mutate(`/api/cases/${encodeURIComponent(id)}`, body, key, "PATCH")); }
   async resubmitCase(id: string, body: ResubmitCaseRequest, key: string): Promise<CaseDetailResponse> { return normalizeCaseDetail(await this.mutate(`/api/cases/${encodeURIComponent(id)}/resubmit`, body, key)); }
   async reviewCase(id: string, action: ReviewAction, body: DecisionRequest, key: string): Promise<DecisionResponse> { return normalizeDecision(await this.mutate(`/api/cases/${encodeURIComponent(id)}/${action}`, body, key)); }
+  async listCampaigns(page = 0): Promise<Page<CampaignResponse>> { return this.request(`/api/campaigns?${new URLSearchParams({page: String(page), size: '20'})}`); }
+  async getCampaign(id: string): Promise<CampaignResponse> { return this.request(`/api/campaigns/${encodeURIComponent(id)}`); }
+  async getCommitments(page = 0): Promise<Page<CommitmentResponse>> { return this.request(`/api/me/commitments?${new URLSearchParams({page: String(page), size: '20'})}`); }
+  async pledge(id: string, body: CommitmentRequest, key: string): Promise<CommitmentResponse> { return this.mutate(`/api/campaigns/${encodeURIComponent(id)}/commitments`, body, key); }
+  async cancel(id: string, body: CancellationRequest, key: string): Promise<CommitmentResponse> { return this.mutate(`/api/commitments/${encodeURIComponent(id)}/cancellations`, body, key); }
   mockControl(action: MockControlAction, caseId?: string): Promise<void> { return this.mutate("/api/mock/control", { action, caseId }); }
 }

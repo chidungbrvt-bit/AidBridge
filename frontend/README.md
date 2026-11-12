@@ -44,6 +44,10 @@ npm run test:e2e -- --project=real
 
 HTTP smoke tạo **hai hồ sơ giả**, giữ audit: changes/edit/resubmit/approve và reject. Script từ chối header mock trước khi gửi credentials; không log body/cookie/password. Thiếu cấu hình báo **Not Run**; Playwright real skipped không được tính pass.
 
-F07 Khoa giữ nguyên trong `features/donor`, preview riêng `dev/donor-preview`; Next không biên dịch cấu hình Vite của preview. B06 P01–P04 thuộc F06.
+F07 G01–G03 đã tích hợp vào Next: `/campaigns`, `/campaigns/{id}`, `/me/commitments`; dùng session/cookie/CSRF và API client chung, cần donor grant thật. Preview riêng `dev/donor-preview` vẫn dùng mock và không được copy vào real path. B06 campaign authoring thuộc F06.
+
+Test F07 HTTP contract trên server **real mode**: `npm run test:e2e -- --project=donor-api`. Playwright intercept API bằng fixtures trong tests; đây không phải Spring Boot/DB E2E. Project mock của F03/F04 loại donor-api để tránh trộn mode. `npm test` gồm session/case, donor adapter và donor model tests.
+
+Xem [bàn giao F07 B07](../docs/reviews/F07_B07_API_INTEGRATION.md) về routes, retry/idempotency, kết quả và môi trường còn thiếu.
 
 Xem [bàn giao hiện tại](../docs/handoffs/MINH_F03_F04_2026-11-12.md). Bàn giao cũ `MINH_F03_F04.md` là lịch sử.

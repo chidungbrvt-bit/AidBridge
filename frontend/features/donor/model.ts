@@ -20,7 +20,9 @@ export function validateCancellation(commitment: CommitmentResponse, draft: Draf
     else if (qty > item.outstandingQty) errors[item.id] = `Only ${item.outstandingQty} unreceived goods can be cancelled.`;
     else items.push({ contributionItemId: item.id, quantity: qty });
   }
+  if (items.length > 50) errors.form = 'Select no more than 50 items.';
   if (!commitment.items.some(item => draft[item.id]?.selected)) errors.form = 'Select at least one unreceived item.';
+  if (/[<>\0]|:\/\//.test(reason)) errors.reason = 'Use plain text without markup or URLs.';
   if (!reason.trim() || reason.trim().length > 500) errors.reason = 'Enter a reason from 1 to 500 characters.';
   return { errors, body: { items, reason: reason.trim() } };
 }
@@ -45,6 +47,7 @@ export function validateDraft(campaign: CampaignResponse, draft: Draft) {
     else if (qty > item.remainingPledgeQty) errors[item.id] = `Only ${item.remainingPledgeQty} ${item.unit} remain available to pledge.`;
     else items.push({ campaignItemId: item.id, quantity: qty });
   }
+  if (items.length > 50) errors.form = 'Select no more than 50 items.';
   if (!campaign.items.some(item => draft[item.id]?.selected)) errors.form = 'Select at least one item.';
   return { errors, body: { items } };
 }
