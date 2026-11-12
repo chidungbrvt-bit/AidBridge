@@ -575,7 +575,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Acceptance criteria:** Atomic multi-line form, same-key network retry, overflow refresh, own history, unreceived cancel; no provenance claim.
 - **Required tests:** BR04-N, BR11-P/N; E2E03, donor privacy.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** In Review (cập nhật11/11/2026). Khoa/Codex đã triển khai mock G01/G02 và bổ sung **G03 unreceived cancellation PASS nghiệm thu nội bộ** theo phân công ngày11. [F07 implementation](../design/F07_DONOR_IMPLEMENTATION.md): multi-line cancellation, đúng original pledged/cancelled/received/outstanding/status, capacity refetch, 400/403/409, stale receipt conflict, same-key retry/double-submit guard. Lint/typecheck/build PASS; **17 unit +17 browser E2E PASS**, gồm toàn bộ regression G01/G02 và desktop/mobile/keyboard, không gọi backend/Fuji. Fixtures S2 F02 được tái sử dụng, không đổi backend hoặc shell Minh. Chưa backend/Next/session/CSRF/DB concurrency integration, dependencies F06/B07 và group review chưa đạt; không Done. Owner/estimate/lịch baseline giữ nguyên; actual human effort chưa có số liệu.
+- **Status / evidence (12/11/2026):** In Review; **F07 PASS trong phạm vi CI thật**: Next production → Spring Boot HTTP → PostgreSQL16. Run43200835548, SHA80e0b88:57 frontend unit +9 backend validation +5 browser E2E +1 Java host test PASS,0 skip/error/failure. [Bàn giao/JSON evidence](../reviews/F07_B07_API_INTEGRATION.md) có G01/G02/G03, session/CSRF, received409, commit504/exact replay, SQL audit/outbox và grant revocation. Received data là SQL fixture test, không phải R01/B08 E2E. PR13 OPEN, không merge; team review/dev provisioning còn riêng, không Done. Owner/estimate/lịch baseline giữ nguyên, actual human effort chưa có số liệu.
 
 ### F08 - Receipt/delivery UI
 
@@ -799,3 +799,13 @@ In Review, technical gate **PASS** tại 903f952: GitHub Actions run43191039984 
 ### C07 — xác minh lại CI và tách việc Fuji, 12/11/2026
 
 Giữ In Review, **technical PASS** được xác minh lại tại SHA4795c9a, run43191763706: compile + 22 unit + 18 integration tests PASS, 0 skip/error/failure. Acceptance matrix tại [C07 review](../reviews/C07_WORKER_SAFETY_REVIEW.md). PR10 đã merge d38fadb; PR12 là bản sửa C07 độc lập, chỉ merge sau checks head hiện hành và branch protection. Người dùng hoãn hoàn toàn rotation/funding sang cuối ngày, giữ nguyên ví/chain; việc đó không chặn C07. C05 Fuji E2E vẫn PARTIAL. Chưa Done, chưa triển khai F07/F08.
+
+
+### F07 — tích hợp B07 thật vào frontend chung, 12/11/2026
+
+Giữ In Review; Khoa thực hiện theo phân công ngày12, không đổi owner/estimate/deadline baseline. G01/G02/G03 đã dùng ApiClient/session chung qua routes `/campaigns`, `/campaigns/{id}`, `/me/commitments`, không mock fallback trong production. Lint/typecheck/Next build PASS;57 unit +14 browser HTTP-contract (production build) +21 preview regressions PASS. **PARTIAL về backend/DB E2E** vì máy Khoa không có backend8081/DB env được cấp, donor dev seed/campaign published chưa xác minh; CI không chạy code F07 chưa push theo user. [Bàn giao](../reviews/F07_B07_API_INTEGRATION.md). Cần Dũng cung cấp env/seed dev, Minh review shell/client và proxy/session thật; không giả backend PASS, không task khác/chain transaction/F08, chưa push/PR.
+
+
+### F07 — kiểm chứng backend thật PASS trên CI, 12/11/2026
+
+Giữ In Review, **PASS** theo [CI run43200835548](https://github.com/chidungbrvt-bit/AidBridge/actions/runs/43200835548), SHA80e0b88:57 unit frontend,9 Java validation,5 browser E2E và1 host IT, không skips/errors/failures. PostgreSQL assertions xác minh multi-item pledge, own history, partial cancel, received409/no-write, G01/G03 commit504/replay chỉ ghi một lần và CSRF/validation/revoked donor403 không ghi DB. [Review/evidence](../reviews/F07_B07_API_INTEGRATION.md). Thay thế kết luận PARTIAL trước đó cho CI; Windows vẫn không cài/chạy JDK/DB. Receipt seed chỉ là fixture như B07 tests (B08/R01 chưa kiểm), worker/chain tắt. PR13 đã tạo, chưa merge, không thay task khác/owner/estimate hoặc làm F08.

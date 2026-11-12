@@ -41,7 +41,7 @@ export function CancellationForm({ api, commitment, campaign, ready, onChanged, 
       setMessage('Cancellation saved. Received goods are unchanged. Pending on-chain.'); onChanged(saved); onLock(false);
     } catch (error) {
       if (!alive.current) return;
-      if (error instanceof ApiError && !cancellationOutcomeUnknown(error)) {
+      if (error instanceof ApiError && error.problem.code !== 'CSRF_INVALID' && !cancellationOutcomeUnknown(error)) {
         pending.current = null; setUnknown(false); onLock(false);
         setMessage(`${error.problem.status === 409 ? '409 Conflict' : error.problem.status} ${error.problem.code}: ${error.problem.detail}`);
         const fieldErrors: Record<string, string> = {};
@@ -55,7 +55,7 @@ export function CancellationForm({ api, commitment, campaign, ready, onChanged, 
         if (error.problem.status === 409) onChanged();
       } else {
         setUnknown(true);
-        setMessage(`${error instanceof ApiError ? `${error.problem.status} ${error.problem.code}: ` : ''}Cancellation outcome is unknown. Retry the same cancellation to recover safely.`);
+        setMessage(error instanceof ApiError && error.problem.code === 'CSRF_INVALID' ? 'The security token expired. Retry the same cancellation with a refreshed token.' : `${error instanceof ApiError ? `${error.problem.status} ${error.problem.code}: ` : ''}Cancellation outcome is unknown. Retry the same cancellation to recover safely.`);
       }
     } finally { locked.current = false; if (alive.current) setBusy(false); }
   }

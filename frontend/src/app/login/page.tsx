@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ApiError } from '@/lib/api-client';
+import { activeMemberships, ApiError } from '@/lib/api-client';
 import { useSession } from '@/components/session-provider';
 
 export default function LoginPage() {
@@ -13,11 +13,11 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const errorRef = useRef<HTMLParagraphElement>(null);
-  useEffect(() => { if (user) router.replace('/cases'); }, [user, router]);
+  useEffect(() => { if (user) router.replace(user.donorEnabled && activeMemberships(user).length === 0 ? '/campaigns' : '/cases'); }, [user, router]);
   useEffect(() => { if (error) errorRef.current?.focus(); }, [error]);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(''); setBusy(true);
-    try { await login({ email: email.trim(), password }); router.replace('/cases'); }
+    try { await login({ email: email.trim(), password }); }
     catch (cause) {
       setError(cause instanceof ApiError && cause.code === 'INVALID_CREDENTIALS' ? 'Email or password is incorrect.' : cause instanceof ApiError && cause.code === 'CSRF_INVALID' ? 'The security token expired. Please try signing in again.' : cause instanceof ApiError && cause.code === 'FORBIDDEN' ? 'This account is not allowed to sign in.' : 'Sign in could not be completed. Check the API connection and retry.');
     } finally { setPassword(''); setBusy(false); }
