@@ -27,6 +27,7 @@ public class AuditEvent {
     @Column(name = "organization_id")
     private UUID organizationId;
 
+    @Getter
     @Column(name = "aid_case_id")
     private UUID caseId;
 

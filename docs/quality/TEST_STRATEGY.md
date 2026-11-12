@@ -78,6 +78,15 @@ B06 (11/11/2026) bổ sung kiểm thử campaign draft/publish (P01–P04):
 - `campaign/CampaignRequestValidationTest` (4 tests): bắt buộc `caseId`, trim và blank → `null`, biên 160/2000 ký tự.
 - Giới hạn: quy tắc BR-08 về `<`, `>`, `://`, NUL nằm trong `CampaignService` nên chỉ test được qua HTTP; nhánh backfill dữ liệu cũ của V10 chưa được test (schema test luôn rỗng).
 
+B07 (12/11/2026) bổ sung kiểm thử commitment/cancel/idempotency (G01–G03):
+- `casefile/ContributionSchemaIT` (9): V11 (donor flag, ràng buộc số lượng, 4 composite FK, `public_ref`), `activeTotals`/`receivedTotals`, mapping JPA, `/api/auth/me` phản ánh donor grant.
+- `casefile/ContributionPledgeIT` (9): BR04-P/N (atomic multi-line, sức chứa tính cả pledge của donor khác), BR11-P/N (replay, cùng key khác payload, kiểm tra quyền lại trước replay), 404/409/400, 401/403/CSRF, last-unit 20 request song song trên target 10, hai pledge 6+6 trên target 10.
+- `casefile/ContributionOutboxIT` (5): đúng 1 `AID_PLEDGED` + 1 job `PENDING` mỗi pledge, `chain_sequence` liên tục theo case, rollback không để lại audit/job, replay không ghi thêm, số liệu pledge công khai trong P03/P04.
+- `casefile/ContributionCancelIT` (10): G02 (chỉ dữ liệu của mình, thứ tự xác định, trạng thái chain theo thời gian thực, G01 khớp G02 tới từng micro giây, phân trang) và G03 (hủy một phần/toàn bộ, không hủy phần đã nhận, `CANCELLED`/`RECEIVED`, atomic, 400/403/404/409, replay).
+- `casefile/ContributionConcurrencyIT` (4): hủy × pledge (5 vòng), hủy × hủy cùng dòng, cùng key × 8, pledge song song nhiều item một case (3 vòng × 10) với sequence không trùng và không hụt.
+- `contribution/CommitmentRequestValidationTest` (5), `contribution/CancellationRequestValidationTest` (4).
+- Giới hạn: chưa đếm số câu SQL để chứng minh G02 không N+1; chưa có test hủy × nhận hàng (cần B08) và pledge × mở dispute (cần B10); `pom.xml` chưa cấu hình surefire nên muốn chạy `*IT` phải dùng `-Dtest=*Test,*Tests,*IT`.
+
 B04 tests07/11 (D41/A): `casefile/CaseApiIT`, `EvidenceAccessIT`, `B04MigrationIT` chạy production HTTP + installed PostgreSQL trong schemas riêng của aidbridge_test; guards từ chối dev URL hoặc account khác aidbridge_app. Không clean/drop/provision DB. Coverage BR01/08/09/11, IT09/15: two-line create/read, tenant/role/creator/revocation, consent/public consent/validation, session/CSRF, version/concurrent edit, idempotency same-key/payload/org conflicts, audit-failure rollback, evidence byte/hash/history/access audit/traversal, immutable overwrite rejection và private log markers. B04MigrationIT có clean V6, upgrade-preserve và legacy guard tests. Đây là tests đã viết và compile, chưa ghi Pass cho PostgreSQL khi thiếu env. `CaseRequestValidationTest`/`EvidenceFixtureCatalogTest` kiểm tra DTO constraints, actual resource hashes/bytes và property binding không dùng DB. Latest commands/results tại Task Backlog; [B04 runbook](../architecture/B04_CASE_WORKFLOW.md) chỉ cách chạy IntelliJ. B05 review states trong fixtures là SQL simulation, không B05 API implementation.
 
 Fictional household `Demo Household A`, org `AidBridge Demo Organization`, need food package2 and hygiene kit2; alternate second org; users each own identity plus dual-role negative account. Private evidence markers are synthetic strings used to assert no leak, not real people data. Each test creates isolated IDs; test transaction/snapshots must not obscure separate-thread locking tests.
@@ -119,3 +128,13 @@ Môi trường: PostgreSQL local `aidbridge_test`, account `aidbridge_app`, sche
 |---|---|---|---|---|---|---|---|---|---|
 | B06-UT `CampaignRequestValidationTest` | 11/11/2026 | JDK 21, Maven offline | `.\mvnw.cmd -o test -Dtest=CampaignRequestValidationTest` | 4 tests pass | 4/4 | Pass | Dũng / Khoa, Minh review | `src/test/java/com/aidbridge/campaign/CampaignRequestValidationTest.java` | B06 |
 | B06-IT `CampaignApiIT` (BR03-P/N, BR08-P/N, BR11-P) | 11/11/2026 | `aidbridge_test`, IntelliJ JUnit | `.\mvnw.cmd -o test -Dtest=CampaignApiIT` | 15 tests pass | 15/15 | Pass | Dũng / Khoa, Minh review | `src/test/java/com/aidbridge/casefile/CampaignApiIT.java` | B06; trước khi pass đã phát hiện và sửa 2 lỗi trong `CampaignService` (off-by-one reviewed version; so sánh item phụ thuộc thứ tự gây `409` ngẫu nhiên) |
+
+### Kết quả backend B07 (12/11/2026)
+
+Môi trường: PostgreSQL local `aidbridge_test`, account `aidbridge_app`, Flyway V1–V12; chạy trên Windows. Kết quả do Dũng chạy và xác nhận.
+
+| Test ID | date | environment/build | command | expected | actual | pass/fail | owner | evidence link | defect/task |
+|---|---|---|---|---|---|---|---|---|---|
+| B07-IT (BR04-P/N, BR11-P/N, IT10 phần pledge/cancel) | 12/11/2026 | `aidbridge_test` | `.\mvnw.cmd -o test -Dtest=ContributionSchemaIT,ContributionPledgeIT,ContributionOutboxIT,ContributionCancelIT,ContributionConcurrencyIT` | 37 tests pass | Dũng xác nhận pass | Pass | Dũng / Khoa, Minh review | `src/test/java/com/aidbridge/casefile/Contribution*IT.java` | B07; đã sửa lỗi làm tròn `pledgedAt` |
+| B07-UT | 12/11/2026 | JDK 21, Maven offline | `.\mvnw.cmd -o test -Dtest=CommitmentRequestValidationTest,CancellationRequestValidationTest` | 9 tests pass | Dũng xác nhận pass | Pass | Dũng | `src/test/java/com/aidbridge/contribution/` | B07 |
+| Hồi quy B03–B07 | 12/11/2026 | `aidbridge_test` + DB dev | `.\mvnw.cmd -o test "-Dtest=*Test,*Tests,*IT"` | Failures 0, Skipped 0 | Dũng xác nhận pass; tổng số test chưa ghi lại | Pass | Dũng | `target/surefire-reports` | B07 |

@@ -25,4 +25,10 @@ public class BusinessException extends RuntimeException {
     public static BusinessException stale() {
         return new BusinessException(HttpStatus.CONFLICT, "VERSION_CONFLICT", "The case has changed; refresh and try again");
     }
+    public static BusinessException quantityExceeded() {
+        return new BusinessException(HttpStatus.CONFLICT, "QUANTITY_EXCEEDED", "Requested quantity exceeds the remaining capacity");
+    }
+    public static BusinessException disputeOpen() {
+        return new BusinessException(HttpStatus.CONFLICT, "DISPUTE_OPEN", "The case has an open dispute");
+    }
 }

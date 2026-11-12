@@ -144,6 +144,23 @@ Implemented and covered by `CampaignApiIT` (15 tests) and `CampaignRequestValida
 - **`CampaignResponse`**: `{id, status, title, publicSummary, approximateArea, organization {name, publicRef}, items[{id, name, unit, targetQty, pledgedQty, receivedQty, deliveredQty, confirmedQty, remainingPledgeQty}], auditUrl}`. `publicRef` is `0x` + 64 lowercase hex. Until B07–B10 the progress fields are `0` and `remainingPledgeQty = targetQty`. Never exposes case ID, beneficiary alias, internal title, user IDs/emails, evidence keys or the internal organization ID.
 - **OPEN (D50)**: the order of `items[]` is currently not guaranteed.
 
+### B07 contribution implementation notes (12/11/2026)
+
+Implemented and covered by `ContributionPledgeIT`, `ContributionCancelIT`, `ContributionOutboxIT`, `ContributionConcurrencyIT` and the two request validation tests.
+
+- **Donor (D52)**: ACTIVE user with `users.donor_enabled = true`; no membership needed. No platform-role or staff bypass. Granted only through SQL/seed. `MeResponse.donorEnabled` reads the column.
+- **G01 `POST /api/campaigns/{id}/commitments`**: CSRF + `Idempotency-Key`. Body `{items:[{campaignItemId, quantity 1..1000000}]}`, 1..50 distinct lines. Lock order case → campaign → campaign items (ORDER BY id) → contribution rows. `201` + `Location: /api/commitments/{id}` (identifier only, F02-A04) + `Cache-Control: no-store`; `auditEventId` = `AID_PLEDGED`, `blockchainStatus = PENDING_ON_CHAIN`.
+  - `400 VALIDATION_ERROR`: shape, duplicate items, item not in this campaign, missing or malformed key.
+  - `401 UNAUTHENTICATED` (no session) / `INVALID_CREDENTIALS` (account no longer ACTIVE); `403 FORBIDDEN` (no donor grant) / `CSRF_INVALID`.
+  - `404 RESOURCE_NOT_FOUND`: campaign missing, `DRAFT`, or organization not `APPROVED`.
+  - `409 INVALID_STATE` (`FULFILLED`/`CLOSED`), `DISPUTE_OPEN`, `QUANTITY_EXCEEDED` (any line; the whole request rolls back), `IDEMPOTENCY_CONFLICT`.
+- **G02 `GET /api/me/commitments?page=0&size=20`**: `page >= 0`, `size` 1..100, else `400`. Only the caller's contributions, ordered `pledgedAt DESC, id`. `CommitmentPage {items, page, size, totalElements}`. `auditEventId` is the `AID_PLEDGED` event; `blockchainStatus` is live: job `PENDING`/`PROCESSING`/`SUBMITTED` → `PENDING_ON_CHAIN`, `CONFIRMED` → `CONFIRMED_ON_CHAIN`, `FAILED` → `FAILED_ON_CHAIN`, no job → `NOT_APPLICABLE`. A revoked donor grant also blocks history (`403`).
+- **G03 `POST /api/commitments/{id}/cancellations`**: CSRF + `Idempotency-Key`. Body `{items:[{contributionItemId, quantity}], reason}`; `reason` required, 1..500 characters, no `<`, `>`, `://` or NUL. Owner only (another donor's contribution → `404`). Per line `quantity <= pledged - cancelled - received`, else `409 QUANTITY_EXCEEDED` and the whole request rolls back. Campaign must be `PUBLISHED` with no open dispute. `200 CommitmentResponse`; `auditEventId` is the new `COMMITMENT_REDUCED` event. Status becomes `CANCELLED` when nothing is outstanding and nothing was received, `RECEIVED` when nothing is outstanding but something was received; otherwise unchanged.
+- **Replay** (G01/G03) returns the stored snapshot (status, body, `Location`, `Idempotent-Replayed: true`), including the `blockchainStatus` at creation; G02 shows the live state. The donor grant is re-checked before any replay.
+- **Line order** in `CommitmentResponse`: campaign item name, unit, id (deterministic, independent of D50).
+- **`CampaignResponse` (P03/P04)**: `pledgedQty` = Σ(pledged − cancelled), live; `remainingPledgeQty = targetQty − pledgedQty`; `receivedQty`/`deliveredQty`/`confirmedQty` stay 0 until B08–B10.
+- **Private audit payloads**: `AID_PLEDGED {payloadVersion, contributionId, lines[{campaignItemId, quantity}]}`; `COMMITMENT_REDUCED` adds `contributionItemId` per line and `reason`. No donor name or email.
+
 ## End-to-end request example
 
 Donor authenticated with CSRF sends `POST /api/campaigns/{id}/commitments`, `Idempotency-Key: <new UUID>`:

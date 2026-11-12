@@ -18,7 +18,7 @@ Dũng = B/Backend; Khoa = C/Blockchain & Integration; Minh = F/Frontend & Produc
 - Sáu P0: organization login/RBAC, create case, independent verification, campaign/commitment, goods receipt/delivery/independent confirmation, Fuji audit.
 - Mỗi actor là tài khoản riêng. Không beneficiary login, self-registration, money processing, escrow, token, NFT hoặc custom Avalanche L1.
 - Evidence dùng fixtures riêng tư có version. UI upload, reports, organization onboarding và member-management UI thuộc P1.
-- Không mở rộng sang AI/ML, mobile offline, hotline hoặc multi-organization trust infrastructure.
+- Không mở rộng sang mobile offline, hotline hoặc multi-organization trust infrastructure. AI/ML bị loại khỏi P0; ngoại lệ duy nhất là bản demo ML offline theo D51: dữ liệu giả lập, chỉ gợi ý thứ tự xem xét, mọi nơi hiển thị ghi rõ DEMO, nằm ở thư mục `ml/` riêng, không import vào backend, không nối vào luồng duyệt/phân bổ, không ghi lên chain, không PII, ngoài 168h và ngoài Definition of Done của P0. Không biến demo thành tính năng sản phẩm nếu chưa có decision mới.
 
 ## Architecture và folders
 

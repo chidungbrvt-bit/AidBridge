@@ -12,7 +12,7 @@ Ngày tạo: 03/11/2026. Cập nhật: 07/11/2026. Người duy trì: Dũng (B).
 
 ## Early-completion policy - user confirmed03/11/2026
 
-18/11 đủ sáu P0;20/11 stable demo;22/11 package/video/runbooks sẵn sàng;25/11 chỉ external submission limit. Xong task sớm thì handoff ngay và pull task tiếp theo đã đủ dependencies, không đợi đến ngày trong lịch. Khi blocked, giúp critical path/review/tests; không tự thêm P1/ML. WIP1 task chính/người.
+18/11 đủ sáu P0;20/11 stable demo;22/11 package/video/runbooks sẵn sàng;25/11 chỉ external submission limit. Xong task sớm thì handoff ngay và pull task tiếp theo đã đủ dependencies, không đợi đến ngày trong lịch. Khi blocked, giúp critical path/review/tests; không tự thêm P1/ML (ngoại lệ: bản demo ML theo D51, tính riêng bên dưới). WIP1 task chính/người.
 
 Giữ nguyên56h work+8h reserve/người.03-20/11 weekday2.5h/weekend5h=55h;21-22/11 x3h=6h;23-25/11 x1h=3h reserve; tổng64h/người không đổi. D26/D27 thay cách phân bổ và deadlines cũ, không giảm estimate/quality hoặc ghi lùi completion. Tiến độ thực tế cập nhật trong bảng và progress log; chưa có bằng chứng deploy.
 
@@ -30,7 +30,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | B04 | P0-02 | Dũng (B) | Khoa / Minh | M | 4 | B03 | 2026-11-07 | 2026-11-07 | In Progress |
 | B05 | P0-03 | Dũng (B) | Khoa / Minh | L | 4 | B04, C01 | 2026-11-08 | 2026-11-08 | In Review |
 | B06 | P0-04 | Dũng (B) | Khoa / Minh | M | 6 | B05 | 2026-11-10 | 2026-11-10 | In Review |
-| B07 | P0-04 | Dũng (B) | Khoa / Minh | L | 7 | B06 | 2026-11-13 | 2026-11-13 | Not Started |
+| B07 | P0-04 | Dũng (B) | Khoa / Minh | L | 7 | B06 | 2026-11-13 | 2026-11-13 | In Review |
 | B08 | P0-05 | Dũng (B) | Khoa / Minh | M | 5 | B07 | 2026-11-14 | 2026-11-14 | Not Started |
 | B09 | P0-05 | Dũng (B) | Khoa / Minh | L | 5 | B08 | 2026-11-15 | 2026-11-15 | Not Started |
 | B10 | P0-05 | Dũng (B) | Khoa / Minh | L | 6 | B09 | 2026-11-18 | 2026-11-17 | Not Started |
@@ -41,7 +41,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | C03 | P0-03/P0-06 | Khoa (C) | Dũng / Minh | L | 5 | C01, C02 | 2026-11-07 | 2026-11-07 | In Review |
 | C04 | P0-06 | Khoa (C) | Dũng / Minh | M | 2 | C03 | 2026-11-07 | 2026-11-07 | In Review |
 | C05 | P0-03/P0-06 | Khoa (C) | Dũng / Minh | L | 6 | B05, C04 | 2026-11-09 | 2026-11-08 | Blocked |
-| C06 | P0-04/P0-05/P0-06 | Khoa (C) | Dũng / Minh | L | 6 | C03 | 2026-11-11 | 2026-11-11 | Not Started |
+| C06 | P0-04/P0-05/P0-06 | Khoa (C) | Dũng / Minh | L | 6 | C03 | 2026-11-11 | 2026-11-11 | In Progress |
 | C07 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C05 | 2026-11-14 | 2026-11-14 | Not Started |
 | C08 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C06, C07 | 2026-11-15 | 2026-11-15 | Not Started |
 | C09 | P0-06 | Khoa (C) | Dũng / Minh | M | 3 | C08 | 2026-11-16 | 2026-11-16 | Not Started |
@@ -62,6 +62,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | F12 | Submission | Minh (F) | Dũng / Khoa | L | 5 | F11 | 2026-11-22 | 2026-11-22 | Not Started |
 
 **Total36 tasks/168h; B56h, C56h, F56h;24h reserve against192h capacity.**
+
+**Gói demo ML (D51, 11/11/2026) tính riêng:** ML-1..ML-5 gồm 9h, ngoài 36 task/168h và ngoài Definition of Done của P0; giờ thêm lấy từ dự phòng. Xem [DAILY_ROADMAP](DAILY_ROADMAP.md#gói-demo-ml-d51--tính-riêng-ngoài-168h).
 
 ## Issue-ready specifications
 
@@ -208,7 +210,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
 - **Phối hợp cụ thể:** Dũng giữ quantity/idempotency và event ID nghiệp vụ; Khoa dùng đầu ra này trong C07/C06, không làm lại business validation trong adapter. Hai bạn kiểm tra retry không tạo thêm pledge/event.
 - **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Review (12/11/2026). Forward `V11__reconcile_contribution_schema.sql` (D52 donor grant, schema contribution, composite FK) và `V12__link_blockchain_jobs_to_case.sql` (D53); package `contribution` gồm G01 `POST /api/campaigns/{id}/commitments`, G02 `GET /api/me/commitments`, G03 `POST /api/commitments/{id}/cancellations`; outbox `AID_PLEDGED`/`COMMITMENT_REDUCED` + `blockchain_jobs(PENDING)` với `chain_sequence` liên tục theo case; `CampaignResponse.pledgedQty/remainingPledgeQty` lấy số thật. Dũng xác nhận pass trên `aidbridge_test`: `ContributionSchemaIT` (9), `ContributionPledgeIT` (9), `ContributionOutboxIT` (5), `ContributionCancelIT` (10), `ContributionConcurrencyIT` (4), `CommitmentRequestValidationTest` (5), `CancellationRequestValidationTest` (4) và hồi quy toàn bộ `-Dtest=*Test,*Tests,*IT`. Trong quá trình làm, test phát hiện và đã sửa lỗi `pledgedAt` lệch 1 µs giữa G01 và G02 do driver làm tròn. Actual human effort chưa được cung cấp. Còn chờ: Khoa review D53 (constructor `BlockchainJob`, worker lọc `event_type`), Minh review shape G01–G03 cho F07 và integration evidence.
 
 ### B08 - Partial goods receipts
 
@@ -376,7 +378,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Acceptance criteria:** Pledge/reduction/receipt/delivery/confirm/dispute/resolve; same org/case refs, no duplicate/absent/void/disputed confirm, sequence guards.
 - **Required tests:** BR08-P/N, BR11-P/N, BR12-P/N; SC04-11.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Progress (11/11/2026, phần 1/2 do Dũng hỗ trợ; Khoa primary owner và reviewer). Thêm vào `AidRegistry.sol` (chỉ thêm; `git diff --numstat` 0 dòng xóa; code C03 giữ nguyên): `recordAidCommitment`, `recordCommitmentReduction`, `recordGoodsReceipt`, `recordDelivery`; event `AidCommitted`, `CommitmentReduced`, `GoodsReceived`, `DeliveryRecorded`; error `CaseNotVerified`, `CaseHasOpenDispute`, `RefAlreadyUsed`, `RefNotFound`, `RefOrganizationMismatch`, `RefCaseMismatch`. Guard order D49 `C01-O05`; `payloadDigest` gồm selector + envelope + ref riêng. Quyết định user 11/11: reduction không có ref riêng (phân biệt bằng `eventId`); reduction/receipt không bị chặn khi có dispute mở; `DeliveryStatus { None, Recorded }`, nối thêm `Confirmed`/`Voided` ngày 12/11. Test mới `contracts/test/AidRegistry.milestones.test.ts`: happy path, BR12-N, SC09, BR11-N/SC04, C01-T17, SC05 refs, SC10 input, ABI allowlist. Lệnh trong `contracts/`: `npm run compile` PASS; `npx hardhat test test/AidRegistry.milestones.test.ts` 86 passing, 1 pending; `npm test` 130 passing, 1 pending (44 test C03/C02 vẫn xanh). ABI xuất từ compiler artifact: `docs/fixtures/c06/AidRegistry.milestones.abi.json` (14 entry). Not Run: `CaseHasOpenDispute` (cần `flagDispute`); `confirmDelivery`, `flagDispute`, `resolveDispute` (12/11); Java/Web3j decode (C05); Fuji (C04); Khoa review. Actual effort chưa ghi nhận. Chưa Done.
 
 ### C07 - Durable signing/submission worker
 
@@ -543,6 +545,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Phối hợp cụ thể:** Minh ghép API/status UI; Dũng hỗ trợ DTO/auth/errors, Khoa xác nhận chain status/hash/link. Hash vừa gửi chưa được hiển thị confirmed.
 - **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Hỗ trợ Dũng (12/11/2026):** lập bảng trạng thái audit kỳ vọng `docs/reviews/F05_AUDIT_STATUS_EXPECTATIONS.md` (8 tình huống, GAP-1..7). Chưa có bằng chứng Fuji nên bảng chỉ dùng với fixture; GAP-1..3 (audit-trail, txHash/explorerUrl, trạng thái chain sống) chặn F05. Không phải Done.
 
 ### F06 - Campaign multi-item UI
 
@@ -644,6 +647,21 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
 
+## ML demo package (D51)
+
+Không thuộc sáu P0 và không cộng vào 168h. Mục đích: một bản demo ML offline nộp kèm BTC, chạy ổn định trên dữ liệu giả lập, ghi rõ chỉ là bản demo. Quy tắc chung: thư mục `ml/` riêng (đề xuất), không import vào backend, không nối vào luồng duyệt/phân bổ, không ghi lên chain, không PII, mọi nơi hiển thị ghi DEMO. Tiêu chí "chạy ổn" xem [DAILY_ROADMAP](DAILY_ROADMAP.md#gói-demo-ml-d51--tính-riêng-ngoài-168h). Môi trường: scikit-learn chưa có trong môi trường cloud của Claude; chưa kiểm tra máy thành viên, ML-1 phải kiểm tra trước.
+
+| ID | Phụ trách chính | Hỗ trợ / kiểm tra | Giờ | Thời gian | Dependencies | Acceptance | Status |
+|---|---|---|---:|---|---|---|---|
+| ML-1 | Minh (F) | Dũng kiểm tra schema và không PII | 3 | 12–13/11 | D51 | Đặc tả; bộ sinh seed cố định ~10.000 hồ sơ, 3 hồ sơ tổ chức giả lập, nhiễu nhãn và thiếu giá trị; luật cơ sở; test bộ sinh và schema | Not Started |
+| ML-2 | Dũng (B) | Minh kiểm tra thước đo | 3 | 13–15/11 | ML-1 | Logistic Regression so với luật cơ sở; 5 seed x 5 fold, trung bình ± độ lệch chuẩn; ca sai; chỉ số theo nhóm; một lệnh chạy lại; smoke test pipeline | Not Started |
+| ML-3 | Dũng (B) | Minh kiểm tra wording | 1 | 20/11 | ML-2 | Giới hạn trung thực; phần "để thành bản chính thức cần gì" (dữ liệu thật có đồng ý, gán nhãn, đánh giá độc lập, thời gian huấn luyện, người duyệt quyết định và khiếu nại, kiểm tra thiên lệch) | Not Started |
+| ML-4 | Minh (F) | Khoa kiểm tra wording DEMO | 1,5 | 16–17/11 | ML-2 | Trang tĩnh đọc điểm tính sẵn, có biểu ngữ DEMO; không gọi backend; cắt nếu P0 trễ tại 17/11 | Not Started |
+| ML-5 | Khoa (C) | Dũng kiểm tra BR-02 | 0,5 | 20/11 | ML-2, ML-4 | Không PII, không dữ liệu ML lên chain, ML không thể duyệt hay đổi trạng thái hồ sơ; có bước trong kịch bản demo | Not Started |
+
+Status / evidence: tất cả Not Started; chưa có code, giờ thực tế hay kết quả kiểm thử.
+
+
 ## First ten immediate actions
 
 1. Review scope/capacity and documentation vs coding authorization boundary.
@@ -680,7 +698,9 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | C02 (Hardhat 3 local toolchain & smoke tests) | 09/11/2026 | In Review | Chưa ghi nhận giờ làm thực tế của Dũng | Commit `84a042f` (PR `#3` merged vào `main`): `contracts/` với Solidity `0.8.28`, `evmVersion: paris`, `ToolchainSmokeProbe.sol` & `ToolchainSmoke.test.ts` (`3 passing`) | Khoa review và dùng làm nền triển khai `C03` (`AidRegistry.sol`) |
 | C01 & F02 (D49 cross-owner review & protocol freeze) | 10/11/2026 | In Review | Chưa ghi nhận giờ làm thực tế của Dũng | Dũng chạy `node docs/fixtures/c01/verify-c01.mjs --ethers` và `node docs/fixtures/f02/verify-f02.mjs` (`PASS`); chốt toàn bộ `C01-O01..O05` và `F02-A01..A05` tại `D49` | Bàn giao lại cho Khoa (`C03`/`C05`) và Minh (`F03`/`F04`/`F07`/`F08`) |
 | C03 (AidRegistry slice, Part 1 + Part 2 negative/privacy tests) | 10/11/2026 | In Review | Chưa ghi nhận giờ làm thực tế của Dũng | `AidRegistry.sol` + 2 file test; `npm run compile` PASS ("No contracts to compile" — artifact hiện có đã khớp source); `npm test` 44 passing (3 + 5 + 36); `verify-c01.mjs --ethers` PASS; ABI draft 4/4 khớp artifact | Khoa review contract, guard order và C01-T12 deviation trước C04 Fuji pilot (11/11); C06 mở rộng milestone khi được giao |
+| ML-1..ML-5 (D51 planning) | 11/11/2026 | Not Started | Chưa ghi nhận | User chọn bản demo ML offline trên dữ liệu giả lập quy mô rộng; chỉ cập nhật tài liệu (D51, AGENTS, MVP_SCOPE, DAILY_ROADMAP, TASK_BACKLOG); chưa có code hoặc test | Minh bắt đầu ML-1 (kiểm tra Python/thư viện trên máy); Dũng duyệt schema; theo dõi quy tắc cắt tại 17/11 |
 | B06 (P01–P04 implementation & tests) | 11/11/2026 | In Review | Estimate gốc 6h (deadline gốc 10/11/2026); actual human effort chưa được cung cấp | V10 reconcile + `Campaign`/`CampaignItem` + `CampaignService`/`CampaignController`; sửa 2 lỗi do test phát hiện (off-by-one reviewed version, so sánh item phụ thuộc thứ tự); Dũng xác nhận `CampaignApiIT` 15/15 và `CampaignRequestValidationTest` 4/4 pass trên `aidbridge_test` | Khoa/Minh cross-owner review; bàn giao P01–P04 cho F06; chốt D50; B07 sẵn sàng khi được phê duyệt |
+| B07 (G01–G03 implementation & tests, T1–T5) | 12/11/2026 | In Review | Estimate gốc 7h (deadline 13/11/2026); actual human effort chưa được cung cấp | V11/V12 + package `contribution` + outbox AID_PLEDGED/COMMITMENT_REDUCED + số liệu pledge công khai; 37 IT + 9 unit B07 và hồi quy toàn bộ được Dũng xác nhận pass trên `aidbridge_test`; sửa lỗi làm tròn `pledgedAt` | Khoa review D53 + worker lọc `event_type`; Minh nối F07 với G01–G03; B08 sẵn sàng khi được phê duyệt |
 
 ### C01 review handoff - 09/11/2026
 
