@@ -111,6 +111,30 @@ Theo [backlog](TASK_BACKLOG.md), C01–C10 và F01–F10 có tổng estimate 92h
 | Release · Smoke và rollback | Khoa | F10 | 2h | Chuẩn bị checklist chạy demo và rollback. Khi Minh có bản công khai, chạy kịch bản hàng hóa và lưu bằng chứng Fuji đã xác minh. | Checklist, kết quả từng bước, receipt/event và điều kiện rollback. |
 | Release · Demo công khai | Minh | F10 | 2h | Khi đủ điều kiện và đã được phép, triển khai rồi kiểm tra HTTPS/session, truy cập dữ liệu riêng tư và luồng demo chung với Khoa. | URL demo và kết quả smoke, hoặc blocker cùng trạng thái từng P0 nếu chưa thể triển khai. |
 
+## Gói demo ML (D51) — tính riêng, ngoài 168h
+
+Cập nhật 11/11/2026. User yêu cầu một bản demo ML nộp kèm BTC, ghi rõ chỉ là bản demo và cần thời gian huấn luyện để thành bản chính thức. Gói này thay mục "ML offline" 4h của D47: tổng 9h (Dũng 4h, Minh 4,5h, Khoa 0,5h), tức thêm 5h (Dũng +2h, Minh +2,5h, Khoa +0,5h). Giờ thêm lấy từ dự phòng, không tăng quỹ 64h/người; cần xác nhận lại khi chốt actuals. Gói nằm ngoài sáu P0 và ngoài Definition of Done của P0 (xem [D51](DECISION_LOG.md#quyết-định)).
+
+| Task | Người | Giờ | Ngày | Việc cần làm | Đầu ra |
+|---|---|---:|---|---|---|
+| ML-1 | Minh | 3h | 12–13/11 | Kiểm tra Python và thư viện trên máy. Viết đặc tả bài toán, đặc trưng không PII, nhãn và thước đo. Dựng bộ sinh dữ liệu giả lập quy mô rộng và luật cơ sở. | Đặc tả, bộ sinh dữ liệu, dữ liệu mẫu, luật cơ sở |
+| ML-2 | Dũng | 3h | 13–15/11 | Huấn luyện Logistic Regression, so với luật cơ sở. Chạy nhiều seed và kiểm định chéo, phân tích ca sai, chỉ số theo nhóm giả lập. Đóng gói thành một lệnh chạy lại. | Kết quả, script, test pipeline |
+| ML-3 | Dũng | 1h | 20/11 | Ghi giới hạn trung thực và phần "để thành bản chính thức cần gì". | Tài liệu giới hạn và lộ trình |
+| ML-4 | Minh | 1,5h | 16–17/11 | Trang demo tĩnh hiển thị điểm gợi ý tính sẵn, có biểu ngữ DEMO, không đọc hay ghi backend. | Trang demo |
+| ML-5 | Khoa | 0,5h | 20/11 | Rà quyền riêng tư: không PII, không lên chain, không tự duyệt (BR-02). Thêm bước vào kịch bản demo. | Biên bản rà soát ngắn |
+
+**Tiêu chí "chạy ổn" (mục tiêu đề xuất, chưa chạy lần nào; ngưỡng chỉnh sau lần chạy đầu):**
+
+1. **Quy mô dữ liệu:** khoảng 10.000 hồ sơ giả lập, 3 hồ sơ tổ chức giả lập có phân phối khác nhau, nhóm ưu tiên cao 10–20%, nhiễu nhãn khoảng 5%, thiếu giá trị 2–5%. Seed cố định, không có cột PII.
+2. **Tái lập:** cùng seed cho cùng dữ liệu và cùng chỉ số. Một lệnh chạy từ bản checkout sạch. Thời gian chạy mục tiêu dưới 2 phút trên laptop.
+3. **Ổn định:** 5 seed nhân kiểm định chéo 5 fold, báo cáo trung bình ± độ lệch chuẩn của mô hình và luật cơ sở. Ngưỡng đề xuất: độ lệch chuẩn AUC dưới 0,02.
+4. **Chịu lỗi dữ liệu:** pipeline xử lý thiếu giá trị, mất cân bằng lớp và cột lạ. Schema sai thì dừng với thông báo rõ.
+5. **Lát cắt:** chỉ số theo nhóm giả lập (vùng, kiểu hộ) để thấy chênh lệch lớn.
+6. **Kiểm thử tự động:** test cho bộ sinh (seed, phạm vi giá trị), schema, không PII và một smoke test cả pipeline.
+7. **Trung thực:** mọi nơi hiển thị điểm đều có chữ DEMO. Không dùng cụm "phát hiện gian lận" và không công bố độ chính xác như kết quả thật, vì nhãn sinh từ luật.
+
+**Quy tắc cắt:** đến 17/11 nếu P0 chưa đúng tiến độ thì bỏ ML-4, giữ báo cáo offline (ML-1..ML-3). ML không bao giờ được lấy giờ của task P0 đang trễ.
+
 ## Phối hợp Dũng và Khoa
 
 B = Dũng, C = Khoa, F = Minh; mã task/giờ/ngày giữ nguyên. Đầu ra B05/B07/B08–B11 bàn giao cho các task C liên quan theo [phân công](TEAM_RESPONSIBILITIES.md): Dũng nghiệp vụ/Java/DB/REST, Khoa contract/Fuji/signing/nonce/receipt/log, Minh UI/E2E. Hỗ trợ sâu hơn khi Dũng tiết kiệm được giờ thực tế phải ghi task/phần việc/người và không double-book;8h reserve không mặc định đều có sớm.

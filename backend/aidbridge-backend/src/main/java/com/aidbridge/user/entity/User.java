@@ -67,6 +67,9 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Column(name = "donor_enabled", nullable = false)
+    private boolean donorEnabled;
+
     /** The caller must encode the password before constructing a user. */
     public User(String fullName, String email, String passwordHash) {
         setFullName(fullName);

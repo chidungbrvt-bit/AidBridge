@@ -49,4 +49,22 @@ public interface CampaignRepository extends JpaRepository<Campaign, UUID> {
             )
             """, nativeQuery = true)
     boolean hasActiveDispute(@Param("caseId") UUID caseId);
+
+    interface PublicCampaignRef {
+        UUID getCampaignId();
+        UUID getCaseId();
+        UUID getOrganizationId();
+    }
+
+    /** Scalars only, so callers can lock rows before any Campaign entity enters the persistence context. */
+    @Query("""
+            SELECT c.id AS campaignId, c.aidCase.id AS caseId, c.organization.id AS organizationId
+            FROM Campaign c
+            WHERE c.id = :id AND c.status <> :hidden AND c.organization.status = :orgStatus
+            """)
+    Optional<PublicCampaignRef> findPublicRef(
+            @Param("id") UUID id,
+            @Param("hidden") Campaign.Status hidden,
+            @Param("orgStatus") Organization.Status orgStatus
+    );
 }
