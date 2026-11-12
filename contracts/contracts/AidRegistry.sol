@@ -13,6 +13,11 @@ contract AidRegistry is AccessControl {
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
     uint16 public constant SCHEMA_VERSION_V1 = 1;
 
+    /// @dev C06 part 2: resolveDispute outcomes. uint8 (not an enum) keeps the ABI fixed-size and lets an
+    ///      out-of-range value revert with InvalidResolution instead of an opaque enum-conversion Panic.
+    uint8 private constant RESOLUTION_UPHOLD = 1;
+    uint8 private constant RESOLUTION_VOID_DELIVERY = 2;
+
     struct OrganizationRecord {
         bool registered;
         bool active;
@@ -50,13 +55,29 @@ contract AidRegistry is AccessControl {
 
     enum DeliveryStatus {
         None,
-        Recorded
+        Recorded,
+        Confirmed,
+        Voided
     }
 
     struct DeliveryRecord {
         bytes32 orgRef;
         bytes32 caseRef;
         DeliveryStatus status;
+    }
+
+    enum DisputeStatus {
+        None,
+        Open,
+        Resolved
+    }
+
+    /// @dev deliveryRef == bytes32(0) means a case-level dispute (see flagDispute).
+    struct DisputeRecord {
+        bytes32 orgRef;
+        bytes32 caseRef;
+        bytes32 deliveryRef;
+        DisputeStatus status;
     }
 
     mapping(bytes32 => OrganizationRecord) private _organizations;
@@ -68,6 +89,7 @@ contract AidRegistry is AccessControl {
     mapping(bytes32 => CommitmentRecord) private _commitments;
     mapping(bytes32 => ReceiptRecord) private _receipts;
     mapping(bytes32 => DeliveryRecord) private _deliveries;
+    mapping(bytes32 => DisputeRecord) private _disputes;
 
     error InvalidZeroInput();
     error OrganizationAlreadyRegistered(bytes32 orgRef);
@@ -86,6 +108,11 @@ contract AidRegistry is AccessControl {
     error RefNotFound(bytes32 ref);
     error RefOrganizationMismatch(bytes32 ref, bytes32 expectedOrgRef, bytes32 actualOrgRef);
     error RefCaseMismatch(bytes32 ref, bytes32 expectedCaseRef, bytes32 actualCaseRef);
+    error InvalidDeliveryState(bytes32 deliveryRef, DeliveryStatus status);
+    error DisputeNotOpen(bytes32 disputeRef);
+    error InvalidResolution(uint8 resolution);
+    error DisputeDeliveryMismatch(bytes32 disputeRef, bytes32 expectedDeliveryRef, bytes32 actualDeliveryRef);
+    error DisputeHasNoDelivery(bytes32 disputeRef);
 
     event OrganizationRegistered(
         bytes32 indexed orgRef,
@@ -154,6 +181,56 @@ contract AidRegistry is AccessControl {
         uint16 schemaVersion,
         uint64 timestamp,
         bytes32 deliveryRef
+    );
+
+    event DeliveryConfirmed(
+        bytes32 indexed orgRef,
+        bytes32 indexed caseRef,
+        bytes32 indexed eventId,
+        uint64 chainSequence,
+        bytes32 evidenceCommitment,
+        uint16 schemaVersion,
+        uint64 timestamp,
+        bytes32 deliveryRef
+    );
+
+    event DisputeFlagged(
+        bytes32 indexed orgRef,
+        bytes32 indexed caseRef,
+        bytes32 indexed eventId,
+        uint64 chainSequence,
+        bytes32 evidenceCommitment,
+        uint16 schemaVersion,
+        uint64 timestamp,
+        bytes32 disputeRef,
+        bytes32 deliveryRef
+    );
+
+    event DisputeResolved(
+        bytes32 indexed orgRef,
+        bytes32 indexed caseRef,
+        bytes32 indexed eventId,
+        uint64 chainSequence,
+        bytes32 evidenceCommitment,
+        uint16 schemaVersion,
+        uint64 timestamp,
+        bytes32 disputeRef,
+        uint8 resolution,
+        bytes32 deliveryRef
+    );
+
+    /// @dev Emitted only by resolveDispute(VOID_DELIVERY), before DisputeResolved and with the same
+    ///      eventId and chainSequence: one command, one job, two logs.
+    event DeliveryVoided(
+        bytes32 indexed orgRef,
+        bytes32 indexed caseRef,
+        bytes32 indexed eventId,
+        uint64 chainSequence,
+        bytes32 evidenceCommitment,
+        uint16 schemaVersion,
+        uint64 timestamp,
+        bytes32 deliveryRef,
+        bytes32 disputeRef
     );
 
     constructor(address initialAdmin) {
@@ -671,6 +748,252 @@ contract AidRegistry is AccessControl {
         );
     }
 
+    // ---------------------------------------------------------------------------------------------
+    // C06 part 2: delivery confirmation and disputes.
+    // BR-06 (the confirmer must differ from the delivery recorder) and "only a platform admin may void"
+    // CANNOT be enforced on-chain: every write is signed by the same organization relayer, so the chain
+    // never sees the human actors. The backend enforces both before it enqueues the job.
+    // ---------------------------------------------------------------------------------------------
+
+    function confirmDelivery(
+        bytes32 orgRef,
+        bytes32 caseRef,
+        bytes32 eventId,
+        uint64 chainSequence,
+        bytes32 evidenceCommitment,
+        uint16 schemaVersion,
+        bytes32 deliveryRef
+    ) external {
+        // 1. Organization & caller authorization first
+        _requireAuthorizedRelayer(orgRef);
+
+        // 2. Structural & input validation
+        _requireValidEnvelope(orgRef, caseRef, eventId, chainSequence, evidenceCommitment, schemaVersion);
+        if (deliveryRef == bytes32(0)) {
+            revert InvalidZeroInput();
+        }
+
+        // 3. Duplicate eventId check; the digest binds the operation selector and deliveryRef
+        bytes32 payloadDigest = keccak256(
+            abi.encode(
+                this.confirmDelivery.selector,
+                orgRef,
+                caseRef,
+                chainSequence,
+                evidenceCommitment,
+                schemaVersion,
+                deliveryRef
+            )
+        );
+        _requireNewEvent(eventId, payloadDigest);
+
+        // 4. Case verified, owned by orgRef, no open dispute; delivery of this org/case and still Recorded
+        CaseRecord storage caseRecord = _requireVerifiedCase(orgRef, caseRef, true);
+        DeliveryRecord storage delivery = _requireDeliveryOfCase(deliveryRef, orgRef, caseRef);
+        if (delivery.status != DeliveryStatus.Recorded) {
+            revert InvalidDeliveryState(deliveryRef, delivery.status);
+        }
+
+        // 5. chainSequence progression
+        _requireNextSequence(caseRecord, caseRef, chainSequence);
+
+        // 6. State write & event emission
+        _storeEvent(
+            eventId,
+            this.confirmDelivery.selector,
+            orgRef,
+            caseRef,
+            chainSequence,
+            evidenceCommitment,
+            schemaVersion,
+            payloadDigest
+        );
+        delivery.status = DeliveryStatus.Confirmed;
+        caseRecord.lastChainSequence = chainSequence;
+
+        emit DeliveryConfirmed(
+            orgRef,
+            caseRef,
+            eventId,
+            chainSequence,
+            evidenceCommitment,
+            schemaVersion,
+            uint64(block.timestamp),
+            deliveryRef
+        );
+    }
+
+    /// @notice Opens a dispute. Several disputes may be open on the same case or delivery at once.
+    /// @param deliveryRef bytes32(0) = case-level dispute. This is a deliberate exception to the
+    ///        "operation refs must be non-zero" rule; a non-zero value must name a non-voided delivery
+    ///        of the same organization and case. Flagging an already Confirmed delivery is allowed.
+    function flagDispute(
+        bytes32 orgRef,
+        bytes32 caseRef,
+        bytes32 eventId,
+        uint64 chainSequence,
+        bytes32 evidenceCommitment,
+        uint16 schemaVersion,
+        bytes32 disputeRef,
+        bytes32 deliveryRef
+    ) external {
+        // 1. Organization & caller authorization first
+        _requireAuthorizedRelayer(orgRef);
+
+        // 2. Structural & input validation (deliveryRef may be zero, see @param)
+        _requireValidEnvelope(orgRef, caseRef, eventId, chainSequence, evidenceCommitment, schemaVersion);
+        if (disputeRef == bytes32(0)) {
+            revert InvalidZeroInput();
+        }
+
+        // 3. Duplicate eventId check; the digest binds the selector, disputeRef and deliveryRef
+        bytes32 payloadDigest = keccak256(
+            abi.encode(
+                this.flagDispute.selector,
+                orgRef,
+                caseRef,
+                chainSequence,
+                evidenceCommitment,
+                schemaVersion,
+                disputeRef,
+                deliveryRef
+            )
+        );
+        _requireNewEvent(eventId, payloadDigest);
+
+        // 4. Case verified and owned by orgRef (an open dispute does NOT block another flag);
+        //    disputeRef must be new; an optional delivery must belong to this org/case and not be Voided.
+        CaseRecord storage caseRecord = _requireVerifiedCase(orgRef, caseRef, false);
+        if (_disputes[disputeRef].orgRef != bytes32(0)) {
+            revert RefAlreadyUsed(disputeRef);
+        }
+        if (deliveryRef != bytes32(0)) {
+            DeliveryStatus status = _requireDeliveryOfCase(deliveryRef, orgRef, caseRef).status;
+            if (status == DeliveryStatus.Voided) {
+                revert InvalidDeliveryState(deliveryRef, status);
+            }
+        }
+
+        // 5. chainSequence progression
+        _requireNextSequence(caseRecord, caseRef, chainSequence);
+
+        // 6. State write & event emission
+        _storeEvent(
+            eventId,
+            this.flagDispute.selector,
+            orgRef,
+            caseRef,
+            chainSequence,
+            evidenceCommitment,
+            schemaVersion,
+            payloadDigest
+        );
+        _disputes[disputeRef] = DisputeRecord({
+            orgRef: orgRef,
+            caseRef: caseRef,
+            deliveryRef: deliveryRef,
+            status: DisputeStatus.Open
+        });
+        caseRecord.openDisputeCount += 1;
+        caseRecord.lastChainSequence = chainSequence;
+
+        emit DisputeFlagged(
+            orgRef,
+            caseRef,
+            eventId,
+            chainSequence,
+            evidenceCommitment,
+            schemaVersion,
+            uint64(block.timestamp),
+            disputeRef,
+            deliveryRef
+        );
+    }
+
+    /// @notice Resolves an open dispute with UPHOLD (1) or VOID_DELIVERY (2).
+    /// @param deliveryRef must equal the deliveryRef stored by flagDispute for BOTH outcomes
+    ///        (bytes32(0) for a case-level dispute), so the event always describes the stored dispute.
+    /// @dev VOID_DELIVERY emits DeliveryVoided then DisputeResolved under one eventId and one chainSequence;
+    ///      the event record stores the resolveDispute selector. Off-chain verifiers must expect both logs.
+    function resolveDispute(
+        bytes32 orgRef,
+        bytes32 caseRef,
+        bytes32 eventId,
+        uint64 chainSequence,
+        bytes32 evidenceCommitment,
+        uint16 schemaVersion,
+        bytes32 disputeRef,
+        uint8 resolution,
+        bytes32 deliveryRef
+    ) external {
+        // 1. Organization & caller authorization first
+        _requireAuthorizedRelayer(orgRef);
+
+        // 2. Structural & input validation (resolution is structural input, checked before the event lookup)
+        _requireValidEnvelope(orgRef, caseRef, eventId, chainSequence, evidenceCommitment, schemaVersion);
+        if (disputeRef == bytes32(0)) {
+            revert InvalidZeroInput();
+        }
+        if (resolution != RESOLUTION_UPHOLD && resolution != RESOLUTION_VOID_DELIVERY) {
+            revert InvalidResolution(resolution);
+        }
+
+        // 3. Duplicate eventId check; the digest binds the selector, disputeRef, resolution and deliveryRef
+        bytes32 payloadDigest = _resolveDisputeDigest(
+            orgRef,
+            caseRef,
+            chainSequence,
+            evidenceCommitment,
+            schemaVersion,
+            disputeRef,
+            resolution,
+            deliveryRef
+        );
+        _requireNewEvent(eventId, payloadDigest);
+
+        // 4-5 checks and the dispute/delivery/case state writes live in a helper so this frame keeps a single
+        // local (payloadDigest) and stays under the legacy-codegen stack limit without viaIR.
+        _applyResolution(orgRef, caseRef, chainSequence, disputeRef, resolution, deliveryRef);
+
+        // 6. Event record & event emission
+        _storeEvent(
+            eventId,
+            this.resolveDispute.selector,
+            orgRef,
+            caseRef,
+            chainSequence,
+            evidenceCommitment,
+            schemaVersion,
+            payloadDigest
+        );
+
+        if (resolution == RESOLUTION_VOID_DELIVERY) {
+            emit DeliveryVoided(
+                orgRef,
+                caseRef,
+                eventId,
+                chainSequence,
+                evidenceCommitment,
+                schemaVersion,
+                uint64(block.timestamp),
+                deliveryRef,
+                disputeRef
+            );
+        }
+        emit DisputeResolved(
+            orgRef,
+            caseRef,
+            eventId,
+            chainSequence,
+            evidenceCommitment,
+            schemaVersion,
+            uint64(block.timestamp),
+            disputeRef,
+            resolution,
+            deliveryRef
+        );
+    }
+
     function getOrganization(
         bytes32 orgRef
     ) external view returns (bool registered, bool active, address relayer) {
@@ -838,6 +1161,123 @@ contract AidRegistry is AccessControl {
         }
         if (commitment.caseRef != caseRef) {
             revert RefCaseMismatch(commitmentRef, commitment.caseRef, caseRef);
+        }
+    }
+    /// @dev C06 part 2 helper: delivery exists, then same org, then same case (same order as commitments).
+    function _requireDeliveryOfCase(
+        bytes32 deliveryRef,
+        bytes32 orgRef,
+        bytes32 caseRef
+    ) private view returns (DeliveryRecord storage delivery) {
+        delivery = _deliveries[deliveryRef];
+        if (delivery.orgRef == bytes32(0)) {
+            revert RefNotFound(deliveryRef);
+        }
+        if (delivery.orgRef != orgRef) {
+            revert RefOrganizationMismatch(deliveryRef, delivery.orgRef, orgRef);
+        }
+        if (delivery.caseRef != caseRef) {
+            revert RefCaseMismatch(deliveryRef, delivery.caseRef, caseRef);
+        }
+    }
+
+    /// @dev C06 part 2 helper: guard step 6 event record (same fields as every other operation).
+    function _storeEvent(
+        bytes32 eventId,
+        bytes4 operation,
+        bytes32 orgRef,
+        bytes32 caseRef,
+        uint64 chainSequence,
+        bytes32 evidenceCommitment,
+        uint16 schemaVersion,
+        bytes32 payloadDigest
+    ) private {
+        _events[eventId] = EventRecord({
+            exists: true,
+            operation: operation,
+            orgRef: orgRef,
+            caseRef: caseRef,
+            chainSequence: chainSequence,
+            evidenceCommitment: evidenceCommitment,
+            schemaVersion: schemaVersion,
+            payloadDigest: payloadDigest
+        });
+    }
+
+    /// @dev Same digest layout as every operation: selector, envelope without eventId, then operation fields.
+    function _resolveDisputeDigest(
+        bytes32 orgRef,
+        bytes32 caseRef,
+        uint64 chainSequence,
+        bytes32 evidenceCommitment,
+        uint16 schemaVersion,
+        bytes32 disputeRef,
+        uint8 resolution,
+        bytes32 deliveryRef
+    ) private view returns (bytes32) {
+        return keccak256(
+            abi.encode(
+                this.resolveDispute.selector,
+                orgRef,
+                caseRef,
+                chainSequence,
+                evidenceCommitment,
+                schemaVersion,
+                disputeRef,
+                resolution,
+                deliveryRef
+            )
+        );
+    }
+
+    /// @dev resolveDispute guard steps 4-5 plus the dispute/delivery/case state writes of step 6.
+    ///      The caller writes the event record and emits the events afterwards; a revert anywhere undoes all.
+    function _applyResolution(
+        bytes32 orgRef,
+        bytes32 caseRef,
+        uint64 chainSequence,
+        bytes32 disputeRef,
+        uint8 resolution,
+        bytes32 deliveryRef
+    ) private {
+        // 4. Case verified and owned by orgRef; dispute exists, same org, same case, still Open;
+        //    deliveryRef equals the stored one; VOID needs a referenced, not yet voided delivery.
+        CaseRecord storage caseRecord = _requireVerifiedCase(orgRef, caseRef, false);
+        DisputeRecord storage dispute = _disputes[disputeRef];
+        if (dispute.orgRef == bytes32(0)) {
+            revert RefNotFound(disputeRef);
+        }
+        if (dispute.orgRef != orgRef) {
+            revert RefOrganizationMismatch(disputeRef, dispute.orgRef, orgRef);
+        }
+        if (dispute.caseRef != caseRef) {
+            revert RefCaseMismatch(disputeRef, dispute.caseRef, caseRef);
+        }
+        if (dispute.status != DisputeStatus.Open) {
+            revert DisputeNotOpen(disputeRef);
+        }
+        if (dispute.deliveryRef != deliveryRef) {
+            revert DisputeDeliveryMismatch(disputeRef, dispute.deliveryRef, deliveryRef);
+        }
+        if (resolution == RESOLUTION_VOID_DELIVERY) {
+            if (deliveryRef == bytes32(0)) {
+                revert DisputeHasNoDelivery(disputeRef);
+            }
+            DeliveryStatus status = _deliveries[deliveryRef].status;
+            if (status != DeliveryStatus.Recorded && status != DeliveryStatus.Confirmed) {
+                revert InvalidDeliveryState(deliveryRef, status);
+            }
+        }
+
+        // 5. chainSequence progression
+        _requireNextSequence(caseRecord, caseRef, chainSequence);
+
+        // 6. State writes (UPHOLD leaves the delivery untouched)
+        dispute.status = DisputeStatus.Resolved;
+        caseRecord.openDisputeCount -= 1;
+        caseRecord.lastChainSequence = chainSequence;
+        if (resolution == RESOLUTION_VOID_DELIVERY) {
+            _deliveries[deliveryRef].status = DeliveryStatus.Voided;
         }
     }
 }
