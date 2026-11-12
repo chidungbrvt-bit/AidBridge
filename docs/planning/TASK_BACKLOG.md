@@ -57,7 +57,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | F05 | P0-06 | Minh (F) | Dũng / Khoa | L | 4 | F04, C05 | 2026-11-09 | 2026-11-08 | Not Started |
 | F06 | P0-04 | Minh (F) | Dũng / Khoa | M | 6 | F02, B06 | 2026-11-11 | 2026-11-11 | Not Started |
 | F07 | P0-04 | Minh (F) | Dũng / Khoa | M | 5 | F06, B07 | 2026-11-13 | 2026-11-13 | In Review |
-| F08 | P0-05 | Minh (F) | Dũng / Khoa | M | 5 | F04, B08, B09 | 2026-11-15 | 2026-11-15 | Not Started |
+| F08 | P0-05 | Minh (F) | Dũng / Khoa | M | 5 | F04, B08, B09 | 2026-11-15 | 2026-11-15 | In Review |
 | F09 | P0-05/P0-06 | Minh (F) | Dũng / Khoa | L | 5 | F08, B10, C09 | 2026-11-18 | 2026-11-17 | Not Started |
 | F10 | Deployment | Minh (F) | Dũng / Khoa | L | 4 | F09, C10 | 2026-11-18 | 2026-11-18 | Not Started |
 | F11 | Quality | Minh (F) | Dũng / Khoa | L | 6 | F10, B11, C11 | 2026-11-20 | 2026-11-20 | Not Started |
@@ -589,7 +589,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Acceptance criteria:** Partial OA receipt distinct from FV handover and review; stock limits and safe errors; FAILED zero effect; no PII in public.
 - **Required tests:** BR05-P/N; IT10/16 UI; E2E01/07.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Review — Khoa thực hiện khung mock R01/D01 ngày 12/11 theo phân công, giữ owner/estimate/lịch baseline. `/goods-demo` dùng F02 trong shell chung, role mô phỏng, partial receipt/delivery/FAILED và 403/409 không sai stock; không gọi B08/B09. 8 unit + 5 browser (desktop/mobile/keyboard), lint/typecheck và Turbopack build PASS; Webpack production build lỗi nội bộ WasmHash trên máy hiện tại, đã ghi rõ. [Bằng chứng và bàn giao F08](../reviews/F08_MOCK_GOODS_WORKSPACE.md). Chưa integrated acceptance/Done, còn B08/B09 và review Minh/Dũng; actual effort con người chưa đo.
 
 ### F09 - Confirmation/dispute/full timeline
 
