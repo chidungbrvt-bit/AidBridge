@@ -1,7 +1,5 @@
 name: F07 real backend E2E
 on:
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
