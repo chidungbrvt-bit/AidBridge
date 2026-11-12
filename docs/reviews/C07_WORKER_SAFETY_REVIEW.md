@@ -2,13 +2,13 @@
 
 ## Kết luận hiện hành
 
-**PARTIAL, chờ kiểm thử CI và review nhóm.** Commit `8ce40cec` đã sửa receipt timeout; lượt tiếp theo bổ sung signer serialization, khóa phiên PostgreSQL, nonce journal và regression tests. Chưa coi code hoặc test đã viết là PASS. C05 vẫn PARTIAL: chưa có bằng chứng job B05 thật được worker xử lý trên Fuji. Không thay contract C06, ABI D49, ví hoặc chính sách D53/D54.
+**PASS về kỹ thuật C07 tại commit `903f952`**, có bằng chứng CI compile + 22 unit tests + 18 integration tests, 0 failures/errors/skips. Giữ task **In Review** cho nhóm nghiệm thu, không tự đánh Done. Signed persistence/recovery, one in-flight/signer, nonce và session-loss fencing đã chạy trên PostgreSQL thật và Hardhat local; đây không phải Fuji end-to-end. C05 vẫn PARTIAL: chưa có job B05 thật do worker xác nhận trên Fuji. Không thay contract/ABI hoặc ví. Các điều kiện rollout và bàn giao bên dưới vẫn bắt buộc.
 
 ## Git và điều kiện merge
 
-PR9 đã được nhóm merge; PR11 đã merge vào main tại `8005917`. PR10 head `94a99e1fafc7f1c3513755439cae38c3f46ef4e6` hiện OPEN, mergeable/clean, chưa có checks hoặc reviews. Nhánh khoa giữ nguyên toàn bộ lịch sử và code các nhánh để review, không reset/rebase hoặc sửa nhánh Dũng.
+PR9 và PR11 đã merge trước đó. **PR10 đã merge vào main** tại `d38fadb5e0cdf81ca0ef1e894b569e3701b9edd7` sau xác nhận mới của người dùng và CI safety PASS. Nhánh khoa đã merge main an toàn, giữ nguyên lịch sử. Diff [PR12](https://github.com/chidungbrvt-bit/AidBridge/pull/12) chỉ còn 15 files C07/evidence/docs; không lặp B07/C06 hoặc PR9/PR11. Không sửa nhánh Dũng, force-push hoặc bypass protection.
 
-Người dùng cho phép merge PR10 khi worker bị vô hiệu mặc định và không có failed required checks. Đã kiểm tra `application.properties` mặc định BLOCKCHAIN_ENABLED=false; `BlockchainConfiguration` có ConditionalOnProperty(enabled=true); adapter/worker/scheduler chỉ được tạo trong configuration này, không có đường gọi production khác. Merge không tự deploy hoặc cấp secret. Tuy nhiên auto-review đã từ chối thao tác merge vì safety fixes chưa kiểm thử/chưa nằm trong PR10. Chưa merge; không vượt chặn. PR bổ sung C07 cần nhóm review, không được tự merge PR của Khoa.
+Auto-review ban đầu đã từ chối merge/push khi chưa đủ phép và bằng chứng. Người dùng sau đó cho phép rõ push/CI/PR và merge lần lượt khi đủ gate. Đã push khoa, tạo PR12, chạy CI và sửa lỗi fixture tới PASS. `application.properties` vẫn mặc định BLOCKCHAIN_ENABLED=false; ConditionalOnProperty và 2 tests xác nhận không có adapter/worker/scheduler nếu không opt-in. Merge không kích hoạt worker hoặc cấp secret. PR12 bàn giao safety fix để tích hợp ngay sau baseline PR10; trạng thái GitHub và checks tại link PR là nguồn kết quả merge hiện hành.
 
 ## Các lỗi và cách sửa
 
@@ -33,7 +33,7 @@ Test double chỉ ký offline với public Hardhat test accounts. Fixture retire
 
 Workflow `.github/workflows/c07-worker-safety.yml`: Ubuntu runner, JDK21, PostgreSQL16 tạm thời, Hardhat localhost chain31337; không Fuji, DPAPI hoặc secret thật. Chạy compile + unit tests liên quan và CaseVerifiedWorkerIT, BlockchainTransactionPersistenceIT, CaseVerifiedHardhatE2EIT; kiểm tra XML để không coi skipped IT là PASS. Chỉ lưu test reports, không upload ví, signed bytes thật hoặc cache. Mật khẩu PostgreSQL trong workflow chỉ là giá trị test của container dùng một lần.
 
-**Kết quả lượt hiện tại:** Java compile/IT local NOT RUN do không có JDK21/DB test được phép; không cài thêm môi trường Windows. CI chưa có kết quả tại thời điểm ghi mục này. `git diff --check` PASS trước commit. Các kết quả lượt trước (không chạy lại vô ích): 31 client tests PASS, Hardhat Mocha147 PASS/1 pending, C04 readback và F02 checker PASS; không dùng các kết quả này thay Java worker tests.
+**Kết quả thực chạy:** [CI run43191039984](https://github.com/chidungbrvt-bit/AidBridge/actions/runs/43191039984), commit903f952: BUILD SUCCESS, unit22/22, worker IT14/14, persistence IT3/3, Hardhat local E2E1/1; tất cả không skip/error/failure. Bước kiểm tra XML no-skips và toàn job PASS. Java/DB chạy trên GitHub Ubuntu, không cài môi trường Windows; local Java NOT RUN. `git diff --check` PASS trước commit. Các kết quả lượt trước (không chạy lại vô ích): 31 client tests PASS, Hardhat Mocha147 PASS/1 pending, C04 readback và F02 checker PASS; không dùng các kết quả này thay Java worker tests.
 
 ## Fuji và bàn giao Dũng
 
@@ -46,7 +46,7 @@ Workflow `.github/workflows/c07-worker-safety.yml`: Ubuntu runner, JDK21, Postgr
 
 ## Readiness F07/F08
 
-Chỉ đánh giá, không triển khai UI trong lượt này. F07 client/session đã ở main qua PR11; còn cần B07 trên main, donor dev grant D52, published campaign và DB/API được phép. F08 đủ fixtures F02 R01/D01 để bắt đầu mock; receipt/delivery API thật vẫn là dependency riêng. Không đánh dấu task Dũng/Minh Done.
+Chỉ đánh giá, không triển khai UI trong lượt này. F07 client/session đã ở main qua PR11 và B07 đã vào main qua PR10, đủ nền code để bắt đầu ghép API. Kiểm thử real UI vẫn cần donor dev grant D52, published campaign và DB/API được phép, chưa xác minh trên máy Khoa. F08 đủ fixtures F02 R01/D01 để bắt đầu mock; receipt/delivery API thật vẫn là dependency riêng. Không đánh dấu task Dũng/Minh Done.
 
 
 ## CI lần đầu và sửa fixture
@@ -54,3 +54,10 @@ Chỉ đánh giá, không triển khai UI trong lượt này. F07 client/session
 PR bổ sung [#12](https://github.com/chidungbrvt-bit/AidBridge/pull/12), commit 0b5d6bb: compile PASS, 22 unit tests PASS; CaseVerifiedWorkerIT 14/14 PASS; Hardhat E2E 1/1 PASS; persistence IT 2/3 PASS. Run [43190514630](https://github.com/chidungbrvt-bit/AidBridge/actions/runs/43190514630) FAIL do fixture persistence cố dùng nonce0 đã được test worker trước đó ghi trong cùng schema. Không phải lỗi runtime signer locking; unique nonce đã chặn đúng. Sửa fixture lấy nonce base từ journal, không xóa lịch sử hoặc nới constraint. CI tiếp theo phải xác nhận toàn bộ suite và no-skips trước kết luận PASS. Thêm concurrency cho workflow để tránh chạy trùng push/PR.
 
 Readback Fuji mới lưu tại [c07-relayer-preflight.public.json](../../contracts/deployment/c07-relayer-preflight.public.json): đúng runtime C03/chain43113, old Relayer vẫn assigned/active, pilot receipt status1; không có rotation/funding. Trạng thái DB Dũng vẫn NOT_VERIFIED.
+
+
+## Kết quả sau khi sửa fixture và điều kiện tiếp tục
+
+Run43191039984 đã PASS toàn bộ 40 tests và compile sau sửa fixture. Không nới constraint, không xóa journal, không thay production code để che lỗi. C07 technical gate PASS cho phạm vi worker hiện hỗ trợ CASE_VERIFIED. Các milestone C06, stress test dài hạn, Fuji DB end-to-end và cross-owner acceptance chưa được suy ra từ kết quả này.
+
+Dũng tiếp nhận V13 + SignerSessionLock, dừng worker cũ trước rollout; kiểm tra duplicates/open attempts và stable AES key, áp dụng session pooling. Cần xác nhận riêng worker/DB không còn nghĩa vụ old signer trước rotation/funding. Chỉ sau đó mới chạy job B05 thật, đối chiếu receipt/event và công bố C05 CONFIRMED. Khoa không có DB được phép để thay Dũng xác minh bước này.

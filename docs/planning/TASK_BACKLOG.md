@@ -396,7 +396,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
 - **Phối hợp cụ thể:** Dũng làm hoặc hỗ trợ entity/repository/migration, SQL transaction/query job và kiểm tra persistence/idempotency; Khoa phụ trách signer/nonce/signed bytes/broadcast/worker chain lifecycle. Không RPC trong SQL transaction; không viết trùng repository.
 - **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
-- **Status / evidence (12/11/2026):** In Review; kết luận PARTIAL. Đã sửa receipt timeout không được chuyển thành FAILED khi outcome chưa rõ, bổ sung 3 integration tests; Java compile/IT NOT RUN do thiếu JDK21 và DB test. Signer serialization / one in-flight chưa đạt gate; xem [C07 worker review](../reviews/C07_WORKER_SAFETY_REVIEW.md) và ghi chú 12/11 cuối tài liệu. Chưa sign-off worker Fuji; actual effort chưa được cung cấp.
+- **Status / evidence (12/11/2026):** In Review; technical gate PASS tại 903f952, CI compile + 22 unit + 18 integration tests PASS, 0 skip. Đã sửa receipt timeout, signer session serialization/fencing, one open attempt/signer/job (V13), nonce journal và recovery/binding/sequence guards. [C07 review](../reviews/C07_WORKER_SAFETY_REVIEW.md) chứa bằng chứng và điều kiện rollout. C05 Fuji end-to-end vẫn PARTIAL; chờ cross-owner acceptance, không Done. Actual effort chưa được cung cấp.
 
 ### C08 - Receipt/retry/log reconciliation
 
@@ -789,3 +789,8 @@ In Review, kết luận kỹ thuật **PARTIAL**: review nonce/signer/persistenc
 ### C07 — signer serialization và fencing, lượt tiếp 12/11/2026
 
 In Review, kết luận **PARTIAL chờ CI/review**. Giữ receipt fix 8ce40cec; bổ sung signer session lock không giữ SQL transaction qua RPC, one open signer/job (V13 fail-closed, không sửa journal cũ), nonce từ toàn journal, binding/sequence guards và tests cho lease expiry/session loss/restart/concurrency. Không cài JDK/DB trên Windows. [C07 review](../reviews/C07_WORKER_SAFETY_REVIEW.md) ghi điều kiện rollout, CI, migration và giới hạn. PR10 chưa merge do auto-review từ chối trước khi có test evidence; không bypass hoặc sửa nhánh Dũng. Chưa rotate/fund vì DB old-signer obligations chưa kiểm chứng; C05 vẫn PARTIAL. Chưa F07/F08 hoặc Done; không thay owner/estimate/lịch baseline.
+
+
+### C07 — CI PASS và PR10 vào main, 12/11/2026
+
+In Review, technical gate **PASS** tại 903f952: GitHub Actions run43191039984 compile + 22 unit + 18 IT PASS, không skip. Lỗi fixture nonce ở CI đầu đã sửa theo journal, không nới constraint/xóa dữ liệu. PR10 đã merge main d38fadb, PR12 bàn giao riêng 15 files C07; B07/API client đã ở main, F07 đủ nền code nhưng real test cần DB/donor/published campaign, F08 mock fixture ready. Chưa triển khai F07/F08. [C07 review](../reviews/C07_WORKER_SAFETY_REVIEW.md) thay kết luận PARTIAL kỹ thuật trước đây; các mục trước là lịch sử. Chưa rotate/fund do thiếu DB old-signer obligations; C05 vẫn PARTIAL, không Done hoặc đổi task của người khác.
