@@ -1,0 +1,215 @@
+{
+  "organizationId": "11111111-1111-4111-8111-111111111111",
+  "actors": {
+    "donor": {
+      "userId": "70000000-0000-4000-8000-000000000001",
+      "displayName": "Fictional Donor",
+      "donorEnabled": true,
+      "platformAdmin": false,
+      "memberships": []
+    },
+    "organizationAdmin": {
+      "userId": "70000000-0000-4000-8000-000000000002",
+      "displayName": "Fictional Organization Admin",
+      "donorEnabled": false,
+      "platformAdmin": false,
+      "memberships": [
+        {
+          "organizationId": "11111111-1111-4111-8111-111111111111",
+          "roles": [
+            "ORGANIZATION_ADMIN"
+          ],
+          "active": true
+        }
+      ]
+    },
+    "fieldVolunteer": {
+      "userId": "70000000-0000-4000-8000-000000000003",
+      "displayName": "Fictional Field Volunteer",
+      "donorEnabled": false,
+      "platformAdmin": false,
+      "memberships": [
+        {
+          "organizationId": "11111111-1111-4111-8111-111111111111",
+          "roles": [
+            "FIELD_VOLUNTEER"
+          ],
+          "active": true
+        }
+      ]
+    },
+    "caseVerifier": {
+      "userId": "70000000-0000-4000-8000-000000000004",
+      "displayName": "Fictional Case Verifier",
+      "donorEnabled": false,
+      "platformAdmin": false,
+      "memberships": [
+        {
+          "organizationId": "11111111-1111-4111-8111-111111111111",
+          "roles": [
+            "CASE_VERIFIER"
+          ],
+          "active": true
+        }
+      ]
+    }
+  },
+  "states": {
+    "S1": {
+      "campaign": {
+        "id": "10000000-0000-4000-8000-000000000001",
+        "status": "PUBLISHED",
+        "title": "Simulated flood relief essentials",
+        "publicSummary": "Fictional campaign for rice and drinking water.",
+        "approximateArea": "Simulated District",
+        "organization": {
+          "name": "AidBridge Demo Organization",
+          "publicRef": "0x1010101010101010101010101010101010101010101010101010101010101010"
+        },
+        "items": [
+          {
+            "id": "20000000-0000-4000-8000-000000000001",
+            "name": "Rice",
+            "unit": "kg",
+            "targetQty": 20,
+            "pledgedQty": 14,
+            "receivedQty": 2,
+            "deliveredQty": 1,
+            "confirmedQty": 0,
+            "remainingPledgeQty": 6
+          },
+          {
+            "id": "20000000-0000-4000-8000-000000000002",
+            "name": "Drinking Water",
+            "unit": "box",
+            "targetQty": 4,
+            "pledgedQty": 3,
+            "receivedQty": 0,
+            "deliveredQty": 0,
+            "confirmedQty": 0,
+            "remainingPledgeQty": 1
+          }
+        ],
+        "auditUrl": "/api/campaigns/10000000-0000-4000-8000-000000000001/audit-trail"
+      },
+      "focalContribution": {
+        "id": "30000000-0000-4000-8000-000000000001",
+        "campaignId": "10000000-0000-4000-8000-000000000001",
+        "items": [
+          {
+            "id": "40000000-0000-4000-8000-000000000001",
+            "campaignItemId": "20000000-0000-4000-8000-000000000001",
+            "pledgedQty": 8,
+            "cancelledQty": 0,
+            "receivedQty": 0,
+            "outstandingQty": 8
+          },
+          {
+            "id": "40000000-0000-4000-8000-000000000002",
+            "campaignItemId": "20000000-0000-4000-8000-000000000002",
+            "pledgedQty": 2,
+            "cancelledQty": 0,
+            "receivedQty": 0,
+            "outstandingQty": 2
+          }
+        ],
+        "status": "PLEDGED",
+        "createdAt": "2026-11-09T01:30:00.000Z",
+        "auditEventId": "80000000-0000-4000-8000-000000000001",
+        "blockchainStatus": "PENDING_ON_CHAIN"
+      },
+      "receipts": [],
+      "deliveries": []
+    },
+    "S2": {
+      "campaign": {
+        "id": "10000000-0000-4000-8000-000000000001",
+        "status": "PUBLISHED",
+        "title": "Simulated flood relief essentials",
+        "publicSummary": "Fictional campaign for rice and drinking water.",
+        "approximateArea": "Simulated District",
+        "organization": {
+          "name": "AidBridge Demo Organization",
+          "publicRef": "0x1010101010101010101010101010101010101010101010101010101010101010"
+        },
+        "items": [
+          {
+            "id": "20000000-0000-4000-8000-000000000001",
+            "name": "Rice",
+            "unit": "kg",
+            "targetQty": 20,
+            "pledgedQty": 14,
+            "receivedQty": 7,
+            "deliveredQty": 1,
+            "confirmedQty": 0,
+            "remainingPledgeQty": 6
+          },
+          {
+            "id": "20000000-0000-4000-8000-000000000002",
+            "name": "Drinking Water",
+            "unit": "box",
+            "targetQty": 4,
+            "pledgedQty": 3,
+            "receivedQty": 1,
+            "deliveredQty": 0,
+            "confirmedQty": 0,
+            "remainingPledgeQty": 1
+          }
+        ],
+        "auditUrl": "/api/campaigns/10000000-0000-4000-8000-000000000001/audit-trail"
+      },
+      "focalContribution": {
+        "id": "30000000-0000-4000-8000-000000000001",
+        "campaignId": "10000000-0000-4000-8000-000000000001",
+        "items": [
+          {
+            "id": "40000000-0000-4000-8000-000000000001",
+            "campaignItemId": "20000000-0000-4000-8000-000000000001",
+            "pledgedQty": 8,
+            "cancelledQty": 0,
+            "receivedQty": 5,
+            "outstandingQty": 3
+          },
+          {
+            "id": "40000000-0000-4000-8000-000000000002",
+            "campaignItemId": "20000000-0000-4000-8000-000000000002",
+            "pledgedQty": 2,
+            "cancelledQty": 0,
+            "receivedQty": 1,
+            "outstandingQty": 1
+          }
+        ],
+        "status": "PARTIALLY_RECEIVED",
+        "createdAt": "2026-11-09T01:30:00.000Z",
+        "auditEventId": "80000000-0000-4000-8000-000000000001",
+        "blockchainStatus": "PENDING_ON_CHAIN"
+      },
+      "receipts": [
+        {
+          "id": "50000000-0000-4000-8000-000000000001",
+          "contributionId": "30000000-0000-4000-8000-000000000001",
+          "items": [
+            {
+              "contributionItemId": "40000000-0000-4000-8000-000000000001",
+              "quantity": 5
+            },
+            {
+              "contributionItemId": "40000000-0000-4000-8000-000000000002",
+              "quantity": 1
+            }
+          ],
+          "receivedAt": "2026-11-09T01:39:00.000Z",
+          "recordedAt": "2026-11-09T01:40:00.000Z",
+          "recorderId": "70000000-0000-4000-8000-000000000002",
+          "auditEventId": "80000000-0000-4000-8000-000000000002",
+          "blockchainStatus": "PENDING_ON_CHAIN"
+        }
+      ],
+      "deliveries": []
+    }
+  },
+  "evidenceIds": [
+    "55555555-5555-4555-8555-555555555551",
+    "55555555-5555-4555-8555-555555555552"
+  ]
+}

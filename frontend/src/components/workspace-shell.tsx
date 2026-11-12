@@ -38,6 +38,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
         </option>)}
       </select></>}
       <nav aria-label="Workspace navigation">
+        {mode === 'mock' && <Link href="/goods-demo">Goods demo · MOCK</Link>}
         <Link className={pathname.startsWith('/campaigns') ? 'nav-active' : ''} href="/campaigns">Campaigns</Link>
         {user.donorEnabled && <Link className={pathname === '/me/commitments' ? 'nav-active' : ''} href="/me/commitments">My pledges</Link>}
         {canReadCases(user, organizationId) && <Link className={pathname === '/cases' ? 'nav-active' : ''} href="/cases"><span aria-hidden="true">▦</span> Cases</Link>}
