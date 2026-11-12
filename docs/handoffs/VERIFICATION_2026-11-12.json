@@ -1,0 +1,35 @@
+{
+  "date": "2026-11-12",
+  "timezone": "Asia/Saigon",
+  "scope": ["F03", "F04"],
+  "status": "In Review",
+  "mainSource": "051e40f",
+  "mainMergedIntoMinh": "dbeda4e",
+  "checks": [
+    { "command": "npm test", "kind": "source-aligned mock and API client unit tests", "passed": 31, "failed": 0, "skipped": 0 },
+    { "command": "npm run typecheck", "result": "PASS", "exitCode": 0 },
+    { "command": "npm run build", "environment": "NEXT_PUBLIC_API_MODE=mock", "bundler": "webpack", "result": "PASS", "exitCode": 0 },
+    { "command": "npm run build", "environment": "NEXT_PUBLIC_API_MODE=real; API_INTERNAL_BASE_URL=http://127.0.0.1:8081", "bundler": "webpack", "result": "PASS", "exitCode": 0 },
+    { "command": "npm run test:e2e -- --max-failures=1", "target": "http://127.0.0.1:3000", "server": "Next production mock build", "browser": "installed Google Chrome via PLAYWRIGHT_CHROME_PATH", "passed": 13, "failed": 0, "skipped": 1, "skipReason": "real project requires authorized real accounts, organization and evidence fixture keys" },
+    { "command": "node --import tsx --test features/donor/model.test.ts", "kind": "unchanged Khoa F07 compatibility regression", "passed": 18, "failed": 0, "skipped": 0 },
+    { "command": "node scripts/smoke-real.mjs", "result": "Not Run", "exitCode": 0, "reason": "Missing API_BASE_URL, REAL_A_EMAIL, REAL_A_PASSWORD, REAL_B_EMAIL, REAL_B_PASSWORD, REAL_ORGANIZATION_ID, REAL_EVIDENCE_FIXTURE_KEYS; user confirms backend/PostgreSQL only on Dung computer" },
+    { "probe": "GET http://127.0.0.1:8081/api/auth/csrf", "result": "Connection refused; no HTTP response" }
+  ],
+  "earlierAttempts": [
+    { "check": "default Turbopack build", "result": "FAIL", "reason": "Windows native SWC/application-control issue and Turbopack PostCSS child-process failure; final build/dev scripts use supported webpack" },
+    { "check": "initial Playwright run before network permission", "passed": 0, "failed": 5, "skipped": 1, "notRun": 8, "reason": "ERR_NETWORK_ACCESS_DENIED before application interaction" },
+    { "check": "bounded browser retries", "result": "FAIL", "reason": "First server had old permission context; later run exposed ambiguous accessible Review reason name, fixed with explicit aria-label; dev compilation timed out, final E2E used production build" },
+    { "check": "first real-mode rebuild after stopping server", "result": "FAIL", "reason": "Windows EPERM while replacing .next/server/app/login; subsequent cleanly stopped build passed" }
+  ],
+  "notRun": [
+    "Real B03/B04/B05 HTTP acceptance and UI E2E against PostgreSQL",
+    "Real idle expiry and cross-organization fixture checks",
+    "F05 audit timeline, C05 worker/database/receipt/UI integration"
+  ],
+  "limits": [
+    "Source DTO alignment and mock HTTP are not evidence of successful Java/PostgreSQL HTTP integration",
+    "Backend, migrations, contracts and Khoa F07 implementation were not modified",
+    "No fake chain confirmation or Fuji transaction was created",
+    "Human effort/completion date and cross-owner approval remain unrecorded"
+  ]
+}
