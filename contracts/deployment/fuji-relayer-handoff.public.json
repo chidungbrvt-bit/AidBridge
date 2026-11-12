@@ -1,0 +1,195 @@
+{
+  "scope": "C04_C05_OPERATIONAL_HANDOFF_NOT_B05_E2E",
+  "context": {
+    "chainId": 43113,
+    "contract": "0x015D941c679b0c402c8262BE237adAD36cEf6726",
+    "orgRef": "0x2395bfe7f91467046a39bd8440313164c6442839b2be6698832b7b4941b80a46",
+    "admin": "0x131DD6d404f8D0B118D6DB122194bc15b4E4601E",
+    "oldRelayer": "0x559994839f19F40ac704918C3FF1a913AC02dC01",
+    "newRelayer": "0x95a9564899849CF566DE5713205C4B747F361f55"
+  },
+  "workerSafety": "User relayed Dung confirmation: worker disabled; no old-signer transactions/jobs/DB bindings. Keep worker disabled until handoff.",
+  "before": {
+    "checkedAt": "2026-11-12T14:16:34.312Z",
+    "chainId": 43113,
+    "blockNumber": 60950506,
+    "runtimeHash": "0x4c778ba83052da23d357828dca603bddb14c6e26a0fdbda94143cafb2a39e7ad",
+    "organizations": {
+      "0x2395bfe7f91467046a39bd8440313164c6442839b2be6698832b7b4941b80a46": {
+        "registered": true,
+        "active": true,
+        "relayer": "0x559994839f19F40ac704918C3FF1a913AC02dC01"
+      }
+    },
+    "wallets": {
+      "admin": {
+        "address": "0x131DD6d404f8D0B118D6DB122194bc15b4E4601E",
+        "balanceWei": "348775352000000000",
+        "balanceAVAX": "0.348775352",
+        "latestNonce": 2,
+        "pendingNonce": 2,
+        "admin": true,
+        "relayer": false
+      },
+      "oldRelayer": {
+        "address": "0x559994839f19F40ac704918C3FF1a913AC02dC01",
+        "balanceWei": "149700527000000000",
+        "balanceAVAX": "0.149700527",
+        "latestNonce": 1,
+        "pendingNonce": 1,
+        "admin": false,
+        "relayer": true
+      },
+      "newRelayer": {
+        "address": "0x95a9564899849CF566DE5713205C4B747F361f55",
+        "balanceWei": "0",
+        "balanceAVAX": "0.0",
+        "latestNonce": 0,
+        "pendingNonce": 0,
+        "admin": false,
+        "relayer": false
+      }
+    }
+  },
+  "steps": {
+    "rotation": {
+      "state": "CONFIRMED",
+      "from": "0x131DD6d404f8D0B118D6DB122194bc15b4E4601E",
+      "request": {
+        "type": 0,
+        "chainId": 43113,
+        "nonce": 2,
+        "to": "0x015D941c679b0c402c8262BE237adAD36cEf6726",
+        "data": "0xb242b0962395bfe7f91467046a39bd8440313164c6442839b2be6698832b7b4941b80a4600000000000000000000000095a9564899849cf566de5713205c4b747f361f55",
+        "value": "0",
+        "gasLimit": "114851",
+        "gasPrice": "1000000000"
+      },
+      "hash": "0x59f1076214a547795cdab875a364e2652959a43cd11ec254c9bbdee5e656c169",
+      "preparedAt": "2026-11-12T14:16:36.263Z",
+      "gasEstimate": "95709",
+      "balanceBeforeWei": "348775352000000000",
+      "receipt": {
+        "status": 1,
+        "blockNumber": 60950516,
+        "blockHash": "0x14c9bcdf91b369a5756ab8b11d17e8427ad8e2582a2608608aeb21d34f32c99c",
+        "gasUsed": "94861",
+        "gasPrice": "1000000000",
+        "feeWei": "94861000000000"
+      }
+    },
+    "funding": {
+      "state": "CONFIRMED",
+      "from": "0x559994839f19F40ac704918C3FF1a913AC02dC01",
+      "request": {
+        "type": 0,
+        "chainId": 43113,
+        "nonce": 1,
+        "to": "0x95a9564899849CF566DE5713205C4B747F361f55",
+        "data": "0x",
+        "value": "149679527000000000",
+        "gasLimit": "21000",
+        "gasPrice": "1000000000"
+      },
+      "hash": "0xf778d9026a71b5819930e8181a50af12dba7be2931f2324b162ad92fd04ba5f7",
+      "preparedAt": "2026-11-12T14:16:55.711Z",
+      "gasEstimate": "21000",
+      "balanceBeforeWei": "149700527000000000",
+      "receipt": {
+        "status": 1,
+        "blockNumber": 60950527,
+        "blockHash": "0xfa477ec9ecac551da9f6b737e2c9ea540440a3f5f8b99292fe23bf77ac529004",
+        "gasUsed": "21000",
+        "gasPrice": "1000000000",
+        "feeWei": "21000000000000"
+      }
+    }
+  },
+  "state": "PASS",
+  "afterRotation": {
+    "checkedAt": "2026-11-12T14:16:54.107Z",
+    "chainId": 43113,
+    "blockNumber": 60950519,
+    "runtimeHash": "0x4c778ba83052da23d357828dca603bddb14c6e26a0fdbda94143cafb2a39e7ad",
+    "organizations": {
+      "0x2395bfe7f91467046a39bd8440313164c6442839b2be6698832b7b4941b80a46": {
+        "registered": true,
+        "active": true,
+        "relayer": "0x95a9564899849CF566DE5713205C4B747F361f55"
+      }
+    },
+    "wallets": {
+      "admin": {
+        "address": "0x131DD6d404f8D0B118D6DB122194bc15b4E4601E",
+        "balanceWei": "348680491000000000",
+        "balanceAVAX": "0.348680491",
+        "latestNonce": 3,
+        "pendingNonce": 3,
+        "admin": true,
+        "relayer": false
+      },
+      "oldRelayer": {
+        "address": "0x559994839f19F40ac704918C3FF1a913AC02dC01",
+        "balanceWei": "149700527000000000",
+        "balanceAVAX": "0.149700527",
+        "latestNonce": 1,
+        "pendingNonce": 1,
+        "admin": false,
+        "relayer": false
+      },
+      "newRelayer": {
+        "address": "0x95a9564899849CF566DE5713205C4B747F361f55",
+        "balanceWei": "0",
+        "balanceAVAX": "0.0",
+        "latestNonce": 0,
+        "pendingNonce": 0,
+        "admin": false,
+        "relayer": true
+      }
+    }
+  },
+  "after": {
+    "checkedAt": "2026-11-12T14:17:13.284Z",
+    "chainId": 43113,
+    "blockNumber": 60950531,
+    "runtimeHash": "0x4c778ba83052da23d357828dca603bddb14c6e26a0fdbda94143cafb2a39e7ad",
+    "organizations": {
+      "0x2395bfe7f91467046a39bd8440313164c6442839b2be6698832b7b4941b80a46": {
+        "registered": true,
+        "active": true,
+        "relayer": "0x95a9564899849CF566DE5713205C4B747F361f55"
+      }
+    },
+    "wallets": {
+      "admin": {
+        "address": "0x131DD6d404f8D0B118D6DB122194bc15b4E4601E",
+        "balanceWei": "348680491000000000",
+        "balanceAVAX": "0.348680491",
+        "latestNonce": 3,
+        "pendingNonce": 3,
+        "admin": true,
+        "relayer": false
+      },
+      "oldRelayer": {
+        "address": "0x559994839f19F40ac704918C3FF1a913AC02dC01",
+        "balanceWei": "0",
+        "balanceAVAX": "0.0",
+        "latestNonce": 2,
+        "pendingNonce": 2,
+        "admin": false,
+        "relayer": false
+      },
+      "newRelayer": {
+        "address": "0x95a9564899849CF566DE5713205C4B747F361f55",
+        "balanceWei": "149679527000000000",
+        "balanceAVAX": "0.149679527",
+        "latestNonce": 0,
+        "pendingNonce": 0,
+        "admin": false,
+        "relayer": true
+      }
+    }
+  },
+  "abiVersion": "D49/schemaVersion 1",
+  "completedAt": "2026-11-12T14:17:13.285Z"
+}

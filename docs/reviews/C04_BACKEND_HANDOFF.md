@@ -4,6 +4,8 @@ Ngày 11/11/2026. Scope: thông tin/chỉ dẫn đọc; không sửa DB/backend 
 
 ## Cấu hình đã xác minh
 
+**Cập nhật 12/11:** Relayer hiện hành đã chuyển sang **`0x95a9564899849CF566DE5713205C4B747F361f55`** theo D54, funding0,149679527 test AVAX; [bằng chứng/điều kiện bật worker](FUJI_RELAYER_HANDOFF_2026_11_12.md). Signer và receipts ngày11 dưới đây là lịch sử deployment ban đầu. `verify-fuji.mjs` nay kiểm thêm rotation trước quyền hiện tại.
+
 - Fuji C-Chain 43113; RPC https://api.avax-test.network/ext/bc/C/rpc
 - registryAddress: 0x015D941c679b0c402c8262BE237adAD36cEf6726
 - orgRef pilot: 0x2395bfe7f91467046a39bd8440313164c6442839b2be6698832b7b4941b80a46
