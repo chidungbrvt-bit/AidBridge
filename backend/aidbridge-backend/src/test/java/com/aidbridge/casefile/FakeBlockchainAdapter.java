@@ -25,6 +25,7 @@ class FakeBlockchainAdapter implements BlockchainAdapter {
     BigInteger pendingNonce = BigInteger.ZERO;
     BigInteger gasPrice = BigInteger.valueOf(1_000_000_000L);
     BlockchainRpcException nextBroadcastFailure;
+    BlockchainRpcException nextReceiptFailure;
     final Map<String, ChainReceipt> receipts = new HashMap<>();
     final Map<BigInteger, String> canonicalBlocks = new HashMap<>();
 
@@ -59,6 +60,11 @@ class FakeBlockchainAdapter implements BlockchainAdapter {
     }
 
     @Override public Optional<ChainReceipt> getReceipt(String transactionHash) {
+        if (nextReceiptFailure != null) {
+            BlockchainRpcException failure = nextReceiptFailure;
+            nextReceiptFailure = null;
+            throw failure;
+        }
         return Optional.ofNullable(receipts.get(transactionHash.toLowerCase()));
     }
 

@@ -44,7 +44,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | C04 | P0-06 | Khoa (C) | Dũng / Minh | M | 2 | C03 | 2026-11-07 | 2026-11-07 | In Review |
 | C05 | P0-03/P0-06 | Khoa (C) | Dũng / Minh | L | 6 | B05, C04 | 2026-11-09 | 2026-11-08 | Blocked |
 | C06 | P0-04/P0-05/P0-06 | Khoa (C) | Dũng / Minh | L | 6 | C03 | 2026-11-11 | 2026-11-11 | In Progress |
-| C07 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C05 | 2026-11-14 | 2026-11-14 | Not Started |
+| C07 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C05 | 2026-11-14 | 2026-11-14 | In Review |
 | C08 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C06, C07 | 2026-11-15 | 2026-11-15 | Not Started |
 | C09 | P0-06 | Khoa (C) | Dũng / Minh | M | 3 | C08 | 2026-11-16 | 2026-11-16 | Not Started |
 | C10 | P0-05/P0-06 | Khoa (C) | Dũng / Minh | L | 4 | B08, B09, C08 | 2026-11-17 | 2026-11-17 | Not Started |
@@ -396,7 +396,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
 - **Phối hợp cụ thể:** Dũng làm hoặc hỗ trợ entity/repository/migration, SQL transaction/query job và kiểm tra persistence/idempotency; Khoa phụ trách signer/nonce/signed bytes/broadcast/worker chain lifecycle. Không RPC trong SQL transaction; không viết trùng repository.
 - **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence (12/11/2026):** In Review; kết luận PARTIAL. Đã sửa receipt timeout không được chuyển thành FAILED khi outcome chưa rõ, bổ sung 3 integration tests; Java compile/IT NOT RUN do thiếu JDK21 và DB test. Signer serialization / one in-flight chưa đạt gate; xem [C07 worker review](../reviews/C07_WORKER_SAFETY_REVIEW.md) và ghi chú 12/11 cuối tài liệu. Chưa sign-off worker Fuji; actual effort chưa được cung cấp.
 
 ### C08 - Receipt/retry/log reconciliation
 
@@ -780,3 +780,7 @@ In Review, **4/4 đầu ra phân công 11/11 đạt**, source VERIFIED Exact Mat
 ### F07 G03 — receipt refresh bugfix 11/11/2026
 
 Giữ In Review. Browser regression FAIL trước sửa; thêm host dataRevision để refetch history/campaign sau mock receipt, giữ draft/pending thay vì reload/remount/điều hướng. Hai regression mới: history cập nhật tại chỗ và form đang mở nhận bounds mới; in-flight receipt race409 vẫn fail-closed. Lint/typecheck/build PASS,17 unit +19 browser tests PASS (G01/G02 regression gồm trong suite). Chi tiết tại [F07 implementation](../design/F07_DONOR_IMPLEMENTATION.md). Không sửa backend/contract/dependencies; commit local theo user, không push/PR. Chưa group review/real integration, không Done.
+
+### C07 — safety review và receipt-timeout fix, 12/11/2026
+
+In Review, kết luận kỹ thuật **PARTIAL**: review nonce/signer/persistence/retry/D53 và sửa nhánh hết retry budget thành SUBMITTED+operator attention/tiếp tục polling, không FAILED khi receipt chưa rõ. Thêm 3 IT cho late receipt/restart, RPC outage/duplicate broadcast và concurrent workers; **Java compile/IT NOT RUN** vì máy Khoa thiếu JDK21/DB env. 31 client tests PASS; Hardhat Mocha 147 pass/1 pending (không coi pending là PASS); C04/F02 read-only checks PASS. [C07 review](../reviews/C07_WORKER_SAFETY_REVIEW.md) ghi rõ gate, lệnh Dũng chạy và điều kiện nhận job thật. PR11 đã merge main `8005917`; PR10 giữ open: cần kiểm chứng safety fix và xử lý gate signer serialization / one in-flight cùng lease fencing. Chưa rotate/fund vì thiếu bằng chứng worker/DB trên máy Dũng không còn nghĩa vụ signer cũ. C05 vẫn PARTIAL; F07 real chưa đủ B07 main/DB seed/campaign, F08 fixture ready. Không triển khai F07/F08, không secret/Fuji transaction. Estimate/owner/lịch baseline giữ nguyên, actual human effort chưa có dữ liệu; không Done.

@@ -339,9 +339,13 @@ public class CaseVerifiedWorker {
             return new PollResult(item.jobId(), PollOutcome.PENDING, "RECEIPT_PENDING");
         }
         if (item.retryCount() >= MAX_REBROADCASTS) {
-            // Hand over to C08 log reconciliation / a human; never confirm without a receipt.
-            tx.executeWithoutResult(status -> jobs.findById(item.jobId()).orElseThrow().markFailed("RECEIPT_NOT_FOUND"));
-            return new PollResult(item.jobId(), PollOutcome.FAILED, "RECEIPT_NOT_FOUND");
+            // A retry budget is not proof of a reverted transaction. Stop automatic rebroadcast,
+            // retain the original attempt and keep polling so a late receipt can still reconcile.
+            // retryCount also includes RPC/binding errors; do not interpret it as a mining verdict.
+            String code = "RECEIPT_PENDING_OPERATOR_ATTENTION";
+            tx.executeWithoutResult(status -> jobs.findById(item.jobId()).orElseThrow()
+                    .scheduleRetry(code, now.plus(REBROADCAST_RETRY_DELAY)));
+            return new PollResult(item.jobId(), PollOutcome.PENDING, code);
         }
         BlockchainTransaction attempt = attempts.findById(item.attemptId()).orElseThrow();
         String raw = Numeric.toHexString(cipher.decrypt(attempt.getSignedTxCiphertext(),
