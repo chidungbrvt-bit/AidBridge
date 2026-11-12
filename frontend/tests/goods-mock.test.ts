@@ -48,3 +48,17 @@ test('delivery rejects non-allowlisted evidence and invalid timestamps', () => {
   assert.throws(() => apply(initialSnapshot(true),{...delivery(),evidence:['unknown']}),/EVIDENCE_REQUIRED/);
   assert.throws(() => apply(initialSnapshot(),{...receipt(),at:'invalid'}),/VALIDATION_ERROR/);
 });
+
+test('R01 accepts a 500-character receipt note', () => {
+  const before = initialSnapshot();
+  const after = apply(before, {...receipt(), note: 'x'.repeat(500)});
+  assert.equal(after.campaign.items[0].receivedQty, before.campaign.items[0].receivedQty + 5);
+  assert.deepEqual(before, initialSnapshot());
+});
+test('R01 rejects a 501-character receipt note atomically', () => {
+  const before = initialSnapshot();
+  assert.throws(() => apply(before, {...receipt(), note: 'x'.repeat(501)}), /400 VALIDATION_ERROR/);
+  assert.deepEqual(before, initialSnapshot());
+  assert.equal(before.campaign.items[0].receivedQty, 2);
+  assert.equal(before.campaign.items[1].receivedQty, 0);
+});
