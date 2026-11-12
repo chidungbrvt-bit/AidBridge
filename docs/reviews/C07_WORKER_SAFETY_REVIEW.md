@@ -2,6 +2,8 @@
 
 ## Kết luận hiện hành
 
+Cập nhật12/11 cuối ngày: đã nhận xác nhận worker/DB không còn nghĩa vụ signer cũ từ Dũng qua người dùng; [rotation/funding D54 và independent readback](FUJI_RELAYER_HANDOFF_2026_11_12.md) PASS. Các ghi chú chờ xác nhận/rotation bên dưới là lịch sử trước bàn giao, không còn blocker hiện hành. C05 B05 Fuji E2E vẫn PARTIAL, chưa chạy worker trong lượt bàn giao.
+
 **PASS về kỹ thuật C07, đã xác minh lại tại commit `4795c9a368fd33c725ad3b182b8cb0eb5fc78dc7`**, có bằng chứng CI compile + 22 unit tests + 18 integration tests, 0 failures/errors/skips. Giữ task **In Review** cho nhóm nghiệm thu, không tự đánh Done. Signed persistence/recovery, one in-flight/signer, nonce và session-loss fencing đã chạy trên PostgreSQL thật và Hardhat local; đây không phải Fuji end-to-end. C05 vẫn PARTIAL: chưa có job B05 thật do worker xác nhận trên Fuji. Không thay contract/ABI hoặc ví. Các điều kiện rollout và bàn giao bên dưới vẫn bắt buộc.
 
 ## Git và điều kiện merge
