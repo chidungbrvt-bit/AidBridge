@@ -47,3 +47,10 @@ Workflow `.github/workflows/c07-worker-safety.yml`: Ubuntu runner, JDK21, Postgr
 ## Readiness F07/F08
 
 Chỉ đánh giá, không triển khai UI trong lượt này. F07 client/session đã ở main qua PR11; còn cần B07 trên main, donor dev grant D52, published campaign và DB/API được phép. F08 đủ fixtures F02 R01/D01 để bắt đầu mock; receipt/delivery API thật vẫn là dependency riêng. Không đánh dấu task Dũng/Minh Done.
+
+
+## CI lần đầu và sửa fixture
+
+PR bổ sung [#12](https://github.com/chidungbrvt-bit/AidBridge/pull/12), commit 0b5d6bb: compile PASS, 22 unit tests PASS; CaseVerifiedWorkerIT 14/14 PASS; Hardhat E2E 1/1 PASS; persistence IT 2/3 PASS. Run [43190514630](https://github.com/chidungbrvt-bit/AidBridge/actions/runs/43190514630) FAIL do fixture persistence cố dùng nonce0 đã được test worker trước đó ghi trong cùng schema. Không phải lỗi runtime signer locking; unique nonce đã chặn đúng. Sửa fixture lấy nonce base từ journal, không xóa lịch sử hoặc nới constraint. CI tiếp theo phải xác nhận toàn bộ suite và no-skips trước kết luận PASS. Thêm concurrency cho workflow để tránh chạy trùng push/PR.
+
+Readback Fuji mới lưu tại [c07-relayer-preflight.public.json](../../contracts/deployment/c07-relayer-preflight.public.json): đúng runtime C03/chain43113, old Relayer vẫn assigned/active, pilot receipt status1; không có rotation/funding. Trạng thái DB Dũng vẫn NOT_VERIFIED.

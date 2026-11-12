@@ -1,0 +1,46 @@
+{
+  "checkedAt": "2026-11-12T09:21:15.596Z",
+  "chainId": 43113,
+  "contract": "0x015D941c679b0c402c8262BE237adAD36cEf6726",
+  "orgRef": "0x2395bfe7f91467046a39bd8440313164c6442839b2be6698832b7b4941b80a46",
+  "organization": {
+    "registered": true,
+    "active": true,
+    "relayer": "0x559994839f19F40ac704918C3FF1a913AC02dC01"
+  },
+  "runtimeHash": "0x4c778ba83052da23d357828dca603bddb14c6e26a0fdbda94143cafb2a39e7ad",
+  "wallets": {
+    "admin": {
+      "address": "0x131DD6d404f8D0B118D6DB122194bc15b4E4601E",
+      "balanceWei": "348775352000000000",
+      "latestNonce": 2,
+      "pendingNonce": 2,
+      "hasAdmin": true,
+      "hasRelayer": false
+    },
+    "oldRelayer": {
+      "address": "0x559994839f19F40ac704918C3FF1a913AC02dC01",
+      "balanceWei": "149700527000000000",
+      "latestNonce": 1,
+      "pendingNonce": 1,
+      "hasAdmin": false,
+      "hasRelayer": true
+    },
+    "newRelayer": {
+      "address": "0x95a9564899849CF566DE5713205C4B747F361f55",
+      "balanceWei": "0",
+      "latestNonce": 0,
+      "pendingNonce": 0,
+      "hasAdmin": false,
+      "hasRelayer": false
+    }
+  },
+  "independentPilotReceipt": {
+    "hash": "0xc3b02934afb1f29816836fb22146dbc350202d3b2a9e8dbbb19c2fd2e7e8c00f",
+    "status": 1,
+    "blockNumber": 60893112
+  },
+  "rotationExecuted": false,
+  "fundingExecuted": false,
+  "oldSignerBackendObligations": "NOT_VERIFIED_NO_AUTHORIZED_DB_ACCESS"
+}
