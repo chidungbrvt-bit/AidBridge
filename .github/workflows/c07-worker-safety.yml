@@ -1,8 +1,6 @@
 name: C07 worker safety
 
 on:
-  push:
-    branches: [khoa]
   pull_request:
     branches: [main]
   workflow_dispatch:

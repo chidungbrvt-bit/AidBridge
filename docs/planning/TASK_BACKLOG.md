@@ -794,3 +794,8 @@ In Review, kết luận **PARTIAL chờ CI/review**. Giữ receipt fix 8ce40cec;
 ### C07 — CI PASS và PR10 vào main, 12/11/2026
 
 In Review, technical gate **PASS** tại 903f952: GitHub Actions run43191039984 compile + 22 unit + 18 IT PASS, không skip. Lỗi fixture nonce ở CI đầu đã sửa theo journal, không nới constraint/xóa dữ liệu. PR10 đã merge main d38fadb, PR12 bàn giao riêng 15 files C07; B07/API client đã ở main, F07 đủ nền code nhưng real test cần DB/donor/published campaign, F08 mock fixture ready. Chưa triển khai F07/F08. [C07 review](../reviews/C07_WORKER_SAFETY_REVIEW.md) thay kết luận PARTIAL kỹ thuật trước đây; các mục trước là lịch sử. Chưa rotate/fund do thiếu DB old-signer obligations; C05 vẫn PARTIAL, không Done hoặc đổi task của người khác.
+
+
+### C07 — xác minh lại CI và tách việc Fuji, 12/11/2026
+
+Giữ In Review, **technical PASS** được xác minh lại tại SHA4795c9a, run43191763706: compile + 22 unit + 18 integration tests PASS, 0 skip/error/failure. Acceptance matrix tại [C07 review](../reviews/C07_WORKER_SAFETY_REVIEW.md). PR10 đã merge d38fadb; PR12 là bản sửa C07 độc lập, chỉ merge sau checks head hiện hành và branch protection. Người dùng hoãn hoàn toàn rotation/funding sang cuối ngày, giữ nguyên ví/chain; việc đó không chặn C07. C05 Fuji E2E vẫn PARTIAL. Chưa Done, chưa triển khai F07/F08.
