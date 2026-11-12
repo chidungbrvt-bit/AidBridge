@@ -14,7 +14,7 @@ export function ReviewPanel({ detail, onDecision, onRefresh, onBusyChange }: {
   onRefresh: () => void;
   onBusyChange: (busy: boolean) => void;
 }) {
-  const { api, user } = useSession();
+  const { api, user, setNavigationLocked } = useSession();
   const [reviewed, setReviewed] = useState<string[]>([]);
   const [reason, setReason] = useState("");
   const [error, setError] = useState<ErrorInfo | null>(null);
@@ -33,6 +33,7 @@ export function ReviewPanel({ detail, onDecision, onRefresh, onBusyChange }: {
   const locked = !canAct || busy || mustRefresh || uncertain;
 
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  useEffect(() => { setNavigationLocked(busy || uncertain); return () => setNavigationLocked(false); }, [busy, uncertain, setNavigationLocked]);
   useEffect(() => { onBusyChange(busy || uncertain); }, [busy, uncertain, onBusyChange]);
   useEffect(() => {
     if (!uncertain) return;
@@ -60,8 +61,9 @@ export function ReviewPanel({ detail, onDecision, onRefresh, onBusyChange }: {
       const info = describeError(cause);
       setError(info);
       setIssues(info.fieldErrors);
-      setUncertain(info.unknownOutcome);
-      if (!info.unknownOutcome) pending.current = null;
+      const unresolved = info.unknownOutcome || (uncertain && info.code === "CSRF_INVALID");
+      setUncertain(unresolved);
+      if (!unresolved) pending.current = null;
       if (["VERSION_CONFLICT", "INVALID_STATE", "IDEMPOTENCY_CONFLICT"].includes(info.code)) setMustRefresh(true);
       focusFirstError(form, info.fieldErrors);
     } finally {
@@ -94,7 +96,7 @@ export function ReviewPanel({ detail, onDecision, onRefresh, onBusyChange }: {
         <div className="stack evidence-review">{detail.evidenceVersions.map((item, index) => <label className="checkbox" key={item.id}><input type="checkbox" name="reviewedEvidenceVersionIds" value={item.id} checked={reviewed.includes(item.id)} onChange={event => setReviewed(current => event.target.checked ? [...current, item.id] : current.filter(id => id !== item.id))} aria-describedby="error-reviewedEvidenceVersionIds" /><span><strong>Evidence {index + 1} · version {item.versionNo}</strong><span className="mono">{item.id}</span></span></label>)}</div>
         <FieldError name="reviewedEvidenceVersionIds" issues={issues} />
         <FieldError name="expectedVersion" issues={issues} />
-        <label className="field"><span>Review reason</span><textarea name="reason" value={reason} onChange={event => setReason(event.target.value)} rows={4} maxLength={2000} placeholder="Required for rejection or a request for changes" aria-invalid={issues.some(issue => issue.field === "reason")} aria-describedby={issues.some(issue => issue.field === "reason") ? "error-reason" : "reason-help"} /><span id="reason-help" className="muted">Required for reject and request changes; optional for approval.</span><FieldError name="reason" issues={issues} /></label>
+        <label className="field"><span>Review reason</span><textarea name="reason" aria-label="Review reason" value={reason} onChange={event => setReason(event.target.value)} rows={4} maxLength={2000} placeholder="Required for rejection or a request for changes" aria-invalid={issues.some(issue => issue.field === "reason")} aria-describedby={issues.some(issue => issue.field === "reason") ? "error-reason" : "reason-help"} /><span id="reason-help" className="muted">Required for reject and request changes; optional for approval.</span><FieldError name="reason" issues={issues} /></label>
         <div className="stack review-actions"><button type="button" className="button" onClick={() => decide("verify")}>{busy ? "Submitting review…" : "Approve case"}</button><button type="button" className="button secondary" onClick={() => decide("request-changes")}>Request changes</button><button type="button" className="button danger" onClick={() => decide("reject")}>Reject case</button></div>
       </fieldset>
     </form>

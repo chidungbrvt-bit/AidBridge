@@ -1,6 +1,6 @@
 import type { NextConfig } from 'next';
 
-const mode = process.env.NEXT_PUBLIC_API_MODE ?? 'mock';
+const mode = process.env.NEXT_PUBLIC_API_MODE ?? 'real';
 if (!['mock', 'real'].includes(mode)) throw new Error('Invalid NEXT_PUBLIC_API_MODE');
 const nextConfig: NextConfig = {
   poweredByHeader: false,

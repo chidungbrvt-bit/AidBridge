@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "@/components/session-provider";
+import { canCreateCases } from "@/lib/api-client";
 import type { CaseDetailResponse, DecisionResponse } from "@/lib/types";
 import { describeError, ErrorNotice, LoadingCard, StatusBadge, type ErrorInfo } from "./shared";
 import { ReviewPanel } from "./review-panel";
@@ -13,7 +14,7 @@ export function CaseDetail({ id }: { id: string }) {
 }
 
 function ScopedCaseDetail({ id }: { id: string }) {
-  const { api, organizationId, mode } = useSession();
+  const { api, user, organizationId, mode } = useSession();
   const [detail, setDetail] = useState<CaseDetailResponse | null>(null);
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,7 +42,7 @@ function ScopedCaseDetail({ id }: { id: string }) {
 
   const applyDecision = (decision: DecisionResponse) => setDetail(current => current ? {
     ...current, status: decision.caseStatus, version: decision.caseVersion, blockchainStatus: decision.blockchainStatus,
-    reviewHistory: [...current.reviewHistory, decision],
+    reviewHistory: [...(current.reviewHistory ?? []), decision],
   } : current);
 
   async function mockAction(action: "stale-case" | "lose-next-response") {
@@ -56,12 +57,15 @@ function ScopedCaseDetail({ id }: { id: string }) {
 
   if (loading) return <LoadingCard label="Loading case details…" />;
   if (error || !detail) return <div className="stack"><Link href="/cases" className="back-link">← All cases</Link><ErrorNotice error={error} /><button type="button" className="button secondary" onClick={() => setRefreshCount(value => value + 1)}>Retry loading case</button></div>;
+  const canEdit = canCreateCases(user, organizationId) && detail.creator.id === user?.userId && ["SUBMITTED", "CHANGES_REQUESTED"].includes(detail.status);
+  const latestChanges = [...(detail.reviewHistory ?? [])].reverse().find(review => review.decision === "CHANGES_REQUESTED");
 
   return <div className="stack">
-    <header className="page-header"><div><Link href="/cases" className="back-link">← All cases</Link><p className="eyebrow">CASE · REVISION {detail.version}</p><h1>{detail.internalTitle}</h1><p className="muted">{detail.beneficiaryAlias} · {detail.approximateArea}</p></div><button type="button" className="button secondary" disabled={reviewBusy} onClick={() => setRefreshCount(value => value + 1)}>Refresh case</button></header>
+    <header className="page-header"><div><Link href="/cases" className="back-link">← All cases</Link><p className="eyebrow">CASE · REVISION {detail.version}</p><h1>{detail.internalTitle}</h1><p className="muted">{detail.beneficiaryAlias} · {detail.approximateArea}</p></div><div className="actions">{canEdit && !reviewBusy && <Link className="button" href={`/cases/${detail.id}/edit`}>Edit case</Link>}<button type="button" className="button secondary" disabled={reviewBusy} onClick={() => setRefreshCount(value => value + 1)}>Refresh case</button></div></header>
+    {detail.status === "CHANGES_REQUESTED" && <section className="notice"><strong>Reviewer requested changes</strong><p>{latestChanges?.reason || "Review feedback is not included in this API projection."}</p>{canEdit && <p>Open Edit case, save the requested revision, then explicitly resubmit for independent review.</p>}</section>}
     <div className="status-grid">
       <section className="card status-card"><span className="eyebrow">BUSINESS STATUS</span><StatusBadge status={detail.status} /><p className="muted">The current state of the aid request.</p></section>
-      <section className="card status-card"><span className="eyebrow">BLOCKCHAIN SYNC</span><StatusBadge status={detail.blockchainStatus} /><p className="muted">{detail.blockchainStatus === "PENDING_ON_CHAIN" ? "Approved in the application; the chain record is still pending." : detail.blockchainStatus === "NOT_REQUIRED" ? "No chain milestone is required for this state." : detail.blockchainStatus === "CONFIRMED" ? "The chain projection reports confirmation." : "The chain operation needs attention."}{mode === "mock" ? " Simulated status." : ""}</p></section>
+      <section className="card status-card"><span className="eyebrow">BLOCKCHAIN SYNC</span><StatusBadge status={detail.blockchainStatus} /><p className="muted">{detail.blockchainStatus === "UNKNOWN" ? "This API response does not include blockchain synchronization status." : detail.blockchainStatus === "PENDING_ON_CHAIN" ? "The business decision is saved; blockchain confirmation is still pending." : "Blockchain synchronization is separate from the business decision."}</p>{mode === "mock" && <p className="muted">Simulated status. No Fuji transaction was created.</p>}</section>
     </div>
     <div className="review-layout">
       <div className="stack">

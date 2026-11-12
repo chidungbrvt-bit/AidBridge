@@ -8,7 +8,7 @@ import { useSession } from './session-provider';
 
 export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const session = useSession();
-  const { user, loading, organizationId, mode, generation } = session;
+  const { user, loading, organizationId, mode, generation, navigationLocked } = session;
   const router = useRouter();
   const pathname = usePathname();
   const [actionError, setActionError] = useState('');
@@ -24,12 +24,14 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
     catch { setActionError('Sign out could not be confirmed. Please retry.'); }
     finally { setBusy(false); }
   }
-  return <div className="app-shell">
+  return <div className="app-shell" onClickCapture={event => {
+    if (navigationLocked && event.target instanceof Element && event.target.closest('a')) event.preventDefault();
+  }}>
     <aside className="sidebar">
       <Link href="/cases" className="brand"><span className="brand-icon" aria-hidden="true">a<span>↗</span></span><span>AidBridge<small>CARE, WITH ACCOUNTABILITY</small></span></Link>
       <div className="workspace-label">ORGANIZATION WORKSPACE</div>
       <label className="org-label" htmlFor="organization">Active organization</label>
-      <select id="organization" value={organizationId} onChange={event => session.setOrganizationId(event.target.value)}>
+      <select id="organization" value={organizationId} disabled={navigationLocked} onChange={event => session.setOrganizationId(event.target.value)}>
         {memberships.map(item => <option key={item.organizationId} value={item.organizationId}>
           {mode === 'mock' && item.organizationId.endsWith('0001') ? 'Riverlight Aid' : mode === 'mock' && item.organizationId.endsWith('0002') ? 'Harbor Relief' : item.organizationId}
         </option>)}
@@ -41,11 +43,12 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
       </nav>
       <div className="sidebar-note"><span className="eyebrow">INDEPENDENT REVIEW</span><p>Every case starts with a need.<br/>Every approval needs a second person.</p></div>
       <div className="profile"><span className="avatar">{user.fullName.slice(0, 1)}</span><div><strong>{user.fullName}</strong><small>{membership?.roles.join(' · ') || 'No active staff role'}</small></div></div>
-      <button className="button secondary signout" onClick={signOut} disabled={busy}>{busy ? 'Signing out…' : 'Sign out'}</button>
+      <button className="button secondary signout" onClick={signOut} disabled={busy || navigationLocked}>{busy ? 'Signing out…' : 'Sign out'}</button>
     </aside>
     <div className="workspace-main">
       <header className="topbar"><span>Organization / Case management</span><span className={`environment ${mode}`}><span aria-hidden="true">●</span> {mode === 'mock' ? 'MOCK DEMO · FICTIONAL DATA' : 'REAL API'}</span></header>
       <main className="main-content" key={contextKey}>
+        {navigationLocked && <p className="notice" role="status">Resolve the current submission before leaving this page or switching organization.</p>}
         {actionError && <p className="notice error" role="alert">{actionError}</p>}
         {memberships.length ? children : <section className="card"><h1>No active organization membership</h1><p>Your account has no active staff membership. Ask the organization administrator to check access.</p></section>}
       </main>

@@ -9,6 +9,7 @@ type SessionContextValue = {
   organizationId: string; setOrganizationId: (id: string) => void;
   login: (request: LoginRequest) => Promise<void>; logout: () => Promise<void>;
   refreshUser: () => Promise<void>; notice: string; error: string; generation: number;
+  navigationLocked: boolean; setNavigationLocked: (locked: boolean) => void;
 };
 const SessionContext = createContext<SessionContextValue | null>(null);
 
@@ -19,13 +20,14 @@ export function SessionProvider({ children, mode }: { children: React.ReactNode;
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const [generation, setGeneration] = useState(0);
+  const [navigationLocked, setNavigationLocked] = useState(false);
   const epoch = useRef(0);
   const hadUser = useRef(false);
   const clear = useCallback(() => {
     epoch.current += 1;
     if (hadUser.current) setNotice('Your session ended. Sign in again to continue.');
     hadUser.current = false;
-    setUser(null); setOrg(''); setLoading(false); setGeneration(value => value + 1);
+    setUser(null); setOrg(''); setLoading(false); setNavigationLocked(false); setGeneration(value => value + 1);
   }, []);
   const api = useMemo(() => new ApiClient(mode === 'mock' ? mockTransport : realTransport, clear), [mode, clear]);
   const apply = useCallback((next: MeResponse) => {
@@ -74,7 +76,7 @@ export function SessionProvider({ children, mode }: { children: React.ReactNode;
   return <SessionContext.Provider value={{ user, api, mode, loading, organizationId,
     setOrganizationId: id => {
       if (activeMemberships(user).some(item => item.organizationId === id)) setOrg(id);
-    }, login, logout, refreshUser, notice, error, generation }}>{children}</SessionContext.Provider>;
+    }, login, logout, refreshUser, notice, error, generation, navigationLocked, setNavigationLocked }}>{children}</SessionContext.Provider>;
 }
 export function useSession() {
   const context = useContext(SessionContext);

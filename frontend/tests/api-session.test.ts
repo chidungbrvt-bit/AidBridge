@@ -187,13 +187,13 @@ test("F04: B reviews A case and VERIFIED remains separate from PENDING_ON_CHAIN"
   assert.equal(decision.reviewerId, MOCK_IDENTITIES[1].user.userId);
   assert.equal(decision.caseStatus, "VERIFIED"); assert.equal(decision.blockchainStatus, "PENDING_ON_CHAIN");
   const replayed = await client.api.reviewCase(MOCK_CASE_ID, "verify", body, key); assert.deepEqual(replayed, decision);
-  const current = await client.api.getCase(MOCK_CASE_ID); assert.equal(current.reviewHistory.length, 1); assert.equal(current.version, 2);
+  const current = await client.api.getCase(MOCK_CASE_ID); assert.equal(current.reviewHistory.length, 1); assert.equal(current.version, 1);
 });
 
 test("F04: A is denied self-review even though A also has VERIFIER", async () => {
   const client = browser(); const user = await login(client);
   assert.equal(canReviewCases(user, MOCK_ORGANIZATIONS[0].id), true);
-  await assert.rejects(client.api.reviewCase(MOCK_CASE_ID, "verify", await reviewBody(client), crypto.randomUUID()), rejectsCode("SELF_APPROVAL", 403));
+  await assert.rejects(client.api.reviewCase(MOCK_CASE_ID, "verify", await reviewBody(client), crypto.randomUUID()), rejectsCode("FORBIDDEN", 403));
   assert.equal((await client.api.getCase(MOCK_CASE_ID)).status, "SUBMITTED");
 });
 
@@ -202,9 +202,9 @@ test("F04: stale case or evidence set requires refresh; new valid review succeed
   await client.api.mockControl("stale-case", MOCK_CASE_ID);
   await assert.rejects(client.api.reviewCase(MOCK_CASE_ID, "verify", stale, crypto.randomUUID()), rejectsCode("VERSION_CONFLICT", 409));
   const current = await reviewBody(client);
-  await assert.rejects(client.api.reviewCase(MOCK_CASE_ID, "verify", { ...current, reviewedEvidenceVersionIds: [crypto.randomUUID()] }, crypto.randomUUID()), rejectsCode("VERSION_CONFLICT", 409));
+  await assert.rejects(client.api.reviewCase(MOCK_CASE_ID, "verify", { ...current, reviewedEvidenceVersionIds: [crypto.randomUUID()] }, crypto.randomUUID()), rejectsCode("VALIDATION_ERROR", 400));
   const fresh = await reviewBody(client); const result = await client.api.reviewCase(MOCK_CASE_ID, "verify", fresh, crypto.randomUUID());
-  assert.equal(result.caseVersion, 3);
+  assert.equal(result.caseVersion, 2);
 });
 
 test("F04: reject/request changes require reason and produce the documented business transitions", async () => {
@@ -213,7 +213,7 @@ test("F04: reject/request changes require reason and produce the documented busi
     await assert.rejects(client.api.reviewCase(MOCK_CASE_ID, action, body, crypto.randomUUID()), (error: unknown) => error instanceof ApiError && error.status === 400 && error.fieldErrors.some((field) => field.field === "reason"));
     const result = await client.api.reviewCase(MOCK_CASE_ID, action, { ...body, reason: "Please clarify the fictional intake record." }, crypto.randomUUID());
     assert.equal(result.caseStatus, action === "reject" ? "REJECTED" : "CHANGES_REQUESTED");
-    assert.equal(result.blockchainStatus, "NOT_REQUIRED");
+    assert.equal(result.blockchainStatus, "NOT_APPLICABLE");
   }
 });
 

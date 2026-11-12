@@ -17,7 +17,7 @@ export function CreateCase() {
 }
 
 function ScopedCreateCase() {
-  const { api, user, organizationId } = useSession();
+  const { api, user, organizationId, setNavigationLocked } = useSession();
   const router = useRouter();
   const form = useRef<HTMLFormElement>(null);
   const mounted = useRef(true);
@@ -49,6 +49,7 @@ function ScopedCreateCase() {
   ]);
 
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  useEffect(() => { setNavigationLocked(busy || uncertain); return () => setNavigationLocked(false); }, [busy, uncertain, setNavigationLocked]);
   useEffect(() => {
     let cancelled = false;
     setFixtureLoading(true);
@@ -88,8 +89,9 @@ function ScopedCreateCase() {
       const info = describeError(reason);
       setError(info);
       setIssues(info.fieldErrors);
-      setUncertain(info.unknownOutcome);
-      if (!info.unknownOutcome) pending.current = null;
+      const unresolved = info.unknownOutcome || (uncertain && info.code === "CSRF_INVALID");
+      setUncertain(unresolved);
+      if (!unresolved) pending.current = null;
       focusFirstError(form, info.fieldErrors);
     } finally {
       submitting.current = false;

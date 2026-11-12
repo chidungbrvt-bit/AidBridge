@@ -1,5 +1,5 @@
 /**
- * Real HTTP smoke. Creates one fictional case in the explicitly configured test API.
+ * Real HTTP smoke. Creates two fictional cases in the explicitly configured test API.
  * Node >=22.13; no dependencies. Values belong in process environment, never source.
  * Required: API_BASE_URL (e.g. http://127.0.0.1:3000/api), REAL_A_EMAIL,
  * REAL_A_PASSWORD, REAL_B_EMAIL, REAL_B_PASSWORD, REAL_ORGANIZATION_ID,
@@ -83,13 +83,13 @@ class Browser {
     return result;
   }
 
-  async mutation(path, body, key = randomUUID()) {
+  async mutation(path, body, key = randomUUID(), method = 'POST') {
     // An unknown network outcome retries the exact payload and key once.
-    try { return await this.request(path, { method: 'POST', body, key }); }
+    try { return await this.request(path, { method, body, key }); }
     catch (error) {
       if (!(error instanceof TypeError) && error?.name !== 'TimeoutError') throw error;
       console.log(`RETRY ${stage}: same Idempotency-Key after unknown network outcome.`);
-      return this.request(path, { method: 'POST', body, key });
+      return this.request(path, { method, body, key });
     }
   }
 }
@@ -216,11 +216,9 @@ try {
     reviewedEvidenceVersionIds: detail.data.evidenceVersions.map(item => item.id) };
   stage = 'A denied review';
   const denied = await a.mutation(`${casePath}/verify`, decision);
-  if (membership(a).roles.includes('VERIFIER')) problem(denied, 403, 'SELF_APPROVAL');
-  else {
-    problem(denied, 403, 'FORBIDDEN');
-    console.log('Not Run: dual-role SELF_APPROVAL requires A to also have VERIFIER.');
-  }
+  // Current B05 uses AccessDeniedException for self-review and missing role.
+  problem(denied, 403, 'FORBIDDEN');
+  if (!membership(a).roles.includes('VERIFIER')) console.log('Not Run: dual-role self-review denial requires A to also have VERIFIER.');
   for (const action of ['reject', 'request-changes']) {
     stage = `${action} missing reason`;
     problem(await b.mutation(`${casePath}/${action}`, decision), 400, 'VALIDATION_ERROR');
@@ -232,6 +230,31 @@ try {
   assert.equal(refreshed.status, 200);
   decision.expectedVersion = refreshed.data.version;
   decision.reviewedEvidenceVersionIds = refreshed.data.evidenceVersions.map(item => item.id);
+  stage = 'B requests changes';
+  const changes = await b.mutation(`${casePath}/request-changes`, { ...decision, reason: 'Clarify the quantity for this fictional household.' });
+  assert.equal(changes.status, 200);
+  assert.equal(changes.data?.caseStatus, 'CHANGES_REQUESTED');
+  assert.equal(changes.data?.blockchainStatus, 'NOT_APPLICABLE');
+  report(stage, changes.status);
+  stage = 'resubmit without a revision denied';
+  problem(await a.mutation(`${casePath}/resubmit`, { expectedVersion: changes.data.caseVersion }), 409, 'INVALID_STATE');
+  stage = 'B cannot edit A case';
+  problem(await b.mutation(casePath, { expectedVersion: changes.data.caseVersion, internalTitle: 'Disallowed edit' }, randomUUID(), 'PATCH'), 403, 'FORBIDDEN');
+  stage = 'A saves revised case';
+  const edited = await a.mutation(casePath, { expectedVersion: changes.data.caseVersion, internalTitle: 'F03 F04 fictional revised household', needs: [{ name: 'Rice', unit: 'bag', quantity: 3 }, { name: 'Hygiene kit', unit: 'kit', quantity: 2 }] }, randomUUID(), 'PATCH');
+  assert.equal(edited.status, 200);
+  assert.equal(edited.data?.status, 'CHANGES_REQUESTED');
+  report(stage, edited.status);
+  stage = 'A explicitly resubmits';
+  const submitted = await a.mutation(`${casePath}/resubmit`, { expectedVersion: edited.data.version });
+  assert.equal(submitted.status, 200);
+  assert.equal(submitted.data?.status, 'SUBMITTED');
+  report(stage, submitted.status);
+  stage = 'B reviews refreshed detail';
+  const revised = await b.request(casePath);
+  assert.equal(revised.status, 200);
+  decision.expectedVersion = revised.data.version;
+  decision.reviewedEvidenceVersionIds = revised.data.evidenceVersions.map(item => item.id);
   stage = 'B independent approval';
   const verified = await b.mutation(`${casePath}/verify`, decision);
   assert.equal(verified.status, 200);
@@ -240,7 +263,18 @@ try {
   assert.equal(verified.data?.reviewerId, b.me.userId);
   report(stage, verified.status);
   console.log('PASS business VERIFIED and chain PENDING_ON_CHAIN asserted independently.');
-  console.log('Not Run: real idle-session expiry, cross-organization 404, successful reject/request-changes need separate backend fixtures.');
+  stage = 'A cannot edit verified case';
+  problem(await a.mutation(casePath, { expectedVersion: verified.data.caseVersion, internalTitle: 'Disallowed verified edit' }, randomUUID(), 'PATCH'), 409, 'INVALID_STATE');
+  stage = 'second fictional case for rejection';
+  const rejectCase = await a.mutation('cases', { ...body, internalTitle: 'F03 F04 fictional rejection smoke' });
+  assert.equal(rejectCase.status, 201);
+  stage = 'B independently rejects';
+  const rejected = await b.mutation(`cases/${encodeURIComponent(rejectCase.data.id)}/reject`, { expectedVersion: rejectCase.data.version, reviewedEvidenceVersionIds: rejectCase.data.evidenceVersions.map(item => item.id), reason: 'This fictional request does not meet the demo criteria.' });
+  assert.equal(rejected.status, 200);
+  assert.equal(rejected.data?.caseStatus, 'REJECTED');
+  assert.equal(rejected.data?.blockchainStatus, 'NOT_APPLICABLE');
+  report(stage, rejected.status);
+  console.log('Not Run: real idle-session expiry and cross-organization 404 require separate backend fixtures. F05 is deferred.');
 } catch (error) {
   failures++;
   const safeCode = ['MOCK_TARGET_REJECTED', 'NON_JSON_RESPONSE'].includes(error?.message)

@@ -1,5 +1,7 @@
 # Bàn giao F03 và F04 của Minh
 
+> Bản lịch sử ngày 10/11. Bàn giao hiện hành, DTO đã đối chiếu main và kết quả mới: [12/11/2026](MINH_F03_F04_2026-11-12.md). Các ghi chú backend chưa có trong bản cũ không phản ánh main hiện tại.
+
 Ngày bàn giao: 10/11/2026. Phạm vi gồm app shell và session client F03; danh sách, tạo và chi tiết hồ sơ F04; review độc lập F04. Mã frontend chạy với mock HTTP có cookie, đồng thời có cấu hình chuyển toàn bộ API sang backend thật. **Trạng thái: In Review**, chờ người phụ trách review và bằng chứng tích hợp backend; không đánh dấu Done.
 
 Yêu cầu hiện tại của người dùng cho phép triển khai F03/F04, thay cho giới hạn documentation-only trong bản planning cũ đối với đúng hai task này. Quyền đó không mở rộng sang triển khai B04/B05, F05, commit/push, public deployment hoặc mua dịch vụ. Giữ nguyên primary owner, estimate và lịch sử tiến độ của nhóm.

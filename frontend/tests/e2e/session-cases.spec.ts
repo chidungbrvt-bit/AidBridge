@@ -92,7 +92,7 @@ test("A creates two items; self review denied; B approves with distinct business
     data: { expectedVersion: item.version, reviewedEvidenceVersionIds: item.evidenceVersions.map(evidence => evidence.id) },
   });
   expect(denied.status()).toBe(403);
-  expect((await denied.json()).code).toBe("SELF_APPROVAL");
+  expect((await denied.json()).code).toBe("FORBIDDEN");
   await becomeReviewer(page, item);
   await acknowledgeEvidence(page);
   await page.getByRole("button", { name: "Approve case", exact: true }).click();
@@ -118,7 +118,7 @@ for (const action of [
     await page.locator('textarea[name="reason"]').fill("Fictional assessment requires clearer supporting evidence.");
     await page.getByRole("button", { name: action.button, exact: true }).click();
     await expect(businessCard(page).getByText(action.status, { exact: true })).toBeVisible();
-    await expect(chainCard(page).getByText("NOT REQUIRED", { exact: true })).toBeVisible();
+    await expect(chainCard(page).getByText("NOT APPLICABLE", { exact: true })).toBeVisible();
   });
 }
 
@@ -134,7 +134,7 @@ test("a stale revision blocks review until refresh and renewed evidence acknowle
   await expect(page.locator('.notice[role="alert"]')).toContainText("VERSION_CONFLICT");
   await expect(page.getByRole("button", { name: "Approve case", exact: true })).toBeDisabled();
   await page.getByRole("button", { name: "Refresh before reviewing again", exact: true }).click();
-  await expect(page.getByText("CASE · REVISION 2", { exact: true })).toBeVisible();
+  await expect(page.getByText(`CASE · REVISION ${item.version + 1}`, { exact: true })).toBeVisible();
   await expect(page.locator('input[name="reviewedEvidenceVersionIds"]').first()).not.toBeChecked();
   await acknowledgeEvidence(page);
   await page.getByRole("button", { name: "Approve case", exact: true }).click();

@@ -1,4 +1,4 @@
-import type { CaseDetailResponse, CaseListQuery, CaseSummary, CreateCaseRequest, CsrfResponse, DecisionRequest, DecisionResponse, EvidenceFixture, FieldError, LoginRequest, LoginResponse, MeResponse, Membership, MockControlAction, OrganizationRole, PageResponse, ProblemDetail, ReviewAction } from "./types";
+import type { BlockchainStatus, CaseDetailResponse, CaseListQuery, CaseSummary, CreateCaseRequest, CsrfResponse, DecisionRequest, DecisionResponse, EvidenceFixture, FieldError, LoginRequest, LoginResponse, MeResponse, Membership, MockControlAction, OrganizationRole, PageResponse, PatchCaseRequest, ProblemDetail, ResubmitCaseRequest, ReviewAction } from "./types";
 
 export type Transport = (path: string, init?: RequestInit) => Promise<Response>;
 export const realTransport: Transport = (path, init) => {
@@ -50,6 +50,31 @@ export const canReadCases = (user: MeResponse | null, organizationId: string): b
 export const canCreateCases = (user: MeResponse | null, organizationId: string): boolean => rolesFor(user, organizationId).includes("VOLUNTEER");
 export const canReviewCases = (user: MeResponse | null, organizationId: string): boolean => rolesFor(user, organizationId).includes("VERIFIER");
 
+export function normalizeBlockchainStatus(value: unknown): BlockchainStatus {
+  if (value === "NOT_REQUIRED") return "NOT_APPLICABLE";
+  if (value === "FAILED") return "FAILED_ON_CHAIN";
+  if (value === "CONFIRMED") return "CONFIRMED_ON_CHAIN";
+  return ["NOT_APPLICABLE", "PENDING_ON_CHAIN", "CONFIRMED_ON_CHAIN", "FAILED_ON_CHAIN"].includes(String(value)) ? value as BlockchainStatus : "UNKNOWN";
+}
+/** Display adapter only: fullName is the current B04 contract; displayName was the F03/F04 mock. */
+export function normalizeCaseSummary(input: unknown): CaseSummary {
+  const value = input as CaseSummary & { creator?: { id: string; fullName?: string; displayName?: string }; needs?: unknown[] };
+  if (!value || typeof value.id !== "string" || typeof value.organizationId !== "string" || typeof value.internalTitle !== "string") {
+    throw new ApiError({ type: "urn:aidbridge:error:invalid-response", status: 502, code: "INVALID_RESPONSE", title: "Invalid case response" });
+  }
+  return { ...value, creator: value.creator ? { id: value.creator.id, displayName: value.creator.fullName ?? value.creator.displayName ?? "Staff member" } : undefined, needsCount: typeof value.needsCount === "number" ? value.needsCount : Array.isArray(value.needs) ? value.needs.length : undefined };
+}
+export function normalizeCaseDetail(input: unknown): CaseDetailResponse {
+  const value = input as CaseDetailResponse;
+  const summary = normalizeCaseSummary(input);
+  if (!summary.creator || !Array.isArray(value.needs) || !Array.isArray(value.evidenceVersions) || !value.consent) throw new ApiError({ type: "urn:aidbridge:error:invalid-response", status: 502, code: "INVALID_RESPONSE", title: "Invalid case detail response" });
+  return { ...value, ...summary, creator: summary.creator, beneficiaryAlias: value.beneficiaryAlias, approximateArea: value.approximateArea, publicTitle: typeof value.publicTitle === "string" ? value.publicTitle : undefined, publicSummary: typeof value.publicSummary === "string" ? value.publicSummary : undefined, reviewHistory: Array.isArray(value.reviewHistory) ? value.reviewHistory.map(normalizeDecision) : [],
+    reviewHistoryAvailable: Array.isArray(value.reviewHistory), blockchainStatus: normalizeBlockchainStatus(value.blockchainStatus) };
+}
+function normalizeDecision(value: DecisionResponse): DecisionResponse {
+  return { ...value, blockchainStatus: normalizeBlockchainStatus(value.blockchainStatus) };
+}
+
 export class ApiClient {
   private csrfToken: CsrfResponse | undefined;
   private authVersion = 0;
@@ -77,9 +102,9 @@ export class ApiClient {
     if (startedWithAuthVersion === this.authVersion) this.csrfToken = token;
     return token;
   }
-  private async mutate<T>(path: string, body?: unknown, key?: string): Promise<T> {
+  private async mutate<T>(path: string, body?: unknown, key?: string, method: "POST" | "PATCH" = "POST"): Promise<T> {
     const csrf = this.csrfToken ?? await this.csrf();
-    return this.request<T>(path, { method: "POST", headers: { "Content-Type": "application/json", [csrf.headerName]: csrf.token, ...(key ? { "Idempotency-Key": key } : {}) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+    return this.request<T>(path, { method, headers: { "Content-Type": "application/json", [csrf.headerName]: csrf.token, ...(key ? { "Idempotency-Key": key } : {}) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
   }
   async login(credentials: LoginRequest): Promise<MeResponse> {
     this.authVersion += 1;
@@ -97,14 +122,20 @@ export class ApiClient {
     this.onUnauthorized?.();
     await this.csrf();
   }
-  listCases(query: CaseListQuery): Promise<PageResponse<CaseSummary>> {
+  async listCases(query: CaseListQuery): Promise<PageResponse<CaseSummary>> {
     const parameters = new URLSearchParams({ organizationId: query.organizationId, page: String(query.page ?? 0), size: String(query.size ?? 20) });
     if (query.status) parameters.set("status", query.status);
-    return this.request(`/api/cases?${parameters}`);
+    const result = await this.request<PageResponse<unknown>>(`/api/cases?${parameters}`);
+    return { ...result, items: result.items.map(normalizeCaseSummary) };
   }
-  getCase(id: string): Promise<CaseDetailResponse> { return this.request(`/api/cases/${encodeURIComponent(id)}`); }
-  evidenceFixtures(organizationId: string): Promise<EvidenceFixture[]> { return this.request(`/api/evidence-fixtures?${new URLSearchParams({ organizationId })}`); }
-  createCase(body: CreateCaseRequest, key: string): Promise<CaseDetailResponse> { return this.mutate("/api/cases", body, key); }
-  reviewCase(id: string, action: ReviewAction, body: DecisionRequest, key: string): Promise<DecisionResponse> { return this.mutate(`/api/cases/${encodeURIComponent(id)}/${action}`, body, key); }
+  async getCase(id: string): Promise<CaseDetailResponse> { return normalizeCaseDetail(await this.request(`/api/cases/${encodeURIComponent(id)}`)); }
+  async evidenceFixtures(organizationId: string): Promise<EvidenceFixture[]> {
+    const rows = await this.request<(EvidenceFixture & { title?: string })[]>(`/api/evidence-fixtures?${new URLSearchParams({ organizationId })}`);
+    return rows.map(row => ({ ...row, label: row.title ?? row.label ?? "Evidence fixture" }));
+  }
+  async createCase(body: CreateCaseRequest, key: string): Promise<CaseDetailResponse> { return normalizeCaseDetail(await this.mutate("/api/cases", body, key)); }
+  async patchCase(id: string, body: PatchCaseRequest, key: string): Promise<CaseDetailResponse> { return normalizeCaseDetail(await this.mutate(`/api/cases/${encodeURIComponent(id)}`, body, key, "PATCH")); }
+  async resubmitCase(id: string, body: ResubmitCaseRequest, key: string): Promise<CaseDetailResponse> { return normalizeCaseDetail(await this.mutate(`/api/cases/${encodeURIComponent(id)}/resubmit`, body, key)); }
+  async reviewCase(id: string, action: ReviewAction, body: DecisionRequest, key: string): Promise<DecisionResponse> { return normalizeDecision(await this.mutate(`/api/cases/${encodeURIComponent(id)}/${action}`, body, key)); }
   mockControl(action: MockControlAction, caseId?: string): Promise<void> { return this.mutate("/api/mock/control", { action, caseId }); }
 }

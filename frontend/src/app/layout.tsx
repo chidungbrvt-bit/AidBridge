@@ -6,6 +6,6 @@ export const metadata: Metadata = { title: 'AidBridge | Organization workspace',
 // Authenticated workspace shells are rendered per request, never as a cached page.
 export const dynamic = 'force-dynamic';
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const mode = process.env.NEXT_PUBLIC_API_MODE === 'real' ? 'real' : 'mock';
+  const mode = process.env.NEXT_PUBLIC_API_MODE === 'mock' ? 'mock' : 'real';
   return <html lang="en"><body><SessionProvider mode={mode}>{children}</SessionProvider></body></html>;
 }

@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 type Backend = ReturnType<typeof createMockBackend>;
 const mockGlobal = globalThis as typeof globalThis & { aidbridgeMock?: Backend };
 async function handle(request: Request): Promise<Response> {
-  if (process.env.NEXT_PUBLIC_API_MODE === 'real') return Response.json({ code: 'RESOURCE_NOT_FOUND' }, { status: 404 });
+  if (process.env.NEXT_PUBLIC_API_MODE !== 'mock') return Response.json({ code: 'RESOURCE_NOT_FOUND' }, { status: 404 });
   const origin = request.headers.get('origin');
   // Next may normalize request.url to localhost; Host retains the browser's origin.
   const incoming = new URL(request.url);
@@ -21,3 +21,4 @@ async function handle(request: Request): Promise<Response> {
 }
 export const GET = handle;
 export const POST = handle;
+export const PATCH = handle;

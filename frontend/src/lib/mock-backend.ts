@@ -1,7 +1,7 @@
 /** Server-only, process-memory simulation. No SQL/outbox/Fuji claim; never enabled by real transport mode. */
 import { createHash, randomUUID } from "node:crypto";
 import { MOCK_CASE_ID, MOCK_CREATE_CASE, MOCK_EVIDENCE, MOCK_IDENTITIES } from "./mock-fixtures";
-import type { CaseDetailResponse, CaseStatus, CaseSummary, CreateCaseRequest, DecisionRequest, DecisionResponse, EvidenceVersion, FieldError, MeResponse, MockControlAction, ProblemDetail, ReviewAction } from "./types";
+import type { CaseDetailResponse, CaseStatus, CaseSummary, CreateCaseRequest, DecisionRequest, DecisionResponse, EvidenceVersion, FieldError, MeResponse, MockControlAction, PatchCaseRequest, ProblemDetail, ReviewAction } from "./types";
 
 const COOKIE = "AIDBRIDGE_MOCK_SESSION";
 const HEADER = "X-CSRF-TOKEN";
@@ -19,7 +19,9 @@ const canonical = (input: unknown): string => {
   if (input !== null && typeof input === "object") return `{${Object.entries(input).sort(([a], [b]) => a.localeCompare(b)).map(([key, value]) => `${JSON.stringify(key)}:${canonical(value)}`).join(",")}}`;
   return JSON.stringify(input);
 };
-const summary = (item: CaseDetailResponse): CaseSummary => ({ id: item.id, organizationId: item.organizationId, internalTitle: item.internalTitle, beneficiaryAlias: item.beneficiaryAlias, approximateArea: item.approximateArea, priority: item.priority, status: item.status, version: item.version, creator: item.creator, createdAt: item.createdAt, needsCount: item.needs.length });
+const summary = (item: CaseDetailResponse): CaseSummary => ({ id: item.id, organizationId: item.organizationId, internalTitle: item.internalTitle, priority: item.priority, status: item.status, version: item.version, createdAt: item.createdAt });
+// Current B04 wire naming; the shared client normalizes it for the existing UI.
+const detail = (item: CaseDetailResponse) => ({ ...item, creator: { id: item.creator.id, fullName: item.creator.displayName } });
 const cookieHeader = (id: string, secure: boolean, clear = false) => `${COOKIE}=${id}; Path=/; HttpOnly; SameSite=Lax${secure ? "; Secure" : ""}${clear ? "; Max-Age=0" : ""}`;
 const object = (value: unknown): Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 
@@ -29,6 +31,9 @@ export function createMockBackend() {
   const cases = new Map<string, CaseDetailResponse>();
   const replay = new Map<string, StoredResponse>();
   const evidence = new Map<string, { caseId: string; bytes: string }>();
+  const changesRequestedVersion = new Map<string, number>();
+  const revisions = new Map<string, CaseDetailResponse>();
+  const saveRevision = (item: CaseDetailResponse) => revisions.set(`${item.id}:${item.version}`, clone(item));
 
   function buildCase(body: CreateCaseRequest, user: MeResponse, id = randomUUID()): CaseDetailResponse {
     const now = new Date().toISOString();
@@ -38,9 +43,10 @@ export function createMockBackend() {
       evidence.set(evidenceId, { caseId: id, bytes });
       return { id: evidenceId, evidenceFileId: randomUUID(), versionNo: 1, mimeType: "text/plain", byteSize: Buffer.byteLength(bytes), sha256: createHash("sha256").update(bytes).digest("hex"), createdAt: now };
     });
-    return { id, organizationId: body.organizationId, internalTitle: body.internalTitle, beneficiaryAlias: body.beneficiaryAlias, approximateArea: body.approximateArea, priority: body.priority, publicTitle: body.publicTitle, publicSummary: body.publicSummary, status: "SUBMITTED", version: 1, creator: { id: user.userId, displayName: user.fullName }, createdAt: now, needsCount: body.needs.length, needs: body.needs.map((need) => ({ ...need, id: randomUUID() })), consent: clone(body.consent), evidenceVersions: versions, reviewHistory: [], goodsTotals: { pledged: 0, received: 0, delivered: 0, confirmed: 0 }, disputeSummary: { openCount: 0 }, blockchainStatus: "NOT_REQUIRED" };
+    return { id, organizationId: body.organizationId, internalTitle: body.internalTitle, beneficiaryAlias: body.beneficiaryAlias, approximateArea: body.approximateArea, priority: body.priority, publicTitle: body.publicTitle, publicSummary: body.publicSummary, status: "SUBMITTED", version: 0, creator: { id: user.userId, displayName: user.fullName }, createdAt: now, needsCount: body.needs.length, needs: body.needs.map((need) => ({ ...need, id: randomUUID() })), consent: clone(body.consent), evidenceVersions: versions, reviewHistory: [], goodsTotals: { pledged: 0, received: 0, delivered: 0, confirmed: 0 }, disputeSummary: { openCount: 0 }, blockchainStatus: "NOT_APPLICABLE" };
   }
   cases.set(MOCK_CASE_ID, buildCase(clone(MOCK_CREATE_CASE), MOCK_IDENTITIES[0].user, MOCK_CASE_ID));
+  saveRevision(cases.get(MOCK_CASE_ID)!);
 
   function ownMembership(user: MeResponse, organizationId: string) {
     const membership = user.memberships.find((entry) => entry.organizationId === organizationId && entry.status === "ACTIVE");
@@ -60,7 +66,7 @@ export function createMockBackend() {
     Object.keys(body).filter((key) => !allowed.has(key)).forEach((field) => errors.push({ field, code: "UNEXPECTED_FIELD" }));
     const checkText = (field: string, value: unknown, max: number, required = true) => {
       if ((!required && value === undefined)) return;
-      if (typeof value !== "string" || (required && !value.trim()) || value.length > max || /[<>]/.test(value)) errors.push({ field, code: "INVALID_TEXT" });
+      if (typeof value !== "string" || (required && !value.trim()) || value.length > max || /[<>\0]|:\/\//.test(value)) errors.push({ field, code: "INVALID_TEXT" });
     };
     checkText("organizationId", body.organizationId, 36);
     checkText("beneficiaryAlias", body.beneficiaryAlias, 120);
@@ -72,8 +78,9 @@ export function createMockBackend() {
     const consent = object(body.consent);
     if (!["CONSENT", "REPRESENTATIVE"].includes(String(consent.basis))) errors.push({ field: "consent.basis", code: "REQUIRED" });
     checkText("consent.scope", consent.scope, 200);
-    if (typeof consent.capturedAt !== "string" || !Number.isFinite(Date.parse(consent.capturedAt)) || Date.parse(consent.capturedAt) > Date.now() + 300_000) errors.push({ field: "consent.capturedAt", code: "INVALID_TIMESTAMP" });
+    if (typeof consent.capturedAt !== "string" || !Number.isFinite(Date.parse(consent.capturedAt)) || Date.parse(consent.capturedAt) > Date.now()) errors.push({ field: "consent.capturedAt", code: "INVALID_TIMESTAMP" });
     if (typeof consent.publicSummaryAllowed !== "boolean") errors.push({ field: "consent.publicSummaryAllowed", code: "REQUIRED" });
+    if (consent.publicSummaryAllowed === false && [body.publicTitle, body.publicSummary].some(value => typeof value === "string" && value.trim())) errors.push({ field: "consent.publicSummaryAllowed", code: "PUBLIC_SUMMARY_NOT_ALLOWED" });
     if (!Array.isArray(body.needs) || body.needs.length < 1 || body.needs.length > 20) errors.push({ field: "needs", code: "SIZE_1_TO_20" });
     const needKeys = new Set<string>();
     if (Array.isArray(body.needs)) body.needs.forEach((inputNeed: unknown, index: number) => {
@@ -97,18 +104,18 @@ export function createMockBackend() {
   }
   function validateDecision(body: Record<string, unknown>, action: ReviewAction): DecisionRequest {
     const errors: FieldError[] = [];
-    if (!Number.isInteger(body.expectedVersion) || Number(body.expectedVersion) < 1) errors.push({ field: "expectedVersion", code: "REQUIRED" });
-    if (!Array.isArray(body.reviewedEvidenceVersionIds) || body.reviewedEvidenceVersionIds.length < 1 || body.reviewedEvidenceVersionIds.some((id) => typeof id !== "string") || new Set(body.reviewedEvidenceVersionIds).size !== body.reviewedEvidenceVersionIds.length) errors.push({ field: "reviewedEvidenceVersionIds", code: "REQUIRED_UNIQUE_VERSIONS" });
+    if (!Number.isInteger(body.expectedVersion) || Number(body.expectedVersion) < 0) errors.push({ field: "expectedVersion", code: "REQUIRED" });
+    if (!Array.isArray(body.reviewedEvidenceVersionIds) || body.reviewedEvidenceVersionIds.length < 1 || body.reviewedEvidenceVersionIds.length > 10 || body.reviewedEvidenceVersionIds.some((id) => typeof id !== "string") || new Set(body.reviewedEvidenceVersionIds).size !== body.reviewedEvidenceVersionIds.length) errors.push({ field: "reviewedEvidenceVersionIds", code: "REQUIRED_UNIQUE_VERSIONS" });
     if (action !== "verify" && (typeof body.reason !== "string" || !body.reason.trim())) errors.push({ field: "reason", code: "REQUIRED" });
-    if (body.reason !== undefined && (typeof body.reason !== "string" || body.reason.length > 2000 || /[<>]/.test(body.reason))) errors.push({ field: "reason", code: "INVALID_TEXT" });
+    if (body.reason !== undefined && (typeof body.reason !== "string" || body.reason.length > 2000 || /[<>\0]|:\/\//.test(body.reason))) errors.push({ field: "reason", code: "INVALID_TEXT" });
     if (Object.keys(body).some((key) => !["expectedVersion", "reviewedEvidenceVersionIds", "reason"].includes(key))) errors.push({ field: "request", code: "UNEXPECTED_FIELD" });
     if (errors.length) fail(400, "VALIDATION_ERROR", "Check the review fields.", errors);
     return { expectedVersion: Number(body.expectedVersion), reviewedEvidenceVersionIds: body.reviewedEvidenceVersionIds as string[], ...(typeof body.reason === "string" ? { reason: body.reason.trim() } : {}) };
   }
   function idempotent(request: Request, user: MeResponse, body: unknown, operation: () => StoredResponse, session: Session): Response {
     const key = request.headers.get("Idempotency-Key");
-    if (!key || key.length < 16 || key.length > 128) fail(400, "VALIDATION_ERROR", "An Idempotency-Key of 16 to 128 characters is required.", [{ field: "Idempotency-Key", code: "REQUIRED" }]);
-    const scope = `${user.userId}|${new URL(request.url).pathname}|${key}`;
+    if (!key || !/^[\x21-\x7e]{16,128}$/.test(key)) fail(400, "VALIDATION_ERROR", "An Idempotency-Key of 16 to 128 visible ASCII characters is required.", [{ field: "Idempotency-Key", code: "REQUIRED" }]);
+    const scope = `${user.userId}|${request.method}|${new URL(request.url).pathname}|${key}`;
     const digest = canonical(body);
     const saved = replay.get(scope);
     if (saved) {
@@ -171,7 +178,10 @@ export function createMockBackend() {
       if (method === "GET" && session!.nextError) { session!.nextError = false; fail(503, "DEPENDENCY_UNAVAILABLE", "Simulated service interruption. Try again."); }
       if (method === "GET" && path === "/api/evidence-fixtures") {
         const organizationId = url.searchParams.get("organizationId") ?? ""; ownMembership(user, organizationId);
-        return json((MOCK_EVIDENCE[organizationId] ?? []).map((fixture) => ({ ...fixture, byteSize: Buffer.byteLength(`AidBridge fictional evidence fixture\nFixture: ${fixture.key}\nSimulated household record. No real beneficiary data.\n`) })));
+        return json((MOCK_EVIDENCE[organizationId] ?? []).map(({ label, ...fixture }) => {
+          const bytes = `AidBridge fictional evidence fixture\nFixture: ${fixture.key}\nSimulated household record. No real beneficiary data.\n`;
+          return { ...fixture, title: label, byteSize: Buffer.byteLength(bytes), sha256: createHash("sha256").update(bytes).digest("hex") };
+        }));
       }
       if (method === "GET" && path === "/api/cases") {
         const organizationId = url.searchParams.get("organizationId") ?? ""; ownMembership(user, organizationId);
@@ -187,25 +197,57 @@ export function createMockBackend() {
         const allowlist = MOCK_EVIDENCE[input.organizationId] ?? [];
         if (input.evidenceFixtureKeys.some((key) => !allowlist.some((fixture) => fixture.key === key))) fail(404, "RESOURCE_NOT_FOUND", "Resource not found.");
         if (input.supersedesCaseId && ownCase(user, input.supersedesCaseId).organizationId !== input.organizationId) fail(404, "RESOURCE_NOT_FOUND", "Resource not found.");
-        return idempotent(request, user, input, () => { const created = buildCase(input, user); cases.set(created.id, created); return { body: created, status: 201, headers: { Location: `/api/cases/${created.id}` }, digest: "" }; }, session!);
+        return idempotent(request, user, input, () => { const created = buildCase(input, user); cases.set(created.id, created); saveRevision(created); return { body: detail(created), status: 201, headers: { Location: `/api/cases/${created.id}` }, digest: "" }; }, session!);
+      }
+      const editMatch = path.match(/^\/api\/cases\/([^/]+)(\/resubmit)?$/);
+      if (editMatch && ((method === "PATCH" && !editMatch[2]) || (method === "POST" && editMatch[2]))) {
+        const item = ownCase(user, editMatch[1]);
+        const membership = ownMembership(user, item.organizationId);
+        if (!membership.roles.includes("VOLUNTEER") || item.creator.id !== user.userId) fail(403, "FORBIDDEN", "Only the creating volunteer can revise this case.");
+        const allowed = editMatch[2] ? ["expectedVersion"] : ["expectedVersion", "internalTitle", "publicTitle", "publicSummary", "approximateArea", "priority", "needs"];
+        const fields: FieldError[] = Object.keys(body).filter(key => !allowed.includes(key)).map(field => ({ field, code: "UNEXPECTED_FIELD" }));
+        if (!Number.isInteger(body.expectedVersion) || Number(body.expectedVersion) < 0) fields.push({ field: "expectedVersion", code: "REQUIRED" });
+        if (fields.length) fail(400, "VALIDATION_ERROR", "Check the highlighted fields.", fields);
+        return idempotent(request, user, body, () => {
+          if (body.expectedVersion !== item.version) fail(409, "VERSION_CONFLICT", "This case changed. Refresh before continuing.");
+          if (editMatch[2]) {
+            if (item.status !== "CHANGES_REQUESTED") fail(409, "INVALID_STATE", "Only cases with requested changes can be resubmitted.");
+            if (item.version <= (changesRequestedVersion.get(item.id) ?? item.version)) fail(409, "INVALID_STATE", "Save a revision addressing the requested changes before resubmitting.");
+            if (!item.needs.length || !item.evidenceVersions.length) fail(400, "VALIDATION_ERROR", "Needs and evidence are required before resubmission.");
+            item.status = "SUBMITTED"; item.version += 1; saveRevision(item);
+          } else {
+            if (!["SUBMITTED", "CHANGES_REQUESTED"].includes(item.status)) fail(409, "INVALID_STATE", "Only submitted cases or cases with requested changes can be edited.");
+            const patch = Object.fromEntries(Object.entries(body).filter(([key, value]) => key !== "expectedVersion" && value !== null && value !== undefined)) as Omit<PatchCaseRequest, "expectedVersion">;
+            if (!Object.keys(patch).length) fail(400, "VALIDATION_ERROR", "Provide at least one editable field.");
+            const editable = { internalTitle: item.internalTitle, publicTitle: item.publicTitle, publicSummary: item.publicSummary, approximateArea: item.approximateArea, priority: item.priority, needs: item.needs.map(({ name, unit, quantity }) => ({ name, unit, quantity })) };
+            const candidate = { ...editable, ...patch };
+            const valid = validateCreate({ ...candidate, organizationId: item.organizationId, beneficiaryAlias: item.beneficiaryAlias, consent: item.consent, evidenceFixtureKeys: [MOCK_EVIDENCE[item.organizationId][0].key] });
+            const next = { internalTitle: valid.internalTitle, publicTitle: valid.publicTitle, publicSummary: valid.publicSummary, approximateArea: valid.approximateArea, priority: valid.priority, needs: valid.needs };
+            Object.assign(item, { ...next, needs: patch.needs ? next.needs.map(need => ({ ...need, id: randomUUID() })) : item.needs });
+            item.version += 1; item.needsCount = item.needs.length; saveRevision(item);
+          }
+          return { body: detail(item), status: 200, headers: {}, digest: "" };
+        }, session!);
       }
       const caseMatch = path.match(/^\/api\/cases\/([^/]+)(?:\/(verify|reject|request-changes))?$/);
       if (caseMatch) {
         const item = ownCase(user, caseMatch[1]);
-        if (method === "GET" && !caseMatch[2]) return json(item);
+        if (method === "GET" && !caseMatch[2]) return json(detail(item));
         if (method === "POST" && caseMatch[2]) {
           const membership = ownMembership(user, item.organizationId);
           if (!membership.roles.includes("VERIFIER")) fail(403, "FORBIDDEN", "A verifier role is required to review this case.");
-          if (item.creator.id === user.userId) fail(403, "SELF_APPROVAL", "You cannot review a case you created, even with a verifier role.");
+          if (item.creator.id === user.userId) fail(403, "FORBIDDEN", "You cannot review a case you created, even with a verifier role.");
           const action = caseMatch[2] as ReviewAction; const input = validateDecision(body, action);
           return idempotent(request, user, input, () => {
             if (input.expectedVersion !== item.version) fail(409, "VERSION_CONFLICT", "This case changed. Refresh the case and review its evidence again before resubmitting.");
             if (item.status !== "SUBMITTED") fail(409, "INVALID_STATE", "Only submitted cases can be reviewed.");
             const expected = item.evidenceVersions.map((version) => version.id).sort();
-            if (canonical([...input.reviewedEvidenceVersionIds].sort()) !== canonical(expected)) fail(409, "VERSION_CONFLICT", "The evidence snapshot changed. Refresh before resubmitting.");
+            if (canonical([...input.reviewedEvidenceVersionIds].sort()) !== canonical(expected)) fail(400, "VALIDATION_ERROR", "The evidence selection does not match the current versions. Refresh before resubmitting.");
             const caseStatus: CaseStatus = action === "verify" ? "VERIFIED" : action === "reject" ? "REJECTED" : "CHANGES_REQUESTED";
-            const decision: DecisionResponse = { verificationId: randomUUID(), caseId: item.id, decision: action === "verify" ? "APPROVED" : action === "reject" ? "REJECTED" : "CHANGES_REQUESTED", caseStatus, caseVersion: item.version + 1, reviewerId: user.userId, reviewedAt: new Date().toISOString(), auditEventId: randomUUID(), blockchainStatus: action === "verify" ? "PENDING_ON_CHAIN" : "NOT_REQUIRED" };
+            const decision: DecisionResponse = { verificationId: randomUUID(), caseId: item.id, decision: action === "verify" ? "APPROVED" : action === "reject" ? "REJECTED" : "CHANGES_REQUESTED", caseStatus, caseVersion: item.version + 1, reviewerId: user.userId, reviewedAt: new Date().toISOString(), auditEventId: randomUUID(), blockchainStatus: action === "verify" ? "PENDING_ON_CHAIN" : "NOT_APPLICABLE", ...(input.reason ? { reason: input.reason } : {}) };
             item.version += 1; item.status = caseStatus; item.blockchainStatus = decision.blockchainStatus; item.reviewHistory.push(decision);
+            if (action === "request-changes") changesRequestedVersion.set(item.id, item.version);
+            saveRevision(item);
             return { body: decision, status: 200, headers: {}, digest: "" };
           }, session!);
         }
@@ -227,5 +269,7 @@ export function createMockBackend() {
     handle,
     /** Test-only mutation of fixture accounts. Not exposed through the HTTP control route. */
     updateUser(userId: string, update: Partial<MeResponse>) { const user = users.get(userId); if (user) Object.assign(user, clone(update)); },
+    /** Unit-test inspection of immutable simulated revisions; no HTTP exposure. */
+    revisionForTest(caseId: string, version: number) { return clone(revisions.get(`${caseId}:${version}`)); },
   };
 }

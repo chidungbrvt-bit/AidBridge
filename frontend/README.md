@@ -1,29 +1,49 @@
-# AidBridge frontend F03 F04
+# AidBridge frontend — F03/F04
 
-Next.js App Router, TypeScript và Tailwind CSS. Đây là phần Minh phụ trách, chạy mock mặc định với dữ liệu giả; không có transaction Fuji thật.
+Next.js App Router, TypeScript, Tailwind. Mặc định **API thật**, proxy cùng origin `/api` tới `http://127.0.0.1:8081`, không tự fallback sang mock. F05 chưa tích hợp, chờ worker C05 và projection API thật.
+
+## Chạy với backend trên máy Dũng
+
+Backend/PostgreSQL cần chạy trước. Port và các biến DB nằm trong `backend/aidbridge-backend/src/main/resources/application.properties`; evidence grants theo `docs/architecture/B04_CASE_WORKFLOW.md`. Chỉ trên HTTP local đặt `SESSION_COOKIE_SECURE=false` ở backend. Main `051e40f` không có `CLAUDE.md`.
+
+Trong thư mục `frontend`:
 
 ```powershell
 npm ci
+$env:NEXT_PUBLIC_API_MODE = 'real'
+$env:API_INTERNAL_BASE_URL = 'http://127.0.0.1:8081'
 npm run dev
 ```
 
-Mở `http://127.0.0.1:3000/login`. Chọn A để tạo hồ sơ, đăng xuất rồi chọn B để review. Mật khẩu mock `Mock-only-123!`; A `minh.a@example.test`, B `minh.b@example.test`.
+Mở `http://127.0.0.1:3000/login`. localhost trên máy Minh không trỏ tới máy Dũng: chạy frontend cùng máy có backend hoặc cấu hình origin test được nhóm cấp. Đổi mode phải restart/rebuild. Dev/build dùng Webpack để tránh lỗi Turbopack PostCSS worker trong môi trường Windows kiểm tra; không nâng dependencies.
+
+## Mock và kiểm tra
+
+Đặt `NEXT_PUBLIC_API_MODE=mock`, rồi `npm run dev`. A `minh.a@example.test`, B `minh.b@example.test`, password giả `Mock-only-123!`. A tạo case → B request changes → A Edit case/Save revision/Resubmit for review → B refresh/Approve. A không tự duyệt dù có cả VOLUNTEER và VERIFIER.
+
+Trong terminal khác, cùng thư mục:
 
 ```powershell
 npm test
 npm run typecheck
-npm run build
+$env:PLAYWRIGHT_CHROME_PATH = 'C:\Program Files\Google\Chrome\Application\chrome.exe'
+npm run test:e2e -- --project=mock
 ```
 
-Kiểm thử UI với dev server đang chạy trong terminal khác:
+Không có Chrome thì `npx playwright install chromium` và bỏ biến `PLAYWRIGHT_CHROME_PATH`. Dừng dev server trước khi `npm run build`; chạy bản build bằng `npm start`. Server phải chạy cùng mode với project test.
+
+## Smoke thật trên môi trường Dũng
+
+Trong process test, đặt `API_BASE_URL=http://127.0.0.1:3000/api`, `REAL_A_EMAIL`, `REAL_A_PASSWORD`, `REAL_B_EMAIL`, `REAL_B_PASSWORD`, `REAL_ORGANIZATION_ID`, `REAL_EVIDENCE_FIXTURE_KEYS` (key ngăn cách dấu phẩy). Không gửi/commit secrets. A cần VOLUNTEER + VERIFIER, B cần VERIFIER; cùng organization và khác tài khoản.
 
 ```powershell
-npx playwright install chromium
-npm run test:e2e
+node scripts/smoke-real.mjs
+$env:REAL_UI_BASE_URL = 'http://127.0.0.1:3000'
+npm run test:e2e -- --project=real
 ```
 
-Hoặc dùng Chrome sẵn trên Windows: đặt `$env:PLAYWRIGHT_CHROME_PATH = 'C:\Program Files\Google\Chrome\Application\chrome.exe'` rồi `npm run test:e2e`. Bộ test tạo hồ sơ giả mới mỗi lần; restart server để reset mock.
+HTTP smoke tạo **hai hồ sơ giả**, giữ audit: changes/edit/resubmit/approve và reject. Script từ chối header mock trước khi gửi credentials; không log body/cookie/password. Thiếu cấu hình báo **Not Run**; Playwright real skipped không được tính pass.
 
-Real mode: đặt `NEXT_PUBLIC_API_MODE=real`, `API_INTERNAL_BASE_URL` là origin backend, rồi restart/rebuild. Browser vẫn dùng `/api` cùng origin; không fallback sang mock. Backend nguồn đặt port 8081, hiện chưa có B04/B05. Không dùng tài khoản mock để thử API thật.
+F07 Khoa giữ nguyên trong `features/donor`, preview riêng `dev/donor-preview`; Next không biên dịch cấu hình Vite của preview. B06 P01–P04 thuộc F06.
 
-Xem [bàn giao và từng ca smoke](../docs/handoffs/MINH_F03_F04.md) cho contract gaps, DTO đã đối chiếu, endpoint readiness, CSRF, lỗi, idempotency, và hướng dẫn real smoke có hai danh tính.
+Xem [bàn giao hiện tại](../docs/handoffs/MINH_F03_F04_2026-11-12.md). Bàn giao cũ `MINH_F03_F04.md` là lịch sử.
