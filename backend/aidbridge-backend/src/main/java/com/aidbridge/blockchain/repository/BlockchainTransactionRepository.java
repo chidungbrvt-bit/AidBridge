@@ -14,11 +14,10 @@ public interface BlockchainTransactionRepository extends JpaRepository<Blockchai
 
     Optional<BlockchainTransaction> findByTxHash(String txHash);
 
-    /** Highest nonce held by an attempt that may still be pending for this signer (null when none). */
+    /** Highest journaled nonce (including mined attempts; never reuse a nonce after a stale RPC) for this signer (null when none). */
     @Query("""
             SELECT MAX(t.nonce) FROM BlockchainTransaction t
             WHERE t.chainId = :chainId AND LOWER(t.signerAddress) = LOWER(:signer)
-              AND t.status IN ('PREPARED', 'SUBMITTED')
             """)
-    Long maxOpenNonce(@Param("chainId") long chainId, @Param("signer") String signer);
+    Long maxReservedNonce(@Param("chainId") long chainId, @Param("signer") String signer);
 }

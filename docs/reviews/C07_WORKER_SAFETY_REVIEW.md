@@ -2,62 +2,48 @@
 
 ## Kết luận hiện hành
 
-**PARTIAL / chưa sign-off Fuji worker.** Đã review code Dũng PR10 head `94a99e1`, sửa finding receipt-budget trên khoa và bổ sung 3 Java integration tests. Chưa compile/chạy tests Java vì máy Khoa không có Java 21/Maven hoặc PostgreSQL/test env hợp lệ; không coi tests đã viết là PASS. C05 Fuji job thật vẫn chưa chạy. Không thay C06 contract hoặc policy D53/D54.
+**PARTIAL, chờ kiểm thử CI và review nhóm.** Commit `8ce40cec` đã sửa receipt timeout; lượt tiếp theo bổ sung signer serialization, khóa phiên PostgreSQL, nonce journal và regression tests. Chưa coi code hoặc test đã viết là PASS. C05 vẫn PARTIAL: chưa có bằng chứng job B05 thật được worker xử lý trên Fuji. Không thay contract C06, ABI D49, ví hoặc chính sách D53/D54.
 
-## Git và code chung
+## Git và điều kiện merge
 
-PR9 đã được nhóm merge trước lượt này (main `051e40f`); không tự merge lại. PR11 được merge bằng merge commit `8005917` sau review client/session, 31 Node/TypeScript tests PASS bằng tsx hiện có; GitHub mergeable/clean, không checks báo fail hoặc required-check bypass. Không có CI checks nên không ghi CI PASS; build/browser trước đó là evidence Minh báo, không phải rerun ở lượt này. PR10 chưa merge vào main vì finding safety còn phải kiểm chứng. Khoa đã fast-forward main rồi merge origin/dung và origin/minh vào khoa, sau đó merge main `8005917`; không reset/rebase/checkout branch khác, không push nhánh Dũng/khoa hoặc sửa PR10. Các merge local giữ toàn bộ lịch sử cho C07; không có conflict.
+PR9 đã được nhóm merge; PR11 đã merge vào main tại `8005917`. PR10 head `94a99e1fafc7f1c3513755439cae38c3f46ef4e6` hiện OPEN, mergeable/clean, chưa có checks hoặc reviews. Nhánh khoa giữ nguyên toàn bộ lịch sử và code các nhánh để review, không reset/rebase hoặc sửa nhánh Dũng.
 
-## Review safety theo kế hoạch bước5
+Người dùng cho phép merge PR10 khi worker bị vô hiệu mặc định và không có failed required checks. Đã kiểm tra `application.properties` mặc định BLOCKCHAIN_ENABLED=false; `BlockchainConfiguration` có ConditionalOnProperty(enabled=true); adapter/worker/scheduler chỉ được tạo trong configuration này, không có đường gọi production khác. Merge không tự deploy hoặc cấp secret. Tuy nhiên auto-review đã từ chối thao tác merge vì safety fixes chưa kiểm thử/chưa nằm trong PR10. Chưa merge; không vượt chặn. PR bổ sung C07 cần nhóm review, không được tự merge PR của Khoa.
 
-| Hạng mục | Kết luận / giới hạn |
-|---|---|
-| Signer/chain/contract | Config enabled mặc định false; chỉ 43113/31337; Fuji HTTPS, startup chainId check, key/env được redact. Web3j ký EIP155 zero-value với registry config. Khoa đã readback đúng deployed C03 code/roles; Dũng phải xác nhận cùng config/signer khi bật worker |
-| Nonce | pendingNonce + maxOpenNonce; UNIQUE(chain,lower(signer),nonce) và saveAndFlush trước gửi. Conflict không broadcast attempt mới; query signer không phải global signer lease. Pilot chạy một worker/process; long-running expired lease/multi-process recovery chưa có runtime evidence ở máy này |
-| Persistence | Job manifest/commitment/salt được attach một lần; AES256-GCM với AAD(jobId,purpose), signed bytes/hash/nonce/chain/registry/signer được lưu PREPARED trong short SQL transaction trước broadcast |
-| Restart/unknown | PREPARED attempt được decrypt/rebroadcast exact bytes, không sinh manifest/eventId/nonce mới. SUBMITTED poller đọc receipt bên ngoài SQL; giữ expected signer từ attempt. Existing IT có restart trước TX3; bổ sung late receipt sau restart |
-| Receipt/event | Check receipt hash/from/to/status, canonical block, một CaseVerified đúng topic/refs/sequence/schema/commitment; mismatch không confirmed. Chỉ success đúng mới CONFIRMED atomically; revert có receipt mới FAILED. Chưa Java-vs-Fuji-job evidence |
-| D53 | ContributionService khóa case trước MAX(sequence)+1; V12 UNIQUE(case,sequence). Worker lọc CASE_VERIFIED, không lấy AID_PLEDGED/COMMITMENT_REDUCED; verification là sequence1. Không bật worker milestone trước khi có dependency-confirmed gate và deployment C06 đã được review riêng |
-| Key custody | D54 ví backend riêng trên máy Dũng; không cần Khoa lấy key đó. Hai ví DPAPI Khoa/Console Wallet không được đọc hoặc giải mã ở lượt này. Secret-key AES phải ổn định qua restart; không thay key khi còn pending attempts |
+## Các lỗi và cách sửa
 
-## Finding đã sửa
+1. **Receipt chưa rõ bị đánh FAILED:** giữ sửa từ `8ce40cec`: hết retry budget chỉ dừng tự rebroadcast; giữ SUBMITTED, hash/nonce/signed bytes và polling với RECEIPT_PENDING_OPERATOR_ATTENTION. Receipt đến muộn vẫn có thể CONFIRMED. retryCount là bộ đếm chung, không đồng nhất với số lần broadcast.
+2. **Nhiều job cùng signer:** khóa PostgreSQL advisory theo chain + lowercase signer, dùng chung giữa mọi process. Khóa giữ trên connection auto-commit riêng suốt RPC; không giữ SQL transaction mở. Claim không nhận job khác khi signer còn PREPARED/SUBMITTED. V13 bổ sung unique partial indexes cho một open attempt/signer và một open attempt/job, làm lớp bảo vệ khi session mất hoặc writer vi phạm protocol.
+3. **Lease hết hạn / stale worker:** phiên đang giữ signer lock không bị thay thế chỉ vì lease của job hết hạn. Kiểm tra session trước ký, persist, broadcast và sau RPC; mất phiên thì fail-closed, không tiếp tục cập nhật hoặc gửi ở bước tiếp theo. Recovery dùng journal PREPARED, exact bytes/hash, không tạo nonce/event mới. Một RPC đã phát ra không thể bị thu hồi bằng DB fencing; nếu mất session giữa kiểm tra và RPC, recovery chỉ được gửi lại cùng bytes đã commit. Không tuyên bố có thể ngăn một RPC đang bay tới node.
+4. **Nonce node lỗi thời:** lấy max(pendingNonce, max journaled nonce + 1), bao gồm cả CONFIRMED/REVERTED; không tái sử dụng nonce lịch sử khi node trả nonce cũ. UNIQUE(chain, signer, nonce) vẫn giữ.
+5. **Binding và thứ tự:** recovery kiểm tra signer/chain/registry và hash trước broadcast; poller không xử lý attempt của signer/registry khác. CASE_VERIFIED bắt buộc sequence 1. Claim không vượt job trước cùng case chưa CONFIRMED; worker vẫn chỉ hỗ trợ CASE_VERIFIED, không lấy các milestone C06.
 
-CaseVerifiedWorker.handleMissingReceipt trước đây dùng retryCount>=5 để markFailed(RECEIPT_NOT_FOUND). retryCount còn tăng do binding/RPC errors, không phải bằng chứng tx reverted. Sau RPC outage hoặc mining chậm, worker dừng polling vĩnh viễn dù receipt có thể đến sau.
+## Điều kiện vận hành và migration
 
-Sửa tối thiểu: hết budget thì **dừng automatic rebroadcast**, giữ job/attempt SUBMITTED và original hash/encrypted signed bytes/nonce, scheduleRetry 30s với RECEIPT_PENDING_OPERATOR_ATTENTION, trả PENDING. Polling tiếp tục; receipt hợp lệ đến muộn vẫn CONFIRMED. Không re-sign, không thay DB migration hoặc generic retry policy. retryCount vẫn là bộ đếm chung, không tuyên bố bằng đúng số lần broadcast. Operator attention qua reason code/log; chưa có UI operator mới.
+- Tất cả worker dùng chung database và protocol signer lock; pooler phải dùng **session pooling**, không transaction pooling. Pool cần đủ connection: ít nhất một connection giữ lock và một connection cho short transaction/SQL của worker; không giữ nhiều signer locks lồng nhau.
+- V13 không xóa/sửa attempt có sẵn. Nếu DB có nhiều open attempts cùng signer/job, migration phải fail; Dũng dừng worker, đối chiếu receipts/attempts và xử lý rõ nguyên nhân trước khi chạy lại. Không đổi status hoặc xóa journal chỉ để migration thành công.
+- Attempt SUBMITTED có job FAILED do integrity mismatch tiếp tục chặn signer để điều tra; không tự giải phóng nonce/signer khi chưa rõ outcome.
+- AES-GCM key phải ổn định qua restart. Không chạy hai code version cũ/mới đồng thời; dừng worker cũ trước rollout. Session lock không bảo vệ signer bị sử dụng bên ngoài ứng dụng bằng cùng private key.
 
-## Gate còn thiếu: signer serialization và lease fencing
+## Regression và cách kiểm thử
 
-Acceptance C07 yêu cầu **one in-flight/signer**, không chỉ unique nonce. Code hiện tại chưa thực thi điều kiện này: `lockNextCaseVerifiedJob` chỉ khóa từng job; `processNextJob` lấy `maxOpenNonce + 1`, nên ngay cả một worker cũng có thể gửi job B khi job A cùng signer còn SUBMITTED. UNIQUE(chain, signer, nonce) ngăn trùng nonce nhưng không ngăn nhiều nonce đang chờ. Đây là khoảng trống implementation so với acceptance, không phải chỉ thiếu kết quả test. Pilot một worker không tự giải quyết khoảng trống này.
+Tests giữ từ lượt trước: late receipt sau restart; RPC outage/duplicate broadcast; hai workers tranh cùng job. Tests mới: hai cases cùng signer chờ CONFIRMED; nonce node bị lùi; lease hết hạn khi thread ký còn chạy; terminate đúng PostgreSQL lock session để fence worker cũ; registry mismatch khi recovery; CASE_VERIFIED sai sequence; unique open signer/job tại DB. Tests disabled configuration xác nhận không tạo adapter/worker/scheduler khi không opt-in hoặc enabled=false.
 
-Lease 60 giây cũng chưa có fencing token trước persist/broadcast; khi RPC chậm quá lease, worker khác có thể reclaim job. Test mới chỉ chứng minh mục tiêu hai workers tranh **cùng job trong lease**, chưa chứng minh hai jobs cùng signer hoặc lease hết hạn. Cần Dũng/Khoa phối hợp signer serialization + lease-expiry regression trước sign-off đầy đủ C07; lượt này chỉ sửa finding receipt-budget, không âm thầm mở rộng data model/worker locking. Không merge PR10 với tuyên bố C07 đã hoàn tất.
+Test double chỉ ký offline với public Hardhat test accounts. Fixture retirement chỉ xảy ra trong schema test biệt lập, không phải quy trình sửa DB vận hành.
 
-## Regression và bằng chứng
+Workflow `.github/workflows/c07-worker-safety.yml`: Ubuntu runner, JDK21, PostgreSQL16 tạm thời, Hardhat localhost chain31337; không Fuji, DPAPI hoặc secret thật. Chạy compile + unit tests liên quan và CaseVerifiedWorkerIT, BlockchainTransactionPersistenceIT, CaseVerifiedHardhatE2EIT; kiểm tra XML để không coi skipped IT là PASS. Chỉ lưu test reports, không upload ví, signed bytes thật hoặc cache. Mật khẩu PostgreSQL trong workflow chỉ là giá trị test của container dùng một lần.
 
-- `CaseVerifiedWorkerIT.exhaustedRecoveryBudgetKeepsOriginalAttemptAndAcceptsLateReceiptAfterRestart`: retry_count 10, nhiều lần missing receipt vẫn SUBMITTED, không broadcast thêm; hash/nonce/ciphertext nguyên; worker restart cùng cipher, receipt đến muộn ->CONFIRMED.
-- `repeatedRpcOutageAndDuplicateBroadcastNeverTurnUnknownOutcomeIntoFailure`: already-known rebroadcast cùng bytes, 6 RPC outages rồi receipt ->CONFIRMED, một attempt.
-- `concurrentWorkersClaimOneJobAndPersistOnlyOneAttempt`: 2 workers cạnh tranh cùng job, một claim/broadcast/attempt; bên còn lại không nhận job.
-- FakeBlockchainAdapter thêm fault receipt một lần; không sửa production adapter hoặc tạo secret mới.
-- **Java compile/JUnit/PostgreSQL: NOT RUN**, không có JDK21/Maven trên PATH/JAVA_HOME, DB env/listener 5432/5433/8081 không có. Không cài môi trường, tạo DB/seed hoặc chạy tests ghi dữ liệu bằng credentials khác.
-- Lệnh Dũng cần chạy trong backend/aidbridge-backend với DB test được phép: `./mvnw -Dtest=CaseVerifiedReceiptVerifierTest,Web3jBlockchainAdapterTest,JobSecretCipherTest,GoldenVectorParityTest test`, sau đó `./mvnw -Dit.test=CaseVerifiedWorkerIT,BlockchainTransactionPersistenceIT verify`. Dùng AIDBRIDGE_TEST_DATABASE_* và giữ toàn bộ rollback/idempotency/nonce assertions. Restart E2E/lease-expiry cũng cần xác nhận trước sign-off toàn bộ C07.
-- `node frontend/dev/donor-preview/node_modules/tsx/dist/cli.mjs --test frontend/tests/api-session.test.ts frontend/tests/api-workflow.test.ts`: **31/31 PASS**, không cài root dependencies.
-- Hardhat local: **Mocha 147 passing, 1 pending**; Hardhat summary ghi 148 passing nhưng không tính test pending là PASS. Pending C06 chưa triển khai không thuộc C07; không báo đã chạy 148 test thành công. Không dùng suite này làm bằng chứng worker Java.
-- C04 read-only verify-fuji PASS với snapshot C03; F02 checker PASS (5 snapshots/10 scenarios). Source contract C06 không sửa.
-- git diff --check và scope check trước commit PASS. Không CI/runtime Java PASS được suy ra từ kết quả Dũng báo.
+**Kết quả lượt hiện tại:** Java compile/IT local NOT RUN do không có JDK21/DB test được phép; không cài thêm môi trường Windows. CI chưa có kết quả tại thời điểm ghi mục này. `git diff --check` PASS trước commit. Các kết quả lượt trước (không chạy lại vô ích): 31 client tests PASS, Hardhat Mocha147 PASS/1 pending, C04 readback và F02 checker PASS; không dùng các kết quả này thay Java worker tests.
 
-## Fuji và bước7 bàn giao Dũng
+## Fuji và bàn giao Dũng
 
-Read-only chain 43113, registry 0x015D941c679b0c402c8262BE237adAD36cEf6726; orgRef 0x2395bfe7f91467046a39bd8440313164c6442839b2be6698832b7b4941b80a46 vẫn registered/active và assigned 0x559994839f19F40ac704918C3FF1a913AC02dC01. Admin readback PASS. Balance Admin 0.348775352, old Relayer 0.149700527, new 0x95a9564899849CF566DE5713205C4B747F361f55=0 AVAX. Latest=pending nonce lần lượt 2/1/0; đây không chứng minh DB trên máy Dũng không có PREPARED/SUBMITTED attempts.
+- Chain43113, registry `0x015D941c679b0c402c8262BE237adAD36cEf6726`, ABI D49/schemaVersion1.
+- orgRef `0x2395bfe7f91467046a39bd8440313164c6442839b2be6698832b7b4941b80a46`.
+- Admin `0x131DD6d404f8D0B118D6DB122194bc15b4E4601E`; old Relayer `0x559994839f19F40ac704918C3FF1a913AC02dC01`; new Relayer `0x95a9564899849CF566DE5713205C4B747F361f55`.
+- Readback lượt trước: registered/active, assigned old Relayer; balances Admin0.348775352, old0.149700527, new0 AVAX; latest=pending nonce2/1/0. Đây là lịch sử, không phải bằng chứng DB trên máy Dũng không có pending obligation.
+- Chưa rotate/fund ở lượt này. Thiếu bằng chứng worker cũ đã dừng và không còn PREPARED/SUBMITTED/signed attempts của old signer trên DB Dũng hoặc nghĩa vụ organization khác. Khoa không có DB được phép để tự lấy. Không suy từ nonce, số dư hoặc local E2E rằng đủ an toàn; không yêu cầu Dũng gửi secret.
+- Sau khi đủ bằng chứng, Admin updateOrganizationRelayer đúng org, kiểm receipt/roles/org/Admin; sau đó chuyển phần test AVAX còn lại từ old signer, chừa gas. Không cần tạo ví hoặc redeploy. Dũng phải bind org public_ref, signer D54, registry, AES key và job B05 thật trước khi bật worker; chỉ receipt/event đúng mới CONFIRMED. Minh dùng API audit thật, không gắn pilot độc lập vào job chưa xác minh.
 
-**Chưa rotate/fund.** Blocker cụ thể: thiếu xác nhận worker đã dừng và danh sách/đối chiếu attempts/job ký bằng ví cũ cùng các nghĩa vụ organization khác. Không suy từ nonce chain hoặc lời bàn giao E2E local rằng DB dev không còn nghĩa vụ ký. Dũng cung cấp signer/chain/job IDs, statuses/tx hashes và xác nhận không có pending obligation của ví cũ; không gửi secret. Khoa không có DB được phép để tự lấy bằng chứng này. Worker safety tests mới cũng cần chạy trước pilot.
+## Readiness F07/F08
 
-Sau khi đủ điều kiện và được tiếp tục: dùng Admin updateOrganizationRelayer đúng orgRef, kiểm receipt/code/assignment/new-role/old-role/Admin độc lập; nếu sticky withdrawal làm thiếu role thì explicit grant theo policy được duyệt. Sau rotation thành công có thể chuyển đề xuất 0.149 test AVAX từ ví cũ sang mới, trừ phí và đọc lại balance/receipt, không lấy Admin để funding. Không redeploy, không gửi thử milestone C06 vào registry C03. Lượt này không dùng signer, không faucet/wallet browser, không tx hashes mới. Nếu receipt chưa có thì pending/attention, không confirmed hoặc failed giả.
-
-## Readiness F07/F08 — chưa triển khai trong lượt này
-
-- F07: shell/API client F03/F04 đã ở main qua PR11; 31 client tests PASS. B07 chỉ có trên khoa/origin/dung, chưa vào main vì PR10 chưa merge. DB/campaign published/donor dev seed D52 không kiểm chứng được trên máy này; cần Dũng cung cấp môi trường dev được phép + published campaign + donor session. Chưa đủ nghiệm thu real G01-G03. Không tự seed hoặc dựng app mới.
-- F08: fixtures F02 R01/D01, types và endpoint/state mapping đầy đủ, checker PASS; có thể bắt đầu mock UI theo phân công, không chờ B08/B09. API receipt/delivery thật chưa sẵn sàng; lượt này chỉ đánh giá readiness, không code UI.
-
-## Việc tiếp theo và người phụ trách
-
-Khoa: commit local safety fix/tests/report, giữ C07 PARTIAL chờ runtime evidence; không push/PR trong lượt này. Dũng: chạy tests mới trên JDK21/PostgreSQL, review patch, đối chiếu signer attempts/binding và job B05 thật; phối hợp đưa fix cùng PR10 vào main khi đạt gate. Minh: shell đã merge; real donor integration cần B07/main + dev session/campaign, F05 vẫn không dùng independent pilot hash thay job thật. C05 vẫn PARTIAL; không đánh dấu task của Dũng/Minh Done hoặc thay estimate/deadline gốc.
+Chỉ đánh giá, không triển khai UI trong lượt này. F07 client/session đã ở main qua PR11; còn cần B07 trên main, donor dev grant D52, published campaign và DB/API được phép. F08 đủ fixtures F02 R01/D01 để bắt đầu mock; receipt/delivery API thật vẫn là dependency riêng. Không đánh dấu task Dũng/Minh Done.

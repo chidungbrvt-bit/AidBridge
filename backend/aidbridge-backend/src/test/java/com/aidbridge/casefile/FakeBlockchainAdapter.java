@@ -22,6 +22,7 @@ class FakeBlockchainAdapter implements BlockchainAdapter {
 
     private final Web3jBlockchainAdapter signer;
     final List<String> broadcasts = new ArrayList<>();
+    Runnable beforeSign = () -> { };
     BigInteger pendingNonce = BigInteger.ZERO;
     BigInteger gasPrice = BigInteger.valueOf(1_000_000_000L);
     BlockchainRpcException nextBroadcastFailure;
@@ -40,6 +41,7 @@ class FakeBlockchainAdapter implements BlockchainAdapter {
 
     @Override
     public SignedTransaction signTransaction(String to, String calldata, BigInteger nonce, BigInteger price, BigInteger limit) {
+        beforeSign.run();
         return signer.signTransaction(to, calldata, nonce, price, limit);
     }
 

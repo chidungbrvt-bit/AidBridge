@@ -48,10 +48,11 @@ public class CaseVerifiedWorker {
     private final JobSecretCipher cipher;
     private final BlockchainProperties properties;
     private final Clock clock;
+    private final SignerSessionLock signerLock;
 
     public CaseVerifiedWorker(TransactionTemplate tx, BlockchainJobRepository jobs,
             BlockchainTransactionRepository attempts, CaseVerifiedManifestBuilder manifests, BlockchainAdapter adapter,
-            JobSecretCipher cipher, BlockchainProperties properties, Clock clock) {
+            JobSecretCipher cipher, BlockchainProperties properties, Clock clock, SignerSessionLock signerLock) {
         this.tx = tx;
         this.jobs = jobs;
         this.attempts = attempts;
@@ -60,6 +61,7 @@ public class CaseVerifiedWorker {
         this.cipher = cipher;
         this.properties = properties;
         this.clock = clock;
+        this.signerLock = signerLock;
     }
 
     /** What happened to the job picked in this run (for logs and tests; contains no secrets). */
@@ -73,8 +75,15 @@ public class CaseVerifiedWorker {
 
     /** Processes at most one CASE_VERIFIED job; empty when nothing is due. */
     public Optional<Result> processNextJob() {
+        Optional<SignerSessionLock.Guard> acquired = signerLock.tryAcquire(properties.chainId(), adapter.relayerAddress());
+        if (acquired.isEmpty()) return Optional.empty();
+        try (var guard = acquired.get()) { return processNextJob(guard); }
+    }
+
+    private Optional<Result> processNextJob(SignerSessionLock.Guard guard) {
+        guard.assertHeld();
         Instant now = clock.instant();
-        Object claimed = tx.execute(status -> claimNext(now));
+        Object claimed = tx.execute(status -> { guard.assertHeld(); return claimNext(now); });
         if (claimed == null) {
             return Optional.empty();
         }
@@ -96,18 +105,20 @@ public class CaseVerifiedWorker {
         } else {
             BigInteger gasPrice = adapter.gasPrice().multiply(BigInteger.valueOf(12)).divide(BigInteger.TEN);
             if (gasPrice.compareTo(properties.maxGasPriceWei()) > 0) {
-                return Optional.of(retry(claim.jobId(), "GAS_PRICE_ABOVE_CAP"));
+                return Optional.of(retry(claim.jobId(), "GAS_PRICE_ABOVE_CAP", guard));
             }
             String signer = adapter.relayerAddress();
             BigInteger nonce = adapter.pendingNonce(signer);
-            Long reserved = attempts.maxOpenNonce(properties.chainId(), signer);
+            Long reserved = attempts.maxReservedNonce(properties.chainId(), signer);
             if (reserved != null && BigInteger.valueOf(reserved + 1).compareTo(nonce) > 0) {
                 nonce = BigInteger.valueOf(reserved + 1);
             }
+            guard.assertHeld();
             SignedTransaction signed = adapter.signTransaction(properties.registryAddress(),
                     AidRegistryAbi.encodeRecordCaseVerification(claim.envelope()), nonce, gasPrice, properties.gasLimit());
             try {
                 attemptId = tx.execute(status -> {
+                    guard.assertHeld();
                     BlockchainJob job = jobs.findById(claim.jobId()).orElseThrow();
                     byte[] sealed = cipher.encrypt(Numeric.hexStringToByteArray(signed.rawTransactionHex()),
                             JobSecretCipher.associatedData(claim.jobId(), "signed-tx"));
@@ -115,14 +126,24 @@ public class CaseVerifiedWorker {
                 });
             } catch (DataIntegrityViolationException e) {
                 // Another attempt already holds this (chain, signer, nonce); nothing was broadcast.
-                return Optional.of(retry(claim.jobId(), "NONCE_CONFLICT"));
+                return Optional.of(retry(claim.jobId(), "NONCE_CONFLICT", guard));
             }
             rawTransaction = signed.rawTransactionHex();
             expectedHash = signed.transactionHash();
         }
 
+        guard.assertHeld();
+        // A recovered attempt must still belong to this exact signer/chain/registry.
+        BlockchainTransaction persisted = attempts.findById(attemptId).orElseThrow();
+        if (persisted.getChainId() != properties.chainId()
+                || !persisted.getSignerAddress().equalsIgnoreCase(adapter.relayerAddress())
+                || !persisted.getContractAddress().equalsIgnoreCase(properties.registryAddress())
+                || !org.web3j.crypto.Hash.sha3(rawTransaction).equalsIgnoreCase(expectedHash)) {
+            throw new IllegalStateException("PREPARED_ATTEMPT_BINDING_MISMATCH");
+        }
         String broadcastError = null;
         try {
+            guard.assertHeld();
             String returnedHash = adapter.broadcastRawTransaction(rawTransaction);
             if (returnedHash == null || !returnedHash.equalsIgnoreCase(expectedHash)) {
                 broadcastError = "TX_HASH_MISMATCH";
@@ -135,6 +156,7 @@ public class CaseVerifiedWorker {
 
         String reason = broadcastError;
         tx.executeWithoutResult(status -> {
+            guard.assertHeld();
             BlockchainTransaction attempt = attempts.findById(attemptId).orElseThrow();
             if (BlockchainTransaction.PREPARED.equals(attempt.getStatus())) {
                 attempt.markSubmitted(clock.instant());
@@ -150,11 +172,15 @@ public class CaseVerifiedWorker {
 
     /** TX1: lock one due job, check the org binding, prepare once, take a lease. No RPC here. */
     private Object claimNext(Instant now) {
-        Optional<BlockchainJob> next = jobs.lockNextCaseVerifiedJob(properties.chainId(), now);
+        Optional<BlockchainJob> next = jobs.lockNextCaseVerifiedJob(properties.chainId(), adapter.relayerAddress(), now);
         if (next.isEmpty()) {
             return null;
         }
         BlockchainJob job = next.get();
+        if (job.getChainSequence() != 1) {
+            job.markFailed("INVALID_CASE_VERIFICATION_SEQUENCE");
+            return new Result(job.getId(), Outcome.FAILED, "INVALID_CASE_VERIFICATION_SEQUENCE");
+        }
         Optional<CaseVerifiedSource> found = jobs.findCaseVerifiedSource(job.getId());
         if (found.isEmpty()) {
             job.markFailed("CASE_VERIFIED_SOURCE_MISSING");
@@ -207,9 +233,11 @@ public class CaseVerifiedWorker {
         return code.matches("[A-Z0-9_]{3,80}") ? code : fallback;
     }
 
-    private Result retry(UUID jobId, String reasonCode) {
-        tx.executeWithoutResult(status -> jobs.findById(jobId).orElseThrow()
-                .scheduleRetry(reasonCode, clock.instant().plus(RETRY_DELAY)));
+    private Result retry(UUID jobId, String reasonCode, SignerSessionLock.Guard guard) {
+        tx.executeWithoutResult(status -> {
+            guard.assertHeld();
+            jobs.findById(jobId).orElseThrow().scheduleRetry(reasonCode, clock.instant().plus(RETRY_DELAY));
+        });
         return new Result(jobId, Outcome.RETRY_SCHEDULED, reasonCode);
     }
 
@@ -237,11 +265,19 @@ public class CaseVerifiedWorker {
      * transaction, and the job + attempt update for each verdict is one short transaction.
      */
     public List<PollResult> pollSubmitted() {
+        Optional<SignerSessionLock.Guard> acquired = signerLock.tryAcquire(properties.chainId(), adapter.relayerAddress());
+        if (acquired.isEmpty()) return List.of();
+        try (var guard = acquired.get()) { return pollSubmitted(guard); }
+    }
+
+    private List<PollResult> pollSubmitted(SignerSessionLock.Guard guard) {
+        guard.assertHeld();
         Instant now = clock.instant();
         List<PollResult> results = new ArrayList<>();
-        List<PollItem> items = tx.execute(status -> lockSubmitted(now, results));
+        List<PollItem> items = tx.execute(status -> { guard.assertHeld(); return lockSubmitted(now, results); });
         for (PollItem item : items) {
-            results.add(checkReceipt(item));
+            guard.assertHeld();
+            results.add(checkReceipt(item, guard));
         }
         return results;
     }
@@ -263,6 +299,13 @@ public class CaseVerifiedWorker {
                     source.get().getCasePublicRef(), job.getLogicalEventId(), job.getChainSequence(),
                     job.getEvidenceCommitment(), job.getSchemaVersion());
             BlockchainTransaction submitted = attempt.get();
+            if (submitted.getChainId() != properties.chainId()
+                    || !submitted.getSignerAddress().equalsIgnoreCase(adapter.relayerAddress())
+                    || !submitted.getContractAddress().equalsIgnoreCase(properties.registryAddress())) {
+                // Another signer/config must reconcile its own attempt; do not mutate or rebroadcast it.
+                results.add(new PollResult(job.getId(), PollOutcome.PENDING, "SUBMITTED_ATTEMPT_BINDING_MISMATCH"));
+                continue;
+            }
             job.leaseForPolling(now.plus(LEASE));
             items.add(new PollItem(job.getId(), submitted.getId(), submitted.getTxHash(), submitted.getSubmittedAt(),
                     job.getRetryCount(), new CaseVerifiedReceiptVerifier.Expected(submitted.getTxHash(),
@@ -271,21 +314,23 @@ public class CaseVerifiedWorker {
         return items;
     }
 
-    private PollResult checkReceipt(PollItem item) {
+    private PollResult checkReceipt(PollItem item, SignerSessionLock.Guard guard) {
         Optional<ChainReceipt> receipt;
         Optional<String> canonical = Optional.empty();
         try {
+            guard.assertHeld();
             receipt = adapter.getReceipt(item.txHash());
             if (receipt.isPresent() && receipt.get().blockNumber() != null) {
                 canonical = adapter.canonicalBlockHash(receipt.get().blockNumber());
             }
         } catch (BlockchainRpcException e) {
-            deferWithRetry(item, e.code(), RECEIPT_POLL_DELAY);
+            deferWithRetry(item, e.code(), RECEIPT_POLL_DELAY, guard);
             return new PollResult(item.jobId(), PollOutcome.PENDING, e.code());
         }
 
+        guard.assertHeld();
         if (receipt.isEmpty()) {
-            return handleMissingReceipt(item);
+            return handleMissingReceipt(item, guard);
         }
 
         CaseVerifiedReceiptVerifier.Verdict verdict = CaseVerifiedReceiptVerifier.verify(item.expected(), receipt.get(), canonical);
@@ -298,6 +343,7 @@ public class CaseVerifiedWorker {
                     "status", 1,
                     "transactionHash", item.txHash().toLowerCase()));
             tx.executeWithoutResult(status -> {
+                guard.assertHeld();
                 attempts.findById(item.attemptId()).orElseThrow()
                         .markConfirmed(confirmed.blockNumber(), receiptJson, clock.instant());
                 jobs.findById(item.jobId()).orElseThrow().markConfirmed();
@@ -311,6 +357,7 @@ public class CaseVerifiedWorker {
                     "status", 0,
                     "transactionHash", item.txHash().toLowerCase()));
             tx.executeWithoutResult(status -> {
+                guard.assertHeld();
                 attempts.findById(item.attemptId()).orElseThrow()
                         .markReverted(reverted.blockNumber(), receiptJson, "TX_REVERTED");
                 jobs.findById(item.jobId()).orElseThrow().markFailed("TX_REVERTED");
@@ -319,11 +366,14 @@ public class CaseVerifiedWorker {
         }
         CaseVerifiedReceiptVerifier.Mismatch mismatch = (CaseVerifiedReceiptVerifier.Mismatch) verdict;
         if (mismatch.transientCondition()) {
-            tx.executeWithoutResult(status -> jobs.findById(item.jobId()).orElseThrow()
-                    .deferPolling(clock.instant().plus(RECEIPT_POLL_DELAY)));
+            tx.executeWithoutResult(status -> {
+                guard.assertHeld();
+                jobs.findById(item.jobId()).orElseThrow().deferPolling(clock.instant().plus(RECEIPT_POLL_DELAY));
+            });
             return new PollResult(item.jobId(), PollOutcome.PENDING, mismatch.reasonCode());
         }
         tx.executeWithoutResult(status -> {
+            guard.assertHeld();
             attempts.findById(item.attemptId()).orElseThrow().recordError(mismatch.reasonCode());
             jobs.findById(item.jobId()).orElseThrow().markFailed(mismatch.reasonCode());
         });
@@ -331,11 +381,13 @@ public class CaseVerifiedWorker {
     }
 
     /** Not mined yet: wait; after REBROADCAST_AFTER re-send the same persisted bytes (never re-sign). */
-    private PollResult handleMissingReceipt(PollItem item) {
+    private PollResult handleMissingReceipt(PollItem item, SignerSessionLock.Guard guard) {
         Instant now = clock.instant();
         if (Duration.between(item.submittedAt(), now).compareTo(REBROADCAST_AFTER) < 0) {
-            tx.executeWithoutResult(status -> jobs.findById(item.jobId()).orElseThrow()
-                    .deferPolling(now.plus(RECEIPT_POLL_DELAY)));
+            tx.executeWithoutResult(status -> {
+                guard.assertHeld();
+                jobs.findById(item.jobId()).orElseThrow().deferPolling(now.plus(RECEIPT_POLL_DELAY));
+            });
             return new PollResult(item.jobId(), PollOutcome.PENDING, "RECEIPT_PENDING");
         }
         if (item.retryCount() >= MAX_REBROADCASTS) {
@@ -343,8 +395,10 @@ public class CaseVerifiedWorker {
             // retain the original attempt and keep polling so a late receipt can still reconcile.
             // retryCount also includes RPC/binding errors; do not interpret it as a mining verdict.
             String code = "RECEIPT_PENDING_OPERATOR_ATTENTION";
-            tx.executeWithoutResult(status -> jobs.findById(item.jobId()).orElseThrow()
-                    .scheduleRetry(code, now.plus(REBROADCAST_RETRY_DELAY)));
+            tx.executeWithoutResult(status -> {
+                guard.assertHeld();
+                jobs.findById(item.jobId()).orElseThrow().scheduleRetry(code, now.plus(REBROADCAST_RETRY_DELAY));
+            });
             return new PollResult(item.jobId(), PollOutcome.PENDING, code);
         }
         BlockchainTransaction attempt = attempts.findById(item.attemptId()).orElseThrow();
@@ -352,16 +406,20 @@ public class CaseVerifiedWorker {
                 JobSecretCipher.associatedData(item.jobId(), "signed-tx")));
         String code = "REBROADCAST";
         try {
-            adapter.broadcastRawTransaction(raw);
+            guard.assertHeld();
+            String returnedHash = adapter.broadcastRawTransaction(raw);
+            if (returnedHash == null || !returnedHash.equalsIgnoreCase(item.txHash())) code = "TX_HASH_MISMATCH";
         } catch (BlockchainRpcException e) {
             code = e.code(); // e.g. "already known": the node still holds the transaction
         }
-        deferWithRetry(item, code, REBROADCAST_RETRY_DELAY);
+        deferWithRetry(item, code, REBROADCAST_RETRY_DELAY, guard);
         return new PollResult(item.jobId(), PollOutcome.REBROADCAST, code);
     }
 
-    private void deferWithRetry(PollItem item, String reasonCode, Duration delay) {
-        tx.executeWithoutResult(status -> jobs.findById(item.jobId()).orElseThrow()
-                .scheduleRetry(reasonCode, clock.instant().plus(delay)));
+    private void deferWithRetry(PollItem item, String reasonCode, Duration delay, SignerSessionLock.Guard guard) {
+        tx.executeWithoutResult(status -> {
+            guard.assertHeld();
+            jobs.findById(item.jobId()).orElseThrow().scheduleRetry(reasonCode, clock.instant().plus(delay));
+        });
     }
 }

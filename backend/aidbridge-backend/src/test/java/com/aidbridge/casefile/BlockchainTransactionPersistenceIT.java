@@ -41,6 +41,12 @@ class BlockchainTransactionPersistenceIT extends AbstractCaseHttpIT {
 
     private final JobSecretCipher cipher = new JobSecretCipher(randomBytes(32));
 
+    @org.junit.jupiter.api.BeforeEach
+    void retirePriorFixtureAttempts() {
+        // Isolated integration-test schema only: keep journal history, retire prior test open attempts.
+        jdbc.update("UPDATE blockchain_transactions SET status = 'REVERTED' WHERE chain_id = 31337 AND status IN ('PREPARED','SUBMITTED')");
+    }
+
     @Test
     void persistsPreparedAttemptWithEncryptedBytesBeforeBroadcast() throws Exception {
         UUID jobId = newCaseVerifiedJob();
@@ -105,6 +111,24 @@ class BlockchainTransactionPersistenceIT extends AbstractCaseHttpIT {
                     randomBytes(40), Instant.now()));
         })).isInstanceOf(DataIntegrityViolationException.class);
         assertThat(count("blockchain_transactions", "blockchain_job_id", jobId)).isEqualTo(1);
+    }
+
+    @Test
+    void databaseRejectsTwoOpenAttemptsEvenWithDifferentNoncesOrSigners() throws Exception {
+        UUID first = newCaseVerifiedJob();
+        UUID second = newCaseVerifiedJob();
+        tx().executeWithoutResult(status -> transactions.saveAndFlush(BlockchainTransaction.prepared(
+                jobs.findById(first).orElseThrow(), signedWithNonce(200, "0x" + "71".repeat(32)), randomBytes(40), Instant.now())));
+        assertThatThrownBy(() -> tx().executeWithoutResult(status -> transactions.saveAndFlush(BlockchainTransaction.prepared(
+                jobs.findById(second).orElseThrow(), signedWithNonce(201, "0x" + "72".repeat(32)), randomBytes(40), Instant.now()))))
+                .isInstanceOf(DataIntegrityViolationException.class);
+        SignedTransaction anotherSigner = new SignedTransaction("0x" + "ab".repeat(100), "0x" + "73".repeat(32),
+                "0x" + "33".repeat(20), REGISTRY, BigInteger.valueOf(202), BigInteger.ONE, BigInteger.valueOf(300_000), 31337);
+        assertThatThrownBy(() -> tx().executeWithoutResult(status -> transactions.saveAndFlush(BlockchainTransaction.prepared(
+                jobs.findById(first).orElseThrow(), anotherSigner, randomBytes(40), Instant.now()))))
+                .isInstanceOf(DataIntegrityViolationException.class);
+        assertThat(count("blockchain_transactions", "blockchain_job_id", first)).isEqualTo(1);
+        assertThat(count("blockchain_transactions", "blockchain_job_id", second)).isZero();
     }
 
     private UUID newCaseVerifiedJob() throws Exception {

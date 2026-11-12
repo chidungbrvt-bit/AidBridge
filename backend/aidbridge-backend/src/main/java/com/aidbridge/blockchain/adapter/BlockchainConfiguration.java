@@ -7,6 +7,8 @@ import com.aidbridge.blockchain.worker.BlockchainWorkerScheduler;
 import com.aidbridge.blockchain.worker.CaseVerifiedManifestBuilder;
 import com.aidbridge.blockchain.worker.CaseVerifiedWorker;
 import java.time.Clock;
+import javax.sql.DataSource;
+import com.aidbridge.blockchain.worker.SignerSessionLock;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -54,9 +56,9 @@ public class BlockchainConfiguration {
     @Bean
     CaseVerifiedWorker caseVerifiedWorker(PlatformTransactionManager transactionManager, BlockchainJobRepository jobs,
             BlockchainTransactionRepository attempts, CaseVerifiedManifestBuilder manifests, BlockchainAdapter adapter,
-            JobSecretCipher cipher, BlockchainProperties properties) {
+            JobSecretCipher cipher, BlockchainProperties properties, DataSource dataSource) {
         return new CaseVerifiedWorker(new TransactionTemplate(transactionManager), jobs, attempts, manifests, adapter,
-                cipher, properties, Clock.systemUTC());
+                cipher, properties, Clock.systemUTC(), new SignerSessionLock(dataSource));
     }
 
     @Bean

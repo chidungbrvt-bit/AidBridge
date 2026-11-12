@@ -11,6 +11,7 @@ import com.aidbridge.blockchain.repository.BlockchainJobRepository;
 import com.aidbridge.blockchain.repository.BlockchainTransactionRepository;
 import com.aidbridge.blockchain.worker.CaseVerifiedManifestBuilder;
 import com.aidbridge.blockchain.worker.CaseVerifiedWorker;
+import com.aidbridge.blockchain.worker.SignerSessionLock;
 import com.aidbridge.verification.service.VerificationOutboxService;
 import java.math.BigInteger;
 import java.nio.file.Files;
@@ -104,7 +105,7 @@ class CaseVerifiedHardhatE2EIT extends AbstractCaseHttpIT {
             new SecureRandom().nextBytes(key);
             CaseVerifiedWorker worker = new CaseVerifiedWorker(new TransactionTemplate(transactionManager), jobs, attempts,
                     new CaseVerifiedManifestBuilder(json), new Web3jBlockchainAdapter(web3j, properties),
-                    new JobSecretCipher(key), properties, Clock.systemUTC());
+                    new JobSecretCipher(key), properties, Clock.systemUTC(), new SignerSessionLock(jdbc.getDataSource()));
 
             var submitted = worker.processNextJob().orElseThrow();
             assertThat(submitted.jobId()).isEqualTo(jobId);
