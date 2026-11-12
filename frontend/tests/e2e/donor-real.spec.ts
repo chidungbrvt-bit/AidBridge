@@ -139,7 +139,7 @@ test('real HTTP CSRF403 and validation400 leave PostgreSQL unchanged',async({pag
   expect(invalid.status()).toBe(400);expect(count()).toBe(before);
   sql(`UPDATE users SET donor_enabled=false WHERE id='${id(donor)}'`);
   try {
-    await page.reload();await expect(page.getByRole('heading',{name:'Donor access is not enabled'})).toBeVisible();
+    await page.goto(`/campaigns/${campaign}`);await expect(page.getByRole('heading',{name:'Donor access is not enabled'})).toBeVisible();
     const forbidden=await page.request.post(`/api/campaigns/${campaign}/commitments`,{data:body,headers:{'Idempotency-Key':randomUUID(),[token.headerName]:token.token}});
     expect(forbidden.status()).toBe(403);expect((await forbidden.json()).code).toBe('FORBIDDEN');
     expect((await page.request.get('/api/me/commitments?page=0&size=20')).status()).toBe(403);expect(count()).toBe(before);

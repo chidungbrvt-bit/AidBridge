@@ -86,3 +86,6 @@ Tại lúc chuẩn bị commit: local typecheck/lint/diff PASS; Java và 5 brows
 
 
 CI run43199326961 đầu: frontend57 unit và backend9 validation tests PASS; DonorUiE2EIT chưa chạy browser vì readiness Next không nhận200. Sửa test harness: dùng HTTP/1.1 cho readiness, ghi/log startup có redact password, chuyển stdout child sang file thay vì ghi trực tiếp vào Maven fork protocol. Chưa nới assertions hoặc kết luận E2E PASS; chạy lại để xác minh.
+
+
+CI run43200170033 sau sửa harness đã chạy PostgreSQL/Spring Boot/Next thật:4/5 browser scenarios PASS (G01/G02/G03 + DB/audit/outbox, received409, G01/G03 commit504/replay). Test thứ5 FAIL vì tìm notice donor ở `/campaigns` list thay vì trang có pledge form; sửa navigation test tới `/campaigns/{id}` rồi giữ nguyên assertions về CSRF400/403, revoke grant và SQL no-write. Không thay business logic/constraint hoặc coi4/5 là E2E PASS.
