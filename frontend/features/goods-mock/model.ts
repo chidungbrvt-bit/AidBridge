@@ -27,7 +27,7 @@ export function limits(snapshot: Snapshot, action: Action) {
 export type Command = { action: Action; actor: Actor; lines: Line[]; outcome: 'DELIVERED' | 'FAILED'; reason: string; evidence: string[]; at: string; note: string };
 export function apply(snapshot: Snapshot, command: Command, conflict = false): Snapshot {
   if (!permitted(command.action, command.actor)) throw new GoodsError(403, 'FORBIDDEN');
-  if (command.reason.length > 2000 || command.note.length > 2000 || !Number.isFinite(Date.parse(command.at))) throw new GoodsError(400, 'VALIDATION_ERROR');
+  if (command.reason.length > 2000 || command.note.length > 500 || !Number.isFinite(Date.parse(command.at))) throw new GoodsError(400, 'VALIDATION_ERROR');
   const failed = command.action === 'delivery' && command.outcome === 'FAILED';
   if (failed) {
     if (!command.reason.trim() || command.lines.length || command.evidence.length) throw new GoodsError(400, 'VALIDATION_ERROR');
