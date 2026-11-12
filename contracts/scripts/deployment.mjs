@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { ContractFactory, getAddress, keccak256, parseUnits, ZeroAddress, getCreateAddress } from 'ethers';
 import { createHash } from 'node:crypto';
 export const FUJI_RPC='https://api.avax-test.network/ext/bc/C/rpc';
@@ -10,12 +10,14 @@ export function validateArtifact(a) {
  if(keccak256(a.bytecode)!==CREATION_HASH || keccak256(a.deployedBytecode)!==RUNTIME_HASH || createHash('sha256').update(JSON.stringify(a.abi)).digest('hex')!==ABI_HASH)throw Error('UNREVIEWED_ARTIFACT');
  return a;
 }
+// Reviewed C03 artifact (source commit 61cc738, deployed on Fuji), committed as a snapshot.
+// The runner, verify-fuji and c05-pilot always work against this exact deployed artifact, so later
+// edits to contracts/AidRegistry.sol (C06+) cannot change what is deployed or verified here.
+// Deploying a newer contract requires a new reviewed snapshot and new pinned hashes.
+export const REVIEWED_ARTIFACT_URL=new URL('../deployment/AidRegistry.c03-reviewed.artifact.json',import.meta.url);
 export function artifact() {
- const source=readFileSync(new URL('../contracts/AidRegistry.sol',import.meta.url),'utf8').replaceAll('\r\n','\n');
- if(createHash('sha256').update(source).digest('hex')!=="7154cf04f21198cfed6d4930ce7fb7243bef9a2f8d5ecda44c7dcd00dd66735a")throw Error('UNREVIEWED_SOURCE');
- const a=JSON.parse(readFileSync(new URL('../artifacts/contracts/AidRegistry.sol/AidRegistry.json',import.meta.url),'utf8'));
- if(keccak256(a.bytecode)!==CREATION_HASH || keccak256(a.deployedBytecode)!==RUNTIME_HASH || createHash('sha256').update(JSON.stringify(a.abi)).digest('hex')!==ABI_HASH)throw Error('UNREVIEWED_ARTIFACT');
- return validateArtifact(a);
+ if(!existsSync(REVIEWED_ARTIFACT_URL))throw Error('MISSING_REVIEWED_ARTIFACT');
+ return validateArtifact(JSON.parse(readFileSync(REVIEWED_ARTIFACT_URL,'utf8')));
 }
 export function addresses(config) {
  if(!config?.deployer||!config?.admin||!config?.relayer)throw Error('MISSING_PUBLIC_ADDRESSES');
