@@ -13,6 +13,7 @@ import com.aidbridge.blockchain.repository.BlockchainJobRepository;
 import com.aidbridge.blockchain.repository.BlockchainTransactionRepository;
 import com.aidbridge.blockchain.worker.CaseVerifiedManifestBuilder;
 import com.aidbridge.blockchain.worker.CaseVerifiedWorker;
+import com.aidbridge.blockchain.worker.SignerSessionLock;
 import com.aidbridge.verification.service.VerificationOutboxService;
 import java.security.SecureRandom;
 import java.time.Clock;
@@ -56,6 +57,8 @@ class CaseVerifiedWorkerIT extends AbstractCaseHttpIT {
 
     @BeforeEach
     void wireWorker() {
+        // Test-only retirement of prior test attempts in this isolated schema; not an operational cleanup.
+        jdbc.update("UPDATE blockchain_transactions SET status = 'REVERTED' WHERE chain_id = 31337 AND status IN ('PREPARED','SUBMITTED')");
         node = new FakeBlockchainAdapter(properties);
         // A real node remembers every transaction this signer already sent on the chain (other tests share this
         // schema), so the fake starts from that nonce instead of 0.
@@ -63,7 +66,7 @@ class CaseVerifiedWorkerIT extends AbstractCaseHttpIT {
                 "SELECT COALESCE(MAX(nonce) + 1, 0) FROM blockchain_transactions WHERE chain_id = 31337 AND LOWER(signer_address) = ?",
                 Long.class, HARDHAT_ADDRESS_0));
         worker = new CaseVerifiedWorker(new TransactionTemplate(transactionManager), jobs, attempts,
-                new CaseVerifiedManifestBuilder(json), node, cipher, properties, Clock.systemUTC());
+                new CaseVerifiedManifestBuilder(json), node, cipher, properties, Clock.systemUTC(), new SignerSessionLock(jdbc.getDataSource()));
         // Leave no due local-chain job from an earlier test in this schema.
         jdbc.update("UPDATE blockchain_jobs SET next_retry_at = now() + interval '1 day' WHERE chain_id = 31337 AND status IN ('PENDING','PROCESSING','SUBMITTED')");
         jdbc.update("UPDATE organizations SET relayer_address = ? WHERE id = ?", HARDHAT_ADDRESS_0, ORG_A);
@@ -235,6 +238,171 @@ class CaseVerifiedWorkerIT extends AbstractCaseHttpIT {
         assertThat(node.broadcasts.get(1)).isEqualTo(node.broadcasts.get(0));
         assertThat(count("blockchain_transactions", "blockchain_job_id", jobId)).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT status FROM blockchain_jobs WHERE id = ?", String.class, jobId)).isEqualTo("SUBMITTED");
+    }
+
+    @Test
+    void exhaustedRecoveryBudgetKeepsOriginalAttemptAndAcceptsLateReceiptAfterRestart() throws Exception {
+        UUID jobId = newLocalCaseVerifiedJob();
+        worker.processNextJob().orElseThrow();
+        String raw = node.broadcasts.get(0);
+        var before = jdbc.queryForMap("SELECT tx_hash, nonce, signed_tx_ciphertext FROM blockchain_transactions WHERE blockchain_job_id = ?", jobId);
+        jdbc.update("UPDATE blockchain_transactions SET submitted_at = now() - interval '10 minutes' WHERE blockchain_job_id = ?", jobId);
+        jdbc.update("UPDATE blockchain_jobs SET retry_count = 10, next_retry_at = NULL WHERE id = ?", jobId);
+        for (int i = 0; i < 3; i++) {
+            jdbc.update("UPDATE blockchain_jobs SET next_retry_at = NULL WHERE id = ?", jobId);
+            var pending = worker.pollSubmitted().stream().filter(r -> r.jobId().equals(jobId)).findFirst().orElseThrow();
+            assertThat(pending.outcome()).isEqualTo(CaseVerifiedWorker.PollOutcome.PENDING);
+            assertThat(pending.reasonCode()).isEqualTo("RECEIPT_PENDING_OPERATOR_ATTENTION");
+        }
+        assertThat(node.broadcasts).hasSize(1);
+        assertThat(jdbc.queryForObject("SELECT status FROM blockchain_jobs WHERE id = ?", String.class, jobId)).isEqualTo("SUBMITTED");
+        var after = jdbc.queryForMap("SELECT tx_hash, nonce, signed_tx_ciphertext FROM blockchain_transactions WHERE blockchain_job_id = ?", jobId);
+        assertThat(after.get("tx_hash")).isEqualTo(before.get("tx_hash"));
+        assertThat(after.get("nonce")).isEqualTo(before.get("nonce"));
+        assertThat((byte[]) after.get("signed_tx_ciphertext")).containsExactly((byte[]) before.get("signed_tx_ciphertext"));
+        worker = new CaseVerifiedWorker(new TransactionTemplate(transactionManager), jobs, attempts,
+                new CaseVerifiedManifestBuilder(json), node, cipher, properties, Clock.systemUTC(), new SignerSessionLock(jdbc.getDataSource()));
+        node.mine(raw, REGISTRY, 102, null);
+        jdbc.update("UPDATE blockchain_jobs SET next_retry_at = NULL WHERE id = ?", jobId);
+        assertThat(worker.pollSubmitted().stream().filter(r -> r.jobId().equals(jobId)).findFirst().orElseThrow().outcome())
+                .isEqualTo(CaseVerifiedWorker.PollOutcome.CONFIRMED);
+        assertThat(count("blockchain_transactions", "blockchain_job_id", jobId)).isEqualTo(1);
+    }
+
+    @Test
+    void repeatedRpcOutageAndDuplicateBroadcastNeverTurnUnknownOutcomeIntoFailure() throws Exception {
+        UUID jobId = newLocalCaseVerifiedJob();
+        worker.processNextJob().orElseThrow();
+        String raw = node.broadcasts.get(0);
+        jdbc.update("UPDATE blockchain_transactions SET submitted_at = now() - interval '10 minutes' WHERE blockchain_job_id = ?", jobId);
+        node.nextBroadcastFailure = new BlockchainRpcException("RPC_REJECTED", "already known");
+        jdbc.update("UPDATE blockchain_jobs SET next_retry_at = NULL WHERE id = ?", jobId);
+        assertThat(worker.pollSubmitted().stream().filter(r -> r.jobId().equals(jobId)).findFirst().orElseThrow().outcome())
+                .isEqualTo(CaseVerifiedWorker.PollOutcome.REBROADCAST);
+        assertThat(node.broadcasts.get(1)).isEqualTo(raw);
+        for (int i = 0; i < 6; i++) {
+            node.nextReceiptFailure = new BlockchainRpcException("RPC_UNAVAILABLE", "outage");
+            jdbc.update("UPDATE blockchain_jobs SET next_retry_at = NULL WHERE id = ?", jobId);
+            assertThat(worker.pollSubmitted().stream().filter(r -> r.jobId().equals(jobId)).findFirst().orElseThrow().outcome())
+                    .isEqualTo(CaseVerifiedWorker.PollOutcome.PENDING);
+        }
+        jdbc.update("UPDATE blockchain_jobs SET next_retry_at = NULL WHERE id = ?", jobId);
+        assertThat(worker.pollSubmitted().stream().filter(r -> r.jobId().equals(jobId)).findFirst().orElseThrow().outcome())
+                .isEqualTo(CaseVerifiedWorker.PollOutcome.PENDING);
+        node.mine(raw, REGISTRY, 103, null);
+        jdbc.update("UPDATE blockchain_jobs SET next_retry_at = NULL WHERE id = ?", jobId);
+        assertThat(worker.pollSubmitted().stream().filter(r -> r.jobId().equals(jobId)).findFirst().orElseThrow().outcome())
+                .isEqualTo(CaseVerifiedWorker.PollOutcome.CONFIRMED);
+        assertThat(count("blockchain_transactions", "blockchain_job_id", jobId)).isEqualTo(1);
+    }
+
+    @Test
+    void concurrentWorkersClaimOneJobAndPersistOnlyOneAttempt() throws Exception {
+        UUID jobId = newLocalCaseVerifiedJob();
+        var second = new CaseVerifiedWorker(new TransactionTemplate(transactionManager), jobs, attempts,
+                new CaseVerifiedManifestBuilder(json), node, cipher, properties, Clock.systemUTC(), new SignerSessionLock(jdbc.getDataSource()));
+        var pool = java.util.concurrent.Executors.newFixedThreadPool(2);
+        var start = new java.util.concurrent.CountDownLatch(1);
+        try {
+            var a = pool.submit(() -> { start.await(); return worker.processNextJob(); });
+            var b = pool.submit(() -> { start.await(); return second.processNextJob(); });
+            start.countDown();
+            var firstResult = a.get(15, java.util.concurrent.TimeUnit.SECONDS);
+            var secondResult = b.get(15, java.util.concurrent.TimeUnit.SECONDS);
+            assertThat((firstResult.isPresent() ? 1 : 0) + (secondResult.isPresent() ? 1 : 0)).isEqualTo(1);
+            assertThat(count("blockchain_transactions", "blockchain_job_id", jobId)).isEqualTo(1);
+            assertThat(node.broadcasts).hasSize(1);
+        } finally { pool.shutdownNow(); }
+    }
+
+    @Test
+    void aSecondCaseWaitsForTheSignerAndNeverReusesAJournaledNonce() throws Exception {
+        UUID first = newLocalCaseVerifiedJob();
+        worker.processNextJob().orElseThrow();
+        String raw = node.broadcasts.get(0);
+        long firstNonce = TransactionDecoder.decode(raw).getNonce().longValueExact();
+        UUID second = newLocalCaseVerifiedJob();
+        assertThat(worker.processNextJob()).isEmpty();
+        assertThat(count("blockchain_transactions", "blockchain_job_id", second)).isZero();
+        node.mine(raw, REGISTRY, 104, null);
+        worker.pollSubmitted();
+        assertThat(jdbc.queryForObject("SELECT status FROM blockchain_jobs WHERE id = ?", String.class, first))
+                .isEqualTo("CONFIRMED");
+        node.pendingNonce = java.math.BigInteger.ZERO; // stale node must not cause nonce reuse
+        assertThat(worker.processNextJob().orElseThrow().jobId()).isEqualTo(second);
+        assertThat(TransactionDecoder.decode(node.broadcasts.get(1)).getNonce().longValueExact()).isEqualTo(firstNonce + 1);
+    }
+
+    @Test
+    void expiredJobLeaseCannotSupersedeALiveSignerSession() throws Exception {
+        UUID jobId = newLocalCaseVerifiedJob();
+        var signing = new java.util.concurrent.CountDownLatch(1);
+        var release = new java.util.concurrent.CountDownLatch(1);
+        node.beforeSign = () -> {
+            signing.countDown();
+            try {
+                if (!release.await(15, java.util.concurrent.TimeUnit.SECONDS)) throw new IllegalStateException("TEST_TIMEOUT");
+            } catch (InterruptedException e) { Thread.currentThread().interrupt(); throw new IllegalStateException(e); }
+        };
+        var pool = java.util.concurrent.Executors.newSingleThreadExecutor();
+        try {
+            var running = pool.submit(() -> worker.processNextJob());
+            assertThat(signing.await(10, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+            jdbc.update("UPDATE blockchain_jobs SET lease_until = now() - interval '1 minute' WHERE id = ?", jobId);
+            var second = new CaseVerifiedWorker(new TransactionTemplate(transactionManager), jobs, attempts,
+                    new CaseVerifiedManifestBuilder(json), node, cipher, properties, Clock.systemUTC(),
+                    new SignerSessionLock(jdbc.getDataSource()));
+            assertThat(second.processNextJob()).isEmpty();
+            assertThat(second.pollSubmitted()).isEmpty();
+            release.countDown();
+            assertThat(running.get(15, java.util.concurrent.TimeUnit.SECONDS)).isPresent();
+            assertThat(node.broadcasts).hasSize(1);
+            assertThat(count("blockchain_transactions", "blockchain_job_id", jobId)).isEqualTo(1);
+        } finally { release.countDown(); pool.shutdownNow(); }
+    }
+
+    @Test
+    void lostDatabaseSessionFencesTheOldWorkerBeforePersistOrBroadcast() throws Exception {
+        UUID jobId = newLocalCaseVerifiedJob();
+        node.beforeSign = () -> {
+            String lockKey = "aidbridge:signer:31337:" + HARDHAT_ADDRESS_0;
+            Integer pid = jdbc.queryForObject("""
+                    SELECT pid FROM pg_locks WHERE locktype = 'advisory' AND granted AND objsubid = 1
+                      AND classid = ((hashtextextended(?, 0) >> 32) & 4294967295)::oid
+                      AND objid = (hashtextextended(?, 0) & 4294967295)::oid
+                      AND database = (SELECT oid FROM pg_database WHERE datname = current_database())
+                    """, Integer.class, lockKey, lockKey);
+            assertThat(jdbc.queryForObject("SELECT pg_terminate_backend(?)", Boolean.class, pid)).isTrue();
+        };
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> worker.processNextJob())
+                .hasMessage("SIGNER_LOCK_LOST");
+        assertThat(node.broadcasts).isEmpty();
+        assertThat(count("blockchain_transactions", "blockchain_job_id", jobId)).isZero();
+        node.beforeSign = () -> { };
+        jdbc.update("UPDATE blockchain_jobs SET lease_until = now() - interval '1 minute' WHERE id = ?", jobId);
+        assertThat(worker.processNextJob().orElseThrow().outcome()).isEqualTo(CaseVerifiedWorker.Outcome.SUBMITTED);
+        assertThat(node.broadcasts).hasSize(1);
+    }
+
+    @Test
+    void recoveredAttemptCannotBeSentUnderAnotherRegistry() throws Exception {
+        UUID jobId = newLocalCaseVerifiedJob();
+        worker.processNextJob().orElseThrow();
+        jdbc.update("UPDATE blockchain_transactions SET status = 'PREPARED', contract_address = ? WHERE blockchain_job_id = ?",
+                "0x" + "22".repeat(20), jobId);
+        jdbc.update("UPDATE blockchain_jobs SET status = 'PROCESSING', lease_until = now() - interval '1 minute' WHERE id = ?", jobId);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> worker.processNextJob())
+                .hasMessage("PREPARED_ATTEMPT_BINDING_MISMATCH");
+        assertThat(node.broadcasts).hasSize(1);
+        assertThat(count("blockchain_transactions", "blockchain_job_id", jobId)).isEqualTo(1);
+    }
+
+    @Test
+    void caseVerificationCannotBeSignedWithAMilestoneSequence() throws Exception {
+        UUID jobId = newLocalCaseVerifiedJob();
+        jdbc.update("UPDATE blockchain_jobs SET chain_sequence = 2 WHERE id = ?", jobId);
+        assertThat(worker.processNextJob().orElseThrow().reasonCode()).isEqualTo("INVALID_CASE_VERIFICATION_SEQUENCE");
+        assertThat(node.broadcasts).isEmpty();
     }
 
     private UUID newLocalCaseVerifiedJob() throws Exception {

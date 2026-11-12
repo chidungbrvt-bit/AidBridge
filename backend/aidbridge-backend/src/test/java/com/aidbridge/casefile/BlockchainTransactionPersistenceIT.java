@@ -41,6 +41,15 @@ class BlockchainTransactionPersistenceIT extends AbstractCaseHttpIT {
 
     private final JobSecretCipher cipher = new JobSecretCipher(randomBytes(32));
 
+    private long nonceBase;
+
+    @org.junit.jupiter.api.BeforeEach
+    void retirePriorFixtureAttempts() {
+        // Isolated integration-test schema only: keep journal history, retire prior test open attempts.
+        jdbc.update("UPDATE blockchain_transactions SET status = 'REVERTED' WHERE chain_id = 31337 AND status IN ('PREPARED','SUBMITTED')");
+        nonceBase = jdbc.queryForObject("SELECT COALESCE(MAX(nonce) + 1, 0) FROM blockchain_transactions WHERE chain_id = 31337 AND LOWER(signer_address) = ?", Long.class, SIGNER);
+    }
+
     @Test
     void persistsPreparedAttemptWithEncryptedBytesBeforeBroadcast() throws Exception {
         UUID jobId = newCaseVerifiedJob();
@@ -54,7 +63,7 @@ class BlockchainTransactionPersistenceIT extends AbstractCaseHttpIT {
             job.attachPreparation("{\"eventType\":\"CASE_VERIFIED\"}",
                     cipher.encrypt(salt, JobSecretCipher.associatedData(jobId, "salt")), commitment);
             job.claim(Instant.now().plusSeconds(60));
-            SignedTransaction signed = new SignedTransaction(rawTx, txHash, SIGNER, REGISTRY, BigInteger.ZERO,
+            SignedTransaction signed = new SignedTransaction(rawTx, txHash, SIGNER, REGISTRY, BigInteger.valueOf(nonceBase),
                     BigInteger.ONE, BigInteger.valueOf(300_000), 31337);
             transactions.saveAndFlush(BlockchainTransaction.prepared(job, signed,
                     cipher.encrypt(rawTx.getBytes(), JobSecretCipher.associatedData(jobId, "signed-tx")), Instant.now()));
@@ -70,7 +79,7 @@ class BlockchainTransactionPersistenceIT extends AbstractCaseHttpIT {
                 """, jobId);
         assertThat(row).containsEntry("status", "PREPARED")
                 .containsEntry("tx_hash", txHash)
-                .containsEntry("nonce", 0L)
+                .containsEntry("nonce", nonceBase)
                 .containsEntry("chain_id", 31337L)
                 .containsEntry("signer_address", SIGNER)
                 .containsEntry("contract_address", REGISTRY)
@@ -107,6 +116,24 @@ class BlockchainTransactionPersistenceIT extends AbstractCaseHttpIT {
         assertThat(count("blockchain_transactions", "blockchain_job_id", jobId)).isEqualTo(1);
     }
 
+    @Test
+    void databaseRejectsTwoOpenAttemptsEvenWithDifferentNoncesOrSigners() throws Exception {
+        UUID first = newCaseVerifiedJob();
+        UUID second = newCaseVerifiedJob();
+        tx().executeWithoutResult(status -> transactions.saveAndFlush(BlockchainTransaction.prepared(
+                jobs.findById(first).orElseThrow(), signedWithNonce(200, "0x" + "71".repeat(32)), randomBytes(40), Instant.now())));
+        assertThatThrownBy(() -> tx().executeWithoutResult(status -> transactions.saveAndFlush(BlockchainTransaction.prepared(
+                jobs.findById(second).orElseThrow(), signedWithNonce(201, "0x" + "72".repeat(32)), randomBytes(40), Instant.now()))))
+                .isInstanceOf(DataIntegrityViolationException.class);
+        SignedTransaction anotherSigner = new SignedTransaction("0x" + "ab".repeat(100), "0x" + "73".repeat(32),
+                "0x" + "33".repeat(20), REGISTRY, BigInteger.valueOf(202), BigInteger.ONE, BigInteger.valueOf(300_000), 31337);
+        assertThatThrownBy(() -> tx().executeWithoutResult(status -> transactions.saveAndFlush(BlockchainTransaction.prepared(
+                jobs.findById(first).orElseThrow(), anotherSigner, randomBytes(40), Instant.now()))))
+                .isInstanceOf(DataIntegrityViolationException.class);
+        assertThat(count("blockchain_transactions", "blockchain_job_id", first)).isEqualTo(1);
+        assertThat(count("blockchain_transactions", "blockchain_job_id", second)).isZero();
+    }
+
     private UUID newCaseVerifiedJob() throws Exception {
         var created = create();
         UUID caseId = UUID.fromString(created.path("id").asText());
@@ -122,8 +149,8 @@ class BlockchainTransactionPersistenceIT extends AbstractCaseHttpIT {
         return jdbc.queryForObject("SELECT id FROM blockchain_jobs WHERE audit_event_id = ?", UUID.class, auditEventId);
     }
 
-    private static SignedTransaction signedWithNonce(long nonce, String hash) {
-        return new SignedTransaction("0x" + "ab".repeat(100), hash, SIGNER, REGISTRY, BigInteger.valueOf(nonce),
+    private SignedTransaction signedWithNonce(long nonce, String hash) {
+        return new SignedTransaction("0x" + "ab".repeat(100), hash, SIGNER, REGISTRY, BigInteger.valueOf(nonceBase + nonce),
                 BigInteger.ONE, BigInteger.valueOf(300_000), 31337);
     }
 

@@ -28,6 +28,14 @@ public interface BlockchainJobRepository extends JpaRepository<BlockchainJob, UU
             JOIN audit_events a ON a.id = j.audit_event_id
             WHERE a.event_type = 'CASE_VERIFIED'
               AND j.chain_id = :chainId
+              AND NOT EXISTS (
+                  SELECT 1 FROM blockchain_transactions t
+                  WHERE t.chain_id = :chainId AND LOWER(t.signer_address) = LOWER(:signer)
+                    AND t.status IN ('PREPARED', 'SUBMITTED') AND t.blockchain_job_id <> j.id)
+              AND NOT EXISTS (
+                  SELECT 1 FROM blockchain_jobs previous
+                  WHERE previous.aid_case_id = j.aid_case_id AND previous.chain_sequence < j.chain_sequence
+                    AND previous.status <> 'CONFIRMED')
               AND (j.next_retry_at IS NULL OR j.next_retry_at <= :now)
               AND (j.status = 'PENDING'
                    OR (j.status = 'PROCESSING' AND (j.lease_until IS NULL OR j.lease_until < :now)))
@@ -35,7 +43,7 @@ public interface BlockchainJobRepository extends JpaRepository<BlockchainJob, UU
             LIMIT 1
             FOR UPDATE OF j SKIP LOCKED
             """, nativeQuery = true)
-    Optional<BlockchainJob> lockNextCaseVerifiedJob(@Param("chainId") long chainId, @Param("now") Instant now);
+    Optional<BlockchainJob> lockNextCaseVerifiedJob(@Param("chainId") long chainId, @Param("signer") String signer, @Param("now") Instant now);
 
     /** C05: private source rows for the manifest and envelope of one CASE_VERIFIED job. */
     @Query(value = """
