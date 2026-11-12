@@ -83,3 +83,6 @@ Source/tests/docs trong D:/Project/AidBridge. Cài frontend bằng `pnpm dlx npm
 Không thêm seed production hoặc test controller trong src/main. Không truyền fake success responses: chỉ hai fault tests dùng route.fetch tới backend thật, kiểm DB đã commit rồi thay riêng response bằng504. Received goods dùng SQL fixture đúng như ContributionCancelIT vì R01/B08 chưa có; không tuyên bố kiểm thử receipt creation API. Kiểm tra audit/outbox, original key/body và số cancelled trong PostgreSQL. Credentials ngẫu nhiên chỉ truyền qua env child process, không log/artifact. Workflow kiểm cả Java/JUnit/JSON evidence không bị skip.
 
 Tại lúc chuẩn bị commit: local typecheck/lint/diff PASS; Java và 5 browser scenarios này chưa chạy trên Windows, chờ CI. Kết quả PARTIAL trước đó chỉ được thay sau khi có Actions run thực sự PASS. Không cài môi trường nặng lên Windows hoặc bật blockchain. Push/PR được người dùng cho phép ở lượt này; không merge.
+
+
+CI run43199326961 đầu: frontend57 unit và backend9 validation tests PASS; DonorUiE2EIT chưa chạy browser vì readiness Next không nhận200. Sửa test harness: dùng HTTP/1.1 cho readiness, ghi/log startup có redact password, chuyển stdout child sang file thay vì ghi trực tiếp vào Maven fork protocol. Chưa nới assertions hoặc kết luận E2E PASS; chạy lại để xác minh.

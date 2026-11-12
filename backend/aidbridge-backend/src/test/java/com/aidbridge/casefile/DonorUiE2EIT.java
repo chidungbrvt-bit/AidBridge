@@ -52,17 +52,20 @@ class DonorUiE2EIT extends AbstractCampaignHttpIT {
         launch.environment().putAll(env);
         Process server = launch.start();
         try {
-            HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
+            HttpClient client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(Duration.ofSeconds(2)).build();
             boolean ready = false;
+            int lastStatus = -1;
             for (int i = 0; i < 60 && server.isAlive(); i++) {
                 try {
                     var response = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:3000/login"))
                             .timeout(Duration.ofSeconds(2)).GET().build(), HttpResponse.BodyHandlers.discarding());
+                    lastStatus = response.statusCode();
                     if (response.statusCode() == 200) { ready = true; break; }
                 } catch (java.io.IOException ignored) { }
                 Thread.sleep(500);
             }
-            assertThat(ready).as("Next production server must be reachable").isTrue();
+            if (!ready) System.out.println(Files.readString(frontend.resolve(".cache/f07-real-next.log")).replace(PASSWORD, "[REDACTED]"));
+            assertThat(ready).as("Next production server must be reachable; last HTTP status %s", lastStatus).isTrue();
             run(frontend, env, "node", "node_modules/@playwright/test/cli.js", "test", "--project=donor-real", "--reporter=list,junit");
         } finally {
             server.destroy();
@@ -71,11 +74,15 @@ class DonorUiE2EIT extends AbstractCampaignHttpIT {
     }
 
     private static void run(Path cwd, Map<String, String> env, String... command) throws Exception {
-        ProcessBuilder builder = new ProcessBuilder(command).directory(cwd.toFile()).inheritIO();
+        // Native child stdout must not write directly into Maven Surefire's fork protocol channel.
+        Path output = cwd.resolve(".cache/f07-real-child.log");
+        ProcessBuilder builder = new ProcessBuilder(command).directory(cwd.toFile()).redirectErrorStream(true)
+                .redirectOutput(ProcessBuilder.Redirect.appendTo(output.toFile()));
         builder.environment().putAll(env);
         Process child = builder.start();
         try {
             assertThat(child.waitFor(5, TimeUnit.MINUTES)).as("CI child process deadline").isTrue();
+            System.out.println(Files.readString(output).replace(env.get("F07_E2E_DONOR_PASSWORD"), "[REDACTED]"));
             assertThat(child.exitValue()).as("CI child exit status").isZero();
         } finally { if (child.isAlive()) child.destroyForcibly(); }
     }
