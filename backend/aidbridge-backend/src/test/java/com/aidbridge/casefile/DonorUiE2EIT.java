@@ -1,0 +1,82 @@
+package com.aidbridge.casefile;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
+/** Full Next -> same-origin proxy -> Spring Boot -> PostgreSQL; never a test controller or MockMvc. */
+@EnabledIfEnvironmentVariable(named = "AIDBRIDGE_F07_REAL_E2E", matches = "true")
+@EnabledIfEnvironmentVariable(named = "AIDBRIDGE_TEST_DATABASE_URL", matches = ".+")
+@EnabledIfEnvironmentVariable(named = "AIDBRIDGE_TEST_DATABASE_USERNAME", matches = ".+")
+@EnabledIfEnvironmentVariable(named = "AIDBRIDGE_TEST_DATABASE_PASSWORD", matches = ".+")
+class DonorUiE2EIT extends AbstractCampaignHttpIT {
+    @org.springframework.beans.factory.annotation.Autowired org.springframework.context.ApplicationContext context;
+    @Test
+    void donorRoutesUseRealBackendAndPersistTheirResults() throws Exception {
+        assertThat(System.getenv("CI")).as("fixture may only run in disposable CI").isEqualTo("true");
+        assertThat(jdbc.queryForObject("SELECT current_database()", String.class)).isEqualTo("aidbridge_test");
+        assertThat(jdbc.queryForObject("SELECT current_schema()", String.class)).isEqualTo(SCHEMA);
+        assertThat(context.getBeansOfType(com.aidbridge.blockchain.worker.BlockchainWorkerScheduler.class)).isEmpty();
+        Actor orgAdmin = actor(ORG_A, "ORG_ADMIN", false);
+        Actor donor = donor(true);
+        var campaign = publishedCampaign(orgAdmin, List.of(
+                Map.of("name", "Food", "unit", "PACKAGE", "quantity", 50),
+                Map.of("name", "Hygiene", "unit", "KIT", "quantity", 30)));
+        Path frontend = Path.of("../../frontend").toAbsolutePath().normalize();
+        Files.createDirectories(frontend.resolve(".cache"));
+        Map<String, String> env = Map.of(
+                "NEXT_PUBLIC_API_MODE", "real",
+                "API_INTERNAL_BASE_URL", "http://127.0.0.1:" + port,
+                "NEXT_TELEMETRY_DISABLED", "1",
+                "F07_E2E_SCHEMA", SCHEMA,
+                "F07_E2E_DONOR_ID", donor.id().toString(),
+                "F07_E2E_DONOR_EMAIL", jdbc.queryForObject("SELECT email FROM users WHERE id = ?", String.class, donor.id()),
+                "F07_E2E_DONOR_PASSWORD", PASSWORD,
+                "F07_E2E_CAMPAIGN_ID", campaign.toString(),
+                "F07_E2E_RECORDER_ID", volunteer.id().toString());
+        run(frontend, env, "node", "node_modules/next/dist/bin/next", "build", "--webpack");
+        ProcessBuilder launch = new ProcessBuilder("node", "node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", "3000")
+                .directory(frontend.toFile()).redirectErrorStream(true)
+                .redirectOutput(frontend.resolve(".cache/f07-real-next.log").toFile());
+        launch.environment().putAll(env);
+        Process server = launch.start();
+        try {
+            HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
+            boolean ready = false;
+            for (int i = 0; i < 60 && server.isAlive(); i++) {
+                try {
+                    var response = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:3000/login"))
+                            .timeout(Duration.ofSeconds(2)).GET().build(), HttpResponse.BodyHandlers.discarding());
+                    if (response.statusCode() == 200) { ready = true; break; }
+                } catch (java.io.IOException ignored) { }
+                Thread.sleep(500);
+            }
+            assertThat(ready).as("Next production server must be reachable").isTrue();
+            run(frontend, env, "node", "node_modules/@playwright/test/cli.js", "test", "--project=donor-real", "--reporter=list,junit");
+        } finally {
+            server.destroy();
+            if (!server.waitFor(10, TimeUnit.SECONDS)) server.destroyForcibly();
+        }
+    }
+
+    private static void run(Path cwd, Map<String, String> env, String... command) throws Exception {
+        ProcessBuilder builder = new ProcessBuilder(command).directory(cwd.toFile()).inheritIO();
+        builder.environment().putAll(env);
+        Process child = builder.start();
+        try {
+            assertThat(child.waitFor(5, TimeUnit.MINUTES)).as("CI child process deadline").isTrue();
+            assertThat(child.exitValue()).as("CI child exit status").isZero();
+        } finally { if (child.isAlive()) child.destroyForcibly(); }
+    }
+}

@@ -74,3 +74,12 @@ Hiện đã để production server tại http://127.0.0.1:3000. Chưa có backe
 ## File/cache phát sinh
 
 Source/tests/docs trong D:/Project/AidBridge. Cài frontend bằng `pnpm dlx npm@12.2.2 ci --ignore-scripts --cache .cache/npm` vì npm CLI không có trên PATH Codex; không cài global hoặc đổi lockfile. node_modules, .cache/npm, .next và test-results nằm trong frontend, bị ignore. Tool npm qua pnpm dlx tái sử dụng store hiện có D:/.pnpm-store/v11; cache pnpm do runtime quản lý, không đổi cấu hình hoặc dọn cache. Không tạo ví hoặc output riêng ngoài repo.
+
+
+## Bổ sung kiểm chứng CI backend thật — lượt tiếp 12/11
+
+Đã chuẩn bị workflow `f07-real-e2e.yml`: PostgreSQL16/JDK21 trên runner; `DonorUiE2EIT` khởi động full Spring Boot HTTP trên random port và schema test b04_it_*; tái sử dụng AbstractCampaignHttpIT để tạo case → approve độc lập → draft/publish qua API. Donor grant chỉ cập nhật trong schema test. Java test build/start Next production với proxy tới đúng port backend, rồi chạy project Playwright donor-real.
+
+Không thêm seed production hoặc test controller trong src/main. Không truyền fake success responses: chỉ hai fault tests dùng route.fetch tới backend thật, kiểm DB đã commit rồi thay riêng response bằng504. Received goods dùng SQL fixture đúng như ContributionCancelIT vì R01/B08 chưa có; không tuyên bố kiểm thử receipt creation API. Kiểm tra audit/outbox, original key/body và số cancelled trong PostgreSQL. Credentials ngẫu nhiên chỉ truyền qua env child process, không log/artifact. Workflow kiểm cả Java/JUnit/JSON evidence không bị skip.
+
+Tại lúc chuẩn bị commit: local typecheck/lint/diff PASS; Java và 5 browser scenarios này chưa chạy trên Windows, chờ CI. Kết quả PARTIAL trước đó chỉ được thay sau khi có Actions run thực sự PASS. Không cài môi trường nặng lên Windows hoặc bật blockchain. Push/PR được người dùng cho phép ở lượt này; không merge.

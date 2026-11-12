@@ -1,0 +1,95 @@
+name: F07 real backend E2E
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: f07-real-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  donor-real-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: aidbridge_test
+          POSTGRES_USER: aidbridge_app
+          POSTGRES_PASSWORD: ci-local-only
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U aidbridge_app -d aidbridge_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      DB_URL: jdbc:postgresql://127.0.0.1:5432/aidbridge_test
+      DB_USERNAME: aidbridge_app
+      DB_PASSWORD: ci-local-only
+      AIDBRIDGE_TEST_DATABASE_URL: jdbc:postgresql://127.0.0.1:5432/aidbridge_test
+      AIDBRIDGE_TEST_DATABASE_USERNAME: aidbridge_app
+      AIDBRIDGE_TEST_DATABASE_PASSWORD: ci-local-only
+      AIDBRIDGE_F07_REAL_E2E: 'true'
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGDATABASE: aidbridge_test
+      PGUSER: aidbridge_app
+      PGPASSWORD: ci-local-only
+      BLOCKCHAIN_ENABLED: 'false'
+      NEXT_PUBLIC_API_MODE: real
+      NEXT_TELEMETRY_DISABLED: '1'
+      PLAYWRIGHT_JUNIT_OUTPUT_FILE: test-results/f07-real.junit.xml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install frontend from lockfile
+        working-directory: frontend
+        run: npm ci --ignore-scripts
+      - name: Install browser only on disposable runner
+        working-directory: frontend
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+      - name: Frontend unit and adapter regressions
+        working-directory: frontend
+        run: npm test
+      - name: Real PostgreSQL Spring Boot Next proxy browser E2E
+        working-directory: backend/aidbridge-backend
+        run: >-
+          bash ./mvnw -B -ntp
+          -Dtest=CommitmentRequestValidationTest,CancellationRequestValidationTest
+          -Dit.test=DonorUiE2EIT verify
+      - name: Require Java and browser execution with no skipped tests
+        shell: python
+        run: |
+          import json, pathlib, xml.etree.ElementTree as ET
+          java = list(pathlib.Path('backend/aidbridge-backend/target/failsafe-reports').glob('TEST-*DonorUiE2EIT.xml'))
+          assert len(java) == 1
+          root = ET.parse(java[0]).getroot()
+          assert int(root.attrib['tests']) == 1
+          for key in ('failures', 'errors', 'skipped'):
+              assert int(root.attrib.get(key, 0)) == 0
+          junit = ET.parse('frontend/test-results/f07-real.junit.xml').getroot()
+          suites = [junit] if junit.tag == 'testsuite' else list(junit.iter('testsuite'))
+          assert sum(int(s.attrib.get('tests', 0)) for s in suites) == 5
+          for s in suites:
+              for key in ('failures', 'errors', 'skipped'):
+                  assert int(s.attrib.get(key, 0)) == 0
+          evidence = json.loads(pathlib.Path('frontend/test-results/f07-real-evidence.json').read_text())
+          assert evidence['mode'] == 'REAL_NEXT_SPRING_POSTGRES'
+          assert evidence['passedScenarios'] == evidence['expectedScenarios'] == 5
+          assert all(s['databaseVerified'] for s in evidence['scenarios'])
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: f07-real-e2e-evidence
+          retention-days: 7
+          path: |
+            frontend/test-results/f07-real-evidence.json
+            frontend/test-results/f07-real.junit.xml
