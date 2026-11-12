@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "runId": 43200835548,
+  "runUrl": "https://github.com/chidungbrvt-bit/AidBridge/actions/runs/43200835548",
+  "sourceCommit": "80e0b88867643851e17a3bf9fd1b2b9e80ba8650",
+  "conclusion": "success",
+  "frontendUnitTests": 57,
+  "backendValidationTests": 9,
+  "javaHostTests": 1,
+  "browserE2ETests": 5,
+  "failures": 0,
+  "skipped": 0,
+  "evidence": {
+    "mode": "REAL_NEXT_SPRING_POSTGRES",
+    "blockchainEnabled": false,
+    "backendFixture": "AbstractCampaignHttpIT",
+    "receivedFixture": "SQL-only (B08/R01 not implemented)",
+    "expectedScenarios": 5,
+    "passedScenarios": 5,
+    "scenarios": [
+      {
+        "scenario": "multi-item-history-partial-cancel-outbox",
+        "contributionId": "ad7a808f-b8d7-42b0-81c3-ba6d60e30487",
+        "databaseVerified": true
+      },
+      {
+        "scenario": "real-received-fixture-stale409-no-write",
+        "contributionId": "956faf56-abe2-401d-931e-a5a4dfab049d",
+        "databaseVerified": true
+      },
+      {
+        "scenario": "real-pledge-commit504-exact-replay",
+        "contributionId": "2ba3f546-4201-4686-9517-149fbb47bedf",
+        "databaseVerified": true
+      },
+      {
+        "scenario": "real-cancel-commit504-exact-replay",
+        "contributionId": "15158967-69c1-4ae4-b3ed-00a2ab61aa84",
+        "databaseVerified": true
+      },
+      {
+        "scenario": "real-csrf403-validation400-revoked-grant-no-write",
+        "databaseVerified": true
+      }
+    ]
+  }
+}

@@ -1,3 +1,5 @@
+**Kết quả hiện hành 12/11:** F07 PASS kiểm chứng Next production → Spring Boot → PostgreSQL thật trên [CI run43200835548](https://github.com/chidungbrvt-bit/AidBridge/actions/runs/43200835548):57 unit frontend,9 backend validation và5 browser E2E, không skip. [Bàn giao/evidence](../reviews/F07_B07_API_INTEGRATION.md). Giữ In Review chờ nhóm review PR13, không Done. Received rows là SQL fixture CI, không phải R01/B08 E2E; không blockchain. Các mục PARTIAL/chưa backend dưới đây là lịch sử đã được thay thế cho phạm vi CI.
+
 # F07 — G01/G02/G03 donor UI: triển khai và bàn giao
 
 **Cập nhật 12/11:** G01–G03 đã nối vào Next routes và shared API client B07; 57 unit +14 browser HTTP-contract tests và21 preview regressions PASS, build PASS. Nghiệm thu real backend/DB còn PARTIAL, không coi HTTP fixtures là backend E2E. Xem [F07 B07 integration](../reviews/F07_B07_API_INTEGRATION.md); các nội dung mock và chưa Next integration bên dưới là lịch sử ngày10–11.

@@ -51,3 +51,10 @@ Test F07 HTTP contract trên server **real mode**: `npm run test:e2e -- --projec
 Xem [bàn giao F07 B07](../docs/reviews/F07_B07_API_INTEGRATION.md) về routes, retry/idempotency, kết quả và môi trường còn thiếu.
 
 Xem [bàn giao hiện tại](../docs/handoffs/MINH_F03_F04_2026-11-12.md). Bàn giao cũ `MINH_F03_F04.md` là lịch sử.
+
+
+## F07 E2E backend thật trên CI
+
+[PR13](https://github.com/chidungbrvt-bit/AidBridge/pull/13) có workflow `F07 real backend E2E`: PostgreSQL16 + JDK21 trên runner, `DonorUiE2EIT` tạo fixture qua API và khởi động Next production proxy tới Spring Boot thật. Project `donor-real` chỉ bật khi AIDBRIDGE_F07_REAL_E2E=true và được Java test truyền schema/account test qua env; không dùng credentials thật hoặc seed production. Không chạy trực tiếp bộ này trên DB dev chưa được cấp.
+
+[Run43200835548](https://github.com/chidungbrvt-bit/AidBridge/actions/runs/43200835548) đã PASS5 browser E2E thật +SQL assertions, cùng57 frontend unit và9 backend validation; không skip. Received rows được seed theo fixture SQL B07, không phải receipt creation API. Xem [F07 evidence](../docs/reviews/F07_B07_API_INTEGRATION.md). Không cần cài Java/DB lên Windows.

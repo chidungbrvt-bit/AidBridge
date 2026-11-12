@@ -2,7 +2,7 @@
 
 ## Kết luận và phạm vi
 
-**PARTIAL về nghiệm thu end-to-end; implementation frontend/API và kiểm thử HTTP contract đã hoàn thành.** Giữ F07 **In Review**, không Done. Không triển khai lại mock preview ngày11. Baseline main/khoa a300153 (PR10/11/12 đã merge); fetch không có code mới, working tree ban đầu sạch. Không đổi backend, contract, Fuji, ví, task F08 hoặc trạng thái task khác.
+**PASS F07 trong phạm vi đã kiểm chứng: Next production → Spring Boot HTTP → PostgreSQL thật trên CI.** Run [43200835548](https://github.com/chidungbrvt-bit/AidBridge/actions/runs/43200835548), SHA `80e0b88867643851e17a3bf9fd1b2b9e80ba8650`:57 unit frontend +9 backend validation +5 browser E2E +1 Java host test PASS, 0 skip/error/failure. [Bằng chứng công khai](evidence/f07-real-e2e.ci.json). Các kết luận PARTIAL/NOT RUN ở nhật ký chuẩn bị bên dưới là lịch sử đã được thay thế cho CI, không phải kết quả hiện hành. Giữ F07 **In Review**, không Done. Không triển khai lại mock preview ngày11. Baseline main/khoa a300153 (PR10/11/12 đã merge); fetch không có code mới, working tree ban đầu sạch. Không đổi backend, contract, Fuji, ví, task F08 hoặc trạng thái task khác.
 
 Routes trong **frontend Next.js chung**, mặc định real mode:
 
@@ -40,12 +40,12 @@ Pending key/body nằm trong bộ nhớ component; layout chung giữ được q
 | Browser trên Next dev + production build | 14 PASS trên production build (13 ca trước đó cũng PASS trên dev build): G01→G02→G03, non-member donor, no dev controls, reversed items order, 400/403/409/504, 401, CSRF retry, stale receipt, pagination, empty/error, desktop/mobile/keyboard |
 | Vite preview regression | 21 PASS, gồm history mở trước write hoàn tất, receipt/dataRevision, stale conflict và repeated504 cancellation |
 | Trình duyệt thật không intercept | Đã mở `/campaigns`, chuyển `/login`, hiện REAL API và báo không kết nối session service; fail-closed, không hiện dữ liệu mock |
-| Spring Boot + PostgreSQL HTTP E2E với UI mới | **NOT RUN**; không có listener8081/5432/5433 hoặc DB env được cấp trên máy Khoa |
-| Donor grant dev / campaign published thật | **NOT VERIFIED**; không có DB/API được phép để đọc seed hoặc xác minh dữ liệu |
-| CI cho các thay đổi F07 chưa push | **NOT RUN**; workflow đã có trên main kiểm thử C07, không chứng minh UI mới chưa được push. Không push/PR trong lượt này theo user |
+| Spring Boot + PostgreSQL HTTP E2E với UI mới | **PASS trên CI**,5 browser scenarios qua Next production và backend HTTP thật; local Windows không chạy Java/DB |
+| Donor grant / campaign published | **PASS trong CI schema riêng**, donor grant SQL test + create/approve/publish qua API thật. Môi trường dev lâu dài của nhóm vẫn riêng, chưa cung cấp trên máy Khoa |
+| CI F07 real E2E | **PASS run43200835548**; workflow no-skip gate kiểm Java, Playwright JUnit và JSON SQL evidence. PR13 OPEN, không merge |
 | Blockchain checks | Không chạy lại, không gửi giao dịch hoặc bật worker |
 
-Browser contract tests dùng Playwright `page.route` với fixtures/model mock **chỉ trong test**, không có Spring Boot/PostgreSQL phía sau. PASS này chứng minh wiring của Next shell/session/shared client và error/retry UI, không chứng minh real backend authentication, cookie proxy, DB locks/concurrency hoặc outbox đã chạy end-to-end. Partial-receipt fixtures có received>0; B07 thật hiện received/delivered/confirmed còn0 đến B08–B10, không tự tạo receipt thật để demo.
+**Phân biệt hai bộ test:** Browser contract tests dùng Playwright `page.route` với fixtures/model mock **chỉ trong test**, không có Spring Boot/PostgreSQL phía sau. PASS này chứng minh wiring của Next shell/session/shared client và error/retry UI, không chứng minh real backend authentication, cookie proxy, DB locks/concurrency hoặc outbox đã chạy end-to-end. Partial-receipt fixtures có received>0; B07 thật hiện received/delivered/confirmed còn0 đến B08–B10, không tự tạo receipt thật để demo.
 
 Đã sửa regression do khóa My pledges cả khi G01 đang gửi; test race cũ PASS lại. Error copy giữ thông báo cũ kèm status/code để regression không mất semantics. Test locator lỗi đầu do Next route-announcer cũng có role alert đã scope lại đúng error. Hai browser suites được chạy tuần tự sau một timeout scroll khi chạy đồng thời; không force-click hoặc bỏ assertions. CSRF test so sánh refresh tăng1 lần, không cố định tổng lượt bootstrap trong Strict Mode.
 
@@ -69,7 +69,7 @@ Hiện đã để production server tại http://127.0.0.1:3000. Chưa có backe
 
 - Dũng: cung cấp môi trường B07 dev được phép và tài khoản donor ACTIVE/donor_enabled=true, published campaign có capacity; API P03/P04/G01/G02/G03 đã ở main. Seed là dev data theo D52/D54, không migration giả production. Chạy E2E thật: login→multi-line pledge→G02→cancel outstanding→G02/P04 refetch, cùng 403/CSRF/409/replay/outbox; xác minh DB atomicity và ownership. Không cần sửa backend trong lượt này.
 - Minh: review thay đổi giới hạn trong shell/login, donor route group/layout và shared client methods; không dựa item index hoặc platform role. Không copy mock controls vào app. Sau khi có env Dũng, kiểm cookie/CSRF đi qua proxy thật và các task frontend khác vẫn chạy.
-- Khoa: local commit F07, chưa push/PR; giữ In Review/PARTIAL end-to-end. Không bắt đầu F08.
+- Khoa: đã push F07 + E2E CI, [PR13](https://github.com/chidungbrvt-bit/AidBridge/pull/13) chờ review; giữ In Review, technical/E2E PASS theo phạm vi CI, không Done hoặc merge. Không bắt đầu F08.
 
 ## File/cache phát sinh
 
@@ -89,3 +89,20 @@ CI run43199326961 đầu: frontend57 unit và backend9 validation tests PASS; Do
 
 
 CI run43200170033 sau sửa harness đã chạy PostgreSQL/Spring Boot/Next thật:4/5 browser scenarios PASS (G01/G02/G03 + DB/audit/outbox, received409, G01/G03 commit504/replay). Test thứ5 FAIL vì tìm notice donor ở `/campaigns` list thay vì trang có pledge form; sửa navigation test tới `/campaigns/{id}` rồi giữ nguyên assertions về CSRF400/403, revoke grant và SQL no-write. Không thay business logic/constraint hoặc coi4/5 là E2E PASS.
+
+
+## Nghiệm thu CI thật — kết quả hiện hành
+
+[Run43200835548](https://github.com/chidungbrvt-bit/AidBridge/actions/runs/43200835548) PASS tại SHA80e0b88. [JSON evidence](evidence/f07-real-e2e.ci.json) lấy trực tiếp từ artifact của run thành công, chỉ chứa public test IDs/counts, không chứa credentials. Tất cả5 kịch bản thực sự chạy, không skip:
+
+1. Login/session HttpOnly cookie/CSRF thật, donor không có membership; G01 hai dòng → G02 own history → G03 hủy một phần; SQL xác nhận contribution, cancelled quantity và một audit/outbox PENDING cho mỗi logical mutation.
+2. Seed received rows trong PostgreSQL bằng đúng fixture ContributionCancelIT sau khi form mở; G03 thật trả409, UI refetch received/outstanding, cancelled vẫn0 và không tạo reduction job.
+3. G01 route.fetch tới backend thật và SQL xác nhận đã commit rồi mới trả504; retry exact key/body nhận Idempotent-Replayed, chỉ một contribution/job.
+4. G03 commit cancellation1 rồi mất response504; retry exact key/body vẫn cancelled1, chỉ một reduction audit/outbox.
+5. Request không CSRF trả403, quantity0 trả400; thu hồi donor grant trong DB test khiến UI disable và API pledge/history403; SQL không phát sinh contribution.
+
+Không mock success HTTP trong bộ donor-real. Java bootstrap dùng full Spring Boot production controllers/services/JPA/Flyway với PostgreSQL16; không MockMvc/test controller. Case được tạo/duyệt/campaign publish qua API helper có sẵn, donor seed và receipt rows chỉ trong schema b04_it_* thuộc CI disposable DB. Mọi worker blockchain đều tắt và được Java context assertion kiểm tra.
+
+Đã khắc phục2 lỗi harness, không cần sửa business rules B07 hoặc code frontend: readiness dùng HTTP/1.1/child log capture để tránh Maven fork stdout; grant UI assertion được chuyển từ campaign list sang đúng pledge page. Run trước FAIL được giữ làm lịch sử, không bỏ assertions hoặc nới gate.
+
+**Giới hạn còn lại:** received fixture không phải B08/R01 end-to-end; không kiểm Fuji, worker C05 hoặc giao hàng vật lý. CI proof không provisioning DB/account dev lâu dài trên máy nhóm, không tuyên bố production-ready. Team/cross-owner review và kiểm thử các task khác vẫn riêng; F07 giữ In Review. PR13 không được merge trong lượt này.
