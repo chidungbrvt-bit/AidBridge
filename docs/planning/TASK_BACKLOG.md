@@ -545,6 +545,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Phối hợp cụ thể:** Minh ghép API/status UI; Dũng hỗ trợ DTO/auth/errors, Khoa xác nhận chain status/hash/link. Hash vừa gửi chưa được hiển thị confirmed.
 - **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Hỗ trợ Dũng (12/11/2026):** lập bảng trạng thái audit kỳ vọng `docs/reviews/F05_AUDIT_STATUS_EXPECTATIONS.md` (8 tình huống, GAP-1..7). Chưa có bằng chứng Fuji nên bảng chỉ dùng với fixture; GAP-1..3 (audit-trail, txHash/explorerUrl, trạng thái chain sống) chặn F05. Không phải Done.
 
 ### F06 - Campaign multi-item UI
 
