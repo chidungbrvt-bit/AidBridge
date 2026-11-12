@@ -2,6 +2,8 @@
 
 Ngày tạo: 03/11/2026. Cập nhật: 07/11/2026. Người duy trì: Dũng (B). Status: **32 tasks Not Started, B01 In Review, B02/B03/B04 In Progress**. USER_CONFIRMED: từng phần user/security, B01 documentation, B02 phần1 PostgreSQL setup, B03 scoped fixes/tests và B04 Beneficiary entity/annotations; quyền này không tự mở rộng sang full CRUD/deploy/purchase. Status dựa trên bằng chứng hiện có, không đổi owner/estimate/deadline.
 
+Cập nhật riêng Minh 12/11/2026: F03/F04 **In Review**, theo yêu cầu triển khai và merge/PR của user. Đoạn tổng hợp 07/11 phía trên là lịch sử; xem bảng và evidence từng task cho trạng thái mới. F05 chưa triển khai tiếp, chờ C05 worker và API chain projection thật.
+
 ## Thành viên và phối hợp tích hợp
 
 - B = **Dũng — Backend**; C = **Khoa — Blockchain & Integration**; F = **Minh — Frontend & Product**. Các mã task không đổi.
@@ -50,8 +52,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | C12 | Submission | Khoa (C) | Dũng / Minh | M | 3 | C11 | 2026-11-22 | 2026-11-21 | Not Started |
 | F01 | Validation | Minh (F) | Dũng / Khoa | M | 2 | Planning review | 2026-11-03 | 2026-11-03 | In Review |
 | F02 | Design | Minh (F) | Dũng / Khoa | M | 4 | B01 | 2026-11-05 | 2026-11-05 | In Review |
-| F03 | P0-01 | Minh (F) | Dũng / Khoa | M | 4 | F02, B03 | 2026-11-06 | 2026-11-06 | Not Started |
-| F04 | P0-02/P0-03 | Minh (F) | Dũng / Khoa | L | 6 | F03, B04, B05 | 2026-11-08 | 2026-11-08 | Not Started |
+| F03 | P0-01 | Minh (F) | Dũng / Khoa | M | 4 | F02, B03 | 2026-11-06 | 2026-11-06 | In Review |
+| F04 | P0-02/P0-03 | Minh (F) | Dũng / Khoa | L | 6 | F03, B04, B05 | 2026-11-08 | 2026-11-08 | In Review |
 | F05 | P0-06 | Minh (F) | Dũng / Khoa | L | 4 | F04, C05 | 2026-11-09 | 2026-11-08 | Not Started |
 | F06 | P0-04 | Minh (F) | Dũng / Khoa | M | 6 | F02, B06 | 2026-11-11 | 2026-11-11 | Not Started |
 | F07 | P0-04 | Minh (F) | Dũng / Khoa | M | 5 | F06, B07 | 2026-11-13 | 2026-11-13 | In Review |
@@ -510,11 +512,11 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Dependencies:** F02, B03; mock prework allowed, integrated acceptance waits.
 - **Schedule:** allocated 2026-11-05 through 2026-11-06; deadline 2026-11-06, Asia/Bangkok.
 - **Description / expected behavior:** Next shell/session client; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
-- **Expected output files (future, not created):** frontend package/config/lock; app/login; typed API/session client.
+- **Output files:** frontend package/config/lock; app/login; typed API/session client; tests và handoff 12/11.
 - **Acceptance criteria:** After coding approval, same-origin proxy/CSRF/login/logout/nav; no browser secrets/localStorage auth; handle401/403.
 - **Required tests:** Auth UI smoke, invalid login/logout, E2E06/07 basics.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** **In Review (12/11/2026)**. Nối tiếp Minh `79b78b3`, merge main `051e40f` bằng `dbeda4e`; real mode mặc định, same-origin `/api`, CSRF/session cookie và menu từ active `/me`. `npm test` F03/F04 chung **31 pass/0 fail**; `npm run typecheck` PASS; `npm run build` Webpack PASS ở mock và real mode. `npm run test:e2e -- --max-failures=1` **13 mock pass/0 fail, 1 real skipped** (Chrome, production mock server). `node scripts/smoke-real.mjs`: **Not Run** vì thiếu môi trường/accounts; user xác nhận backend/PostgreSQL chỉ ở máy Dũng, probe local8081 connection refused. Các lỗi môi trường ở lần chạy trước được ghi riêng trong [verification](../handoffs/VERIFICATION_2026-11-12.json), không tính là pass. Chờ Dũng review auth/API và real acceptance; actual human effort/ngày hoàn thành chưa có; chưa Done.
 
 ### F04 - Case and verifier UI
 
@@ -524,11 +526,11 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Dependencies:** F03, B04, B05; mock prework allowed, integrated acceptance waits.
 - **Schedule:** allocated 2026-11-07 through 2026-11-08; deadline 2026-11-08, Asia/Bangkok.
 - **Description / expected behavior:** Case and verifier UI; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
-- **Expected output files (future, not created):** frontend case list/new/detail forms/review panels; tests.
+- **Output files:** frontend case list/new/detail/edit forms/review panels; shared client/mock; workflow unit và browser tests.
 - **Acceptance criteria:** Case/consent/multi-need/evidence inputs, other-user review; self rejection/stale version handled; private error data absent.
 - **Required tests:** BR02-N, BR09-P; E2E02/07; loading/empty/400/403/409.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** **In Review (12/11/2026)**. C01–C05 + V01–V03 UI/client theo DTO B04/B05 main `051e40f`: minimal summary, creator.fullName, fixtures.title, expectedVersion0, local chain NOT_APPLICABLE; thiếu chain/history ghi UNKNOWN/unavailable. Creator edit → resubmit → người khác review; 403 self-review;409 refresh; giữ payload/key qua unknown response và CSRF retry. `npm test` F03/F04 chung **31/31** (không cộng lặp với F03); typecheck/build mock+real PASS; Playwright **13 mock pass,0 fail,1 real skipped**. Regression F07 không sửa source: `node --import tsx --test features/donor/model.test.ts` **18/18**. Real smoke/DB/outbox/Fuji **Not Run**; không sửa backend. [Bàn giao và điểm cần Dũng review](../handoffs/MINH_F03_F04_2026-11-12.md); chờ real HTTP/cross-owner approval. F05 để sau C05 worker/API. Actual human effort/ngày hoàn thành chưa có; chưa Done.
 
 ### F05 - Audit vertical slice UI
 
