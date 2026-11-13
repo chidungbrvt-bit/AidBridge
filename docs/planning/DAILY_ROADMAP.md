@@ -113,11 +113,11 @@ Theo [backlog](TASK_BACKLOG.md), C01–C10 và F01–F10 có tổng estimate 92h
 
 ## Gói demo ML (D51) — tính riêng, ngoài 168h
 
-Cập nhật 11/11/2026. User yêu cầu một bản demo ML nộp kèm BTC, ghi rõ chỉ là bản demo và cần thời gian huấn luyện để thành bản chính thức. Gói này thay mục "ML offline" 4h của D47: tổng 9h (Dũng 4h, Minh 4,5h, Khoa 0,5h), tức thêm 5h (Dũng +2h, Minh +2,5h, Khoa +0,5h). Giờ thêm lấy từ dự phòng, không tăng quỹ 64h/người; cần xác nhận lại khi chốt actuals. Gói nằm ngoài sáu P0 và ngoài Definition of Done của P0 (xem [D51](DECISION_LOG.md#quyết-định)).
+Cập nhật 11/11/2026. User yêu cầu một bản demo ML nộp kèm BTC, ghi rõ chỉ là bản demo và cần thời gian huấn luyện để thành bản chính thức. Gói này thay mục "ML offline" 4h của D47: tổng 9h (Dũng 7h, Minh 1,5h, Khoa 0,5h), tức thêm 5h so với D47 (Dũng +5h, Minh −0,5h, Khoa +0,5h). Ngày 12/11 Dũng nhận ML-1 từ Minh để giảm tải cho Minh; quy tắc cắt và tổng giờ không đổi. Giờ thêm lấy từ dự phòng, không tăng quỹ 64h/người; cần xác nhận lại khi chốt actuals. Gói nằm ngoài sáu P0 và ngoài Definition of Done của P0 (xem [D51](DECISION_LOG.md#quyết-định)).
 
 | Task | Người | Giờ | Ngày | Việc cần làm | Đầu ra |
 |---|---|---:|---|---|---|
-| ML-1 | Minh | 3h | 12–13/11 | Kiểm tra Python và thư viện trên máy. Viết đặc tả bài toán, đặc trưng không PII, nhãn và thước đo. Dựng bộ sinh dữ liệu giả lập quy mô rộng và luật cơ sở. | Đặc tả, bộ sinh dữ liệu, dữ liệu mẫu, luật cơ sở |
+| ML-1 | Dũng | 3h | 12–13/11 | Kiểm tra Python và thư viện trên máy. Viết đặc tả bài toán, đặc trưng không PII, nhãn và thước đo. Dựng bộ sinh dữ liệu giả lập quy mô rộng và luật cơ sở. | Đặc tả, bộ sinh dữ liệu, dữ liệu mẫu, luật cơ sở |
 | ML-2 | Dũng | 3h | 13–15/11 | Huấn luyện Logistic Regression, so với luật cơ sở. Chạy nhiều seed và kiểm định chéo, phân tích ca sai, chỉ số theo nhóm giả lập. Đóng gói thành một lệnh chạy lại. | Kết quả, script, test pipeline |
 | ML-3 | Dũng | 1h | 20/11 | Ghi giới hạn trung thực và phần "để thành bản chính thức cần gì". | Tài liệu giới hạn và lộ trình |
 | ML-4 | Minh | 1,5h | 16–17/11 | Trang demo tĩnh hiển thị điểm gợi ý tính sẵn, có biểu ngữ DEMO, không đọc hay ghi backend. | Trang demo |
