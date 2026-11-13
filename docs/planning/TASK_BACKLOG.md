@@ -2,7 +2,7 @@
 
 Ngày tạo: 03/11/2026. Cập nhật: 07/11/2026. Người duy trì: Dũng (B). Status: **32 tasks Not Started, B01 In Review, B02/B03/B04 In Progress**. USER_CONFIRMED: từng phần user/security, B01 documentation, B02 phần1 PostgreSQL setup, B03 scoped fixes/tests và B04 Beneficiary entity/annotations; quyền này không tự mở rộng sang full CRUD/deploy/purchase. Status dựa trên bằng chứng hiện có, không đổi owner/estimate/deadline.
 
-Cập nhật riêng Minh 12/11/2026: F03/F04 đã merge qua PR #11 và tiếp tục In Review cho nghiệm thu thật. F05 fixture và F06 P01–P04 UI đã bàn giao kiểm tra; F05 live còn chờ audit read API và job Fuji. Xem [bàn giao Minh](../handoffs/MINH_F05_F06_2026-11-12.md). Đoạn tổng hợp 07/11 phía trên là lịch sử.
+Cập nhật riêng Minh 13/11/2026: F03/F04 đã merge qua PR #11, F05 fixture và F06 qua PR #17. F05 live còn chờ T01/T02 và mapping case từ bằng chứng Fuji PR #18. F09 D02/S01/S03 đang In Review trong phạm vi fixture nối F08. Xem [bàn giao Minh](../handoffs/MINH_F09_2026-11-13.md). Đoạn tổng hợp 07/11 phía trên là lịch sử.
 
 ## Thành viên và phối hợp tích hợp
 
@@ -58,7 +58,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | F06 | P0-04 | Minh (F) | Dũng / Khoa | M | 6 | F02, B06 | 2026-11-11 | 2026-11-11 | In Review |
 | F07 | P0-04 | Minh (F) | Dũng / Khoa | M | 5 | F06, B07 | 2026-11-13 | 2026-11-13 | In Review |
 | F08 | P0-05 | Minh (F) | Dũng / Khoa | M | 5 | F04, B08, B09 | 2026-11-15 | 2026-11-15 | In Review |
-| F09 | P0-05/P0-06 | Minh (F) | Dũng / Khoa | L | 5 | F08, B10, C09 | 2026-11-18 | 2026-11-17 | Not Started |
+| F09 | P0-05/P0-06 | Minh (F) | Dũng / Khoa | L | 5 | F08, B10, C09 | 2026-11-18 | 2026-11-17 | In Review (fixture) |
 | F10 | Deployment | Minh (F) | Dũng / Khoa | L | 4 | F09, C10 | 2026-11-18 | 2026-11-18 | Not Started |
 | F11 | Quality | Minh (F) | Dũng / Khoa | L | 6 | F10, B11, C11 | 2026-11-20 | 2026-11-20 | Not Started |
 | F12 | Submission | Minh (F) | Dũng / Khoa | L | 5 | F11 | 2026-11-22 | 2026-11-22 | Not Started |
@@ -533,7 +533,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Acceptance criteria:** Case/consent/multi-need/evidence inputs, other-user review; self rejection/stale version handled; private error data absent.
 - **Required tests:** BR02-N, BR09-P; E2E02/07; loading/empty/400/403/409.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** **In Review (12/11/2026)**. C01–C05 + V01–V03 UI/client theo DTO B04/B05 main `051e40f`: minimal summary, creator.fullName, fixtures.title, expectedVersion0, local chain NOT_APPLICABLE; thiếu chain/history ghi UNKNOWN/unavailable. Creator edit → resubmit → người khác review; 403 self-review;409 refresh; giữ payload/key qua unknown response và CSRF retry. `npm test` F03/F04 chung **31/31** (không cộng lặp với F03); typecheck/build mock+real PASS; Playwright **13 mock pass,0 fail,1 real skipped**. Regression F07 không sửa source: `node --import tsx --test features/donor/model.test.ts` **18/18**. Real smoke/DB/outbox/Fuji **Not Run**; không sửa backend. [Bàn giao và điểm cần Dũng review](../handoffs/MINH_F03_F04_2026-11-12.md); chờ real HTTP/cross-owner approval. F05 để sau C05 worker/API. Actual human effort/ngày hoàn thành chưa có; chưa Done.
+- **Status / evidence:** **In Review (12/11/2026)**. C01–C05 + V01–V03 UI/client theo DTO B04/B05 main `051e40f`: minimal summary, creator.fullName, fixtures.title, expectedVersion0, local chain NOT_APPLICABLE; thiếu chain/history ghi UNKNOWN/unavailable. Creator edit → resubmit → người khác review; 403 self-review;409 refresh; giữ payload/key qua unknown response và CSRF retry. `npm test` F03/F04 chung **31/31** (không cộng lặp với F03); typecheck/build mock+real PASS; Playwright **13 mock pass,0 fail,1 real skipped**. Regression F07 không sửa source: `node --import tsx --test features/donor/model.test.ts` **18/18**. Real smoke/DB/outbox/Fuji **Not Run**; không sửa backend. [Bàn giao và điểm cần Dũng review](../handoffs/MINH_F03_F04_2026-11-12.md); chờ real HTTP/cross-owner approval. F05 fixture đã merge qua PR #17; live audit chờ API. Actual human effort/ngày hoàn thành chưa có; chưa Done.
 
 ### F05 - Audit vertical slice UI
 
@@ -549,7 +549,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
 - **Phối hợp cụ thể:** Minh ghép API/status UI; Dũng hỗ trợ DTO/auth/errors, Khoa xác nhận chain status/hash/link. Hash vừa gửi chưa được hiển thị confirmed.
 - **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
-- **Status / evidence:** In Review (fixture, 12/11/2026). `npm run test:e2e -- --project=mock` 15/15 pass chung với F03/F04/F06. Ba badge tách business/evidence và chain; confirmed minh họa bằng proof C05 độc lập. Live T01/T02, C05 worker job Fuji và review Dũng/Khoa chưa nghiệm thu. Chưa có số giờ thực tế hoặc ngày Done.
+- **Status / evidence:** In Review (fixture, 12/11/2026). `npm run test:e2e -- --project=mock` 15/15 pass chung với F03/F04/F06. Ba badge tách business/evidence và chain; confirmed minh họa bằng proof C05 độc lập. PR #18 bổ sung bằng chứng hai CaseVerified trên Fuji và xác nhận SQL từ Dũng; F05 live vẫn chờ mapping DB/case và T01/T02. Chưa có số giờ thực tế hoặc ngày Done.
 - **Hỗ trợ Dũng (12/11/2026):** [Ma trận audit](../reviews/F05_AUDIT_STATUS_EXPECTATIONS.md) mô tả 8 tình huống và các khoảng trống đọc chain. Proof C05 độc lập không phải job B05.
 
 ### F06 - Campaign multi-item UI
@@ -564,7 +564,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Acceptance criteria:** Sanitized browse, fixed units and five progress columns per item, draft private, no PII; publish UI in case detail.
 - **Required tests:** BR03-N, BR08-P/N; E2E06/07; loading/empty/retry.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** In Review (12/11/2026). Admin dùng case đã duyệt để tạo nháp nhiều mặt hàng, công bố và mở cùng campaign qua routes F07. P01–P04 dùng client same-origin, không phụ thuộc thứ tự item. `npm test` 57/57, typecheck và Playwright mock 15/15 pass. F06 real staff smoke còn chờ môi trường test và tài khoản, chưa có campaign thật từ lần chạy này. Chi tiết ở [bàn giao F05/F06](../handoffs/MINH_F05_F06_2026-11-12.md). Chưa có số giờ thực tế hoặc ngày Done.
+- **Status / evidence:** In Review (12/11/2026). Admin dùng case đã duyệt để tạo nháp nhiều mặt hàng, công bố và mở cùng campaign qua routes F07. P01–P04 dùng client same-origin, không phụ thuộc thứ tự item. `npm test` 57/57, typecheck và Playwright mock 15/15 pass. PR #17 đã merge; F06 real staff smoke còn chờ URL môi trường test và tài khoản ORG_ADMIN, chưa tạo campaign thật trong lượt Minh. Chi tiết ở [bàn giao F05/F06](../handoffs/MINH_F05_F06_2026-11-12.md). Chưa có số giờ thực tế hoặc ngày Done.
 
 ### F07 - Donor pledge/history/cancel
 
@@ -602,11 +602,11 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Dependencies:** F08, B10, C09; mock prework allowed, integrated acceptance waits.
 - **Schedule:** allocated 2026-11-15 through 2026-11-17; deadline 2026-11-18, Asia/Bangkok.
 - **Description / expected behavior:** Confirmation/dispute/full timeline; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
-- **Expected output files (future, not created):** frontend confirmation/dispute/resolve/close panels; full audit UI.
+- **Output hiện tại:** D02/S01/S03 trong Goods demo của F08, dùng chung dữ liệu fixture và totals. P05 close và timeline đọc API còn chờ backend.
 - **Acceptance criteria:** Separate reviewer, self blocked, dispute guard, all item target completion, public/internal audit separation; no false chain claim.
 - **Required tests:** BR06-N, BR07-N, BR10-P/N; E2E04/05/06.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Review (fixture, 13/11/2026). F09 nối luồng D01 với xác nhận độc lập, mở/giải quyết tranh chấp và VOID_DELIVERY. Xem [bàn giao và kết quả kiểm thử](../handoffs/MINH_F09_2026-11-13.md). Live HTTP/SQL/Fuji của F09 chưa chạy.
 
 ### F10 - Public hosting/recovery
 
