@@ -48,9 +48,9 @@ B01 consolidation04/11/2026: business audit event_type/function/Solidity event Ä
 | recordCommitmentReduction | Org relayer; envelope + commitmentRef | commitment exists same case/org; no business quantity math on-chain | CommitmentReduced |
 | recordGoodsReceipt | Org relayer; envelope + receiptRef,commitmentRef | commitment exists same case/org; receiptRef unique | GoodsReceived |
 | recordDelivery | Org relayer; envelope + deliveryRef | case verified, no open dispute, deliveryRef unique | DeliveryRecorded |
-| confirmDelivery | Org relayer; envelope + deliveryRef | recorded same org/case, not confirmed/voided; case no dispute | DeliveryConfirmed |
-| flagDispute | Org relayer; envelope + disputeRef,deliveryRef? | case exists; disputeRef unique; allows flag after confirmed delivery | DisputeFlagged |
-| resolveDispute | Org relayer; envelope + disputeRef,resolution,deliveryRef? | open dispute, valid resolution; void only referenced delivery; decrement open count | DisputeResolved / DeliveryVoided |
+| confirmDelivery | Org relayer; envelope + deliveryRef | delivery Recorded, same org/case; case no open dispute | DeliveryConfirmed |
+| flagDispute | Org relayer; envelope + disputeRef, deliveryRef (bytes32(0) = case-level) | verified case; disputeRef unique; delivery (if any) same org/case, not Voided; flag after Confirmed allowed; multiple open disputes allowed | DisputeFlagged |
+| resolveDispute | Org relayer; envelope + disputeRef, uint8 resolution (1 UPHOLD, 2 VOID_DELIVERY), deliveryRef (must equal stored) | dispute Open, same org/case; VOID needs stored deliveryRef â‰  0 and delivery Recorded/Confirmed; decrement open count | DisputeResolved; VOID: DeliveryVoided then DisputeResolved, one eventId/sequence |
 | getEventRecord | Readonly; eventId | return type/org/case/payload digest/sequence, not full history | none |
 | getCaseSummary | Readonly; caseRef | verified/openDisputeCount/lastChainSequence | none |
 
