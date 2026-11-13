@@ -1,6 +1,6 @@
 # AidBridge frontend — F03/F04
 
-Next.js App Router, TypeScript, Tailwind. Mặc định **API thật**, proxy cùng origin `/api` tới `http://127.0.0.1:8081`, không tự fallback sang mock. F05 chưa tích hợp, chờ worker C05 và projection API thật.
+Next.js App Router, TypeScript, Tailwind. Mặc định **API thật**, proxy cùng origin `/api` tới `http://127.0.0.1:8081`, không tự fallback sang mock. F05 có Audit preview bằng fixture. Timeline sống còn chờ T01/T02 và mapping case trong báo cáo Fuji.
 
 ## Chạy với backend trên máy Dũng
 
@@ -70,3 +70,9 @@ Xem [bàn giao F05/F06](../docs/handoffs/MINH_F05_F06_2026-11-12.md) và [bàn g
 [PR13](https://github.com/chidungbrvt-bit/AidBridge/pull/13) có workflow `F07 real backend E2E`: PostgreSQL16 + JDK21 trên runner, `DonorUiE2EIT` tạo fixture qua API và khởi động Next production proxy tới Spring Boot thật. Project `donor-real` chỉ bật khi AIDBRIDGE_F07_REAL_E2E=true và được Java test truyền schema/account test qua env; không dùng credentials thật hoặc seed production. Không chạy trực tiếp bộ này trên DB dev chưa được cấp.
 
 [Run43200835548](https://github.com/chidungbrvt-bit/AidBridge/actions/runs/43200835548) đã PASS5 browser E2E thật +SQL assertions, cùng57 frontend unit và9 backend validation; không skip. Received rows được seed theo fixture SQL B07, không phải receipt creation API. Xem [F07 evidence](../docs/reviews/F07_B07_API_INTEGRATION.md). Không cần cài Java/DB lên Windows.
+
+## Xác nhận giao hàng và tranh chấp (F09 fixture)
+
+Mở **Goods demo · MOCK** trong mock mode. Load S2, ghi D01 thành công bằng actor Field volunteer và chọn evidence. Trong **Delivery confirmation and disputes**, chọn D02 và tick đúng toàn bộ evidence version. Actor Independent delivery confirmer có thể xác nhận hoặc yêu cầu xem xét. Actor Delivery recorder with confirmer role bị chặn tự xác nhận.
+
+S01 mở tranh chấp cấp hồ sơ hoặc gắn một delivery. S03 dùng actor Platform admin để Uphold hoặc Void delivery. Giữ nguyên dữ liệu nhận hàng khi void; UI tính lại số đã giao và đã xác nhận. Các thao tác dùng chung dữ liệu mô phỏng trên trang. Xem [bàn giao F09](../docs/handoffs/MINH_F09_2026-11-13.md).
