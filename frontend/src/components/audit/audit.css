@@ -1,0 +1,44 @@
+.audit-timeline {
+  list-style: none;
+  padding-inline-start: 1.25rem;
+  margin: 0;
+  border-inline-start: 2px solid #ccd5cc;
+}
+
+.audit-event {
+  padding: 1rem 0;
+  position: relative;
+}
+
+.audit-event + .audit-event {
+  border-top: 1px solid #dce3df;
+}
+
+.audit-event::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: -1.62rem;
+  top: 1.65rem;
+  width: .65rem;
+  height: .65rem;
+  border-radius: 50%;
+  background: #376355;
+}
+
+.audit-event-header {
+  flex-wrap: wrap;
+  margin-bottom: .75rem;
+}
+
+.audit-event time {
+  font-size: .85rem;
+}
+
+.audit-proof {
+  overflow-wrap: anywhere;
+  margin-top: .75rem;
+}
+
+.audit-badge.pending_on_chain { color: #704310; background: #fff2d5; }
+.audit-badge.failed_on_chain { color: #921e2d; background: #ffe7ea; }
+.audit-badge.confirmed_on_chain { color: #195d44; background: #def7e9; }

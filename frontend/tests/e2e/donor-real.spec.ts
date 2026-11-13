@@ -85,7 +85,7 @@ test('real stale receipt409: SQL receipt fixture arrives after form opens; no ca
   const receipt=randomUUID();
   // Exactly the receipt fixture used by ContributionCancelIT; no fake R01 endpoint or production seed.
   sql(`BEGIN; INSERT INTO goods_receipts(id,contribution_id,received_by,idempotency_key) VALUES('${receipt}','${id(saved.id)}','${id(recorder)}','${randomUUID()}');
-    INSERT INTO goods_receipt_items(id,goods_receipt_id,contribution_item_id,received_quantity) VALUES('${randomUUID()}','${receipt}','${id(line.id)}',2); COMMIT;`);
+    INSERT INTO goods_receipt_items(id,goods_receipt_id,contribution_id,contribution_item_id,received_quantity) VALUES('${randomUUID()}','${receipt}','${id(saved.id)}','${id(line.id)}',2); COMMIT;`);
   const rejected=page.waitForResponse(r=>r.url().includes(`/api/commitments/${saved.id}/cancellations`) && r.request().method()==='POST');
   await panel.getByRole('button',{name:'Cancel selected goods',exact:true}).click();expect((await rejected).status()).toBe(409);
   await expect(panel.getByRole('alert')).toContainText('409 Conflict');

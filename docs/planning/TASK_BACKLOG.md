@@ -2,7 +2,7 @@
 
 Ngày tạo: 03/11/2026. Cập nhật: 07/11/2026. Người duy trì: Dũng (B). Status: **32 tasks Not Started, B01 In Review, B02/B03/B04 In Progress**. USER_CONFIRMED: từng phần user/security, B01 documentation, B02 phần1 PostgreSQL setup, B03 scoped fixes/tests và B04 Beneficiary entity/annotations; quyền này không tự mở rộng sang full CRUD/deploy/purchase. Status dựa trên bằng chứng hiện có, không đổi owner/estimate/deadline.
 
-Cập nhật riêng Minh 12/11/2026: F03/F04 **In Review**, theo yêu cầu triển khai và merge/PR của user. Đoạn tổng hợp 07/11 phía trên là lịch sử; xem bảng và evidence từng task cho trạng thái mới. F05 chưa triển khai tiếp, chờ C05 worker và API chain projection thật.
+Cập nhật riêng Minh 13/11/2026: F03/F04 đã merge qua PR #11, F05 fixture và F06 qua PR #17. F05 live còn chờ T01/T02 và mapping case từ bằng chứng Fuji PR #18. F09 D02/S01/S03 đang In Review trong phạm vi fixture nối F08. Xem [bàn giao Minh](../handoffs/MINH_F09_2026-11-13.md). Đoạn tổng hợp 07/11 phía trên là lịch sử.
 
 ## Thành viên và phối hợp tích hợp
 
@@ -33,7 +33,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | B05 | P0-03 | Dũng (B) | Khoa / Minh | L | 4 | B04, C01 | 2026-11-08 | 2026-11-08 | In Review |
 | B06 | P0-04 | Dũng (B) | Khoa / Minh | M | 6 | B05 | 2026-11-10 | 2026-11-10 | In Review |
 | B07 | P0-04 | Dũng (B) | Khoa / Minh | L | 7 | B06 | 2026-11-13 | 2026-11-13 | In Review |
-| B08 | P0-05 | Dũng (B) | Khoa / Minh | M | 5 | B07 | 2026-11-14 | 2026-11-14 | Not Started |
+| B08 | P0-05 | Dũng (B) | Khoa / Minh | M | 5 | B07 | 2026-11-14 | 2026-11-14 | Testing |
 | B09 | P0-05 | Dũng (B) | Khoa / Minh | L | 5 | B08 | 2026-11-15 | 2026-11-15 | Not Started |
 | B10 | P0-05 | Dũng (B) | Khoa / Minh | L | 6 | B09 | 2026-11-18 | 2026-11-17 | Not Started |
 | B11 | Quality | Dũng (B) | Khoa / Minh | L | 6 | B03, B04, B05, B06, B07, B08, B09, B10 | 2026-11-20 | 2026-11-20 | Not Started |
@@ -45,7 +45,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | C05 | P0-03/P0-06 | Khoa (C) | Dũng / Minh | L | 6 | B05, C04 | 2026-11-09 | 2026-11-08 | Blocked |
 | C06 | P0-04/P0-05/P0-06 | Khoa (C) | Dũng / Minh | L | 6 | C03 | 2026-11-11 | 2026-11-11 | In Progress |
 | C07 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C05 | 2026-11-14 | 2026-11-14 | In Review |
-| C08 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C06, C07 | 2026-11-15 | 2026-11-15 | Not Started |
+| C08 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C06, C07 | 2026-11-15 | 2026-11-15 | In Progress |
 | C09 | P0-06 | Khoa (C) | Dũng / Minh | M | 3 | C08 | 2026-11-16 | 2026-11-16 | Not Started |
 | C10 | P0-05/P0-06 | Khoa (C) | Dũng / Minh | L | 4 | B08, B09, C08 | 2026-11-17 | 2026-11-17 | Not Started |
 | C11 | Quality | Khoa (C) | Dũng / Minh | L | 6 | C06, C07, C08, C09, C10 | 2026-11-20 | 2026-11-20 | Not Started |
@@ -54,11 +54,11 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | F02 | Design | Minh (F) | Dũng / Khoa | M | 4 | B01 | 2026-11-05 | 2026-11-05 | In Review |
 | F03 | P0-01 | Minh (F) | Dũng / Khoa | M | 4 | F02, B03 | 2026-11-06 | 2026-11-06 | In Review |
 | F04 | P0-02/P0-03 | Minh (F) | Dũng / Khoa | L | 6 | F03, B04, B05 | 2026-11-08 | 2026-11-08 | In Review |
-| F05 | P0-06 | Minh (F) | Dũng / Khoa | L | 4 | F04, C05 | 2026-11-09 | 2026-11-08 | Not Started |
-| F06 | P0-04 | Minh (F) | Dũng / Khoa | M | 6 | F02, B06 | 2026-11-11 | 2026-11-11 | Not Started |
+| F05 | P0-06 | Minh (F) | Dũng / Khoa | L | 4 | F04, C05 | 2026-11-09 | 2026-11-08 | In Review (fixture) |
+| F06 | P0-04 | Minh (F) | Dũng / Khoa | M | 6 | F02, B06 | 2026-11-11 | 2026-11-11 | In Review |
 | F07 | P0-04 | Minh (F) | Dũng / Khoa | M | 5 | F06, B07 | 2026-11-13 | 2026-11-13 | In Review |
 | F08 | P0-05 | Minh (F) | Dũng / Khoa | M | 5 | F04, B08, B09 | 2026-11-15 | 2026-11-15 | In Review |
-| F09 | P0-05/P0-06 | Minh (F) | Dũng / Khoa | L | 5 | F08, B10, C09 | 2026-11-18 | 2026-11-17 | Not Started |
+| F09 | P0-05/P0-06 | Minh (F) | Dũng / Khoa | L | 5 | F08, B10, C09 | 2026-11-18 | 2026-11-17 | In Review (fixture) |
 | F10 | Deployment | Minh (F) | Dũng / Khoa | L | 4 | F09, C10 | 2026-11-18 | 2026-11-18 | Not Started |
 | F11 | Quality | Minh (F) | Dũng / Khoa | L | 6 | F10, B11, C11 | 2026-11-20 | 2026-11-20 | Not Started |
 | F12 | Submission | Minh (F) | Dũng / Khoa | L | 5 | F11 | 2026-11-22 | 2026-11-22 | Not Started |
@@ -222,13 +222,16 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Dependencies:** B07; mock prework allowed, integrated acceptance waits.
 - **Schedule:** allocated 2026-11-13 through 2026-11-14; deadline 2026-11-14, Asia/Bangkok.
 - **Description / expected behavior:** Partial goods receipts; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
-- **Expected output files (future, not created):** backend receipt controller/service/repository; receipt migrations; ReceiptApiIT.
+- **Output:** R01 trong `ContributionController`, `GoodsReceiptService` và các receipt DTO/entity/repository, staff read projection, migration V14, `ReceiptApiIT`, `ReceiptSchemaIT` và `ReceiptRequestValidationTest`.
 - **Acceptance criteria:** Immutable receipt per contribution line; received<=active pledge; repeat once; same org/line; not delivered.
 - **Required tests:** BR05-P/N, BR11-P/N; IT05, IT10; receipt/cancel concurrency.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
 - **Phối hợp cụ thể:** Dũng giữ receipt quantities/immutable records; bàn giao snapshot nhận hàng cho Khoa map C10. Minh hiển thị received riêng pledged/delivered.
-- **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Ghi công hỗ trợ:** Chưa ghi nhận số giờ thực tế của Dũng, Khoa hoặc Minh.
+- **Status / evidence (13/11/2026):** Testing. Dũng duyệt triển khai. V14 giữ receipt lịch sử, ràng buộc sở hữu và bảo vệ bất biến. R01 nối transaction, replay và outbox `GOODS_RECEIVED`. Staff đọc `GET /api/org/cases/{id}` với `outstandingCommitments`. P03/P04 và G02 đọc tổng thực nhận. [B08 R01 handoff](../reviews/B08_R01_HANDOFF.md) có ví dụ, mã lỗi, luồng refresh và contract C10 cần review.
+- **Kiểm chứng 13/11 (Maven):** `mvn -o -B -ntp "-Dtest=ReceiptRequestValidationTest,ReceiptApiIT,ReceiptSchemaIT,ContributionCancelIT,ContributionConcurrencyIT,ContributionSchemaIT,CampaignApiIT" test` build thành công, 5 validation tests pass, 45 test entries PostgreSQL skip vì thiếu `AIDBRIDGE_TEST_DATABASE_*`. Hibernate repository bootstrap và shape staff JSON pass offline. `node docs/fixtures/f02/verify-f02.mjs` pass 5 snapshots và 10 mock scenarios.
+- **Kiểm chứng 13/11 (IntelliJ):** Dũng xác nhận toàn bộ test đã chạy đều pass sau khi chạy bộ B08 với `aidbridge_test`, gồm `ReceiptApiIT` và `ReceiptSchemaIT`. Nguồn kết quả là xác nhận của Dũng trong chat, chưa có báo cáo IntelliJ để đối chiếu số test hoặc các lớp hồi quy đã chạy. Kết quả skip của lượt Maven ghi ở trên vẫn là lịch sử của lượt đó.
+- **Còn lại trước khi Done:** Khoa review payload/refs/sequence `GOODS_RECEIVED`. Minh xác nhận F08 gọi R01 và refresh staff view với backend thật. F08 browser E2E và Fuji receipt sync chưa có kết quả cho R01. Fuji receipt sync thuộc C10.
 
 ### B09 - Delivery records/failed attempts
 
@@ -367,6 +370,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Phối hợp cụ thể:** Dũng làm phần backend verify+SQL audit/job và hỗ trợ trực tiếp DTO/repository/REST/Java glue; Khoa làm Web3j/ABI/signing/Fuji/exact receipt-event verification. Ghép ngay sau B03–B05, không chờ backend hoàn tất.
 - **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
 - **Status / evidence (11/11/2026):** Blocked cho nghiệm thu full C05; kết quả ngày 11/11 **PARTIAL**, proof contract Fuji độc lập PASS. [C05 receipt review](../reviews/C05_FUJI_RECEIPT_REVIEW.md) và [proof JSON](../fixtures/c05/fuji-case-verified.proof.json): tx `0xc3b02934afb1f29816836fb22146dbc350202d3b2a9e8dbbb19c2fd2e7e8c00f`, block60893112/status1, đúng chain43113/registry/Relayer/CaseVerified envelope, calldata/canonical block/getters khớp. Compile và61 Hardhat tests PASS;46 verifier tests PASS; C01 --ethers và C04 readback PASS. Không sửa contract/backend hoặc ghi SQL CONFIRMED. `backendJobId=null`: chưa xác minh số job B05 thật vì không có DB env; worker/API projection chưa có trong checkout, organization binding chưa xác nhận. Dũng xác nhận DB/job/refs và phối hợp Java/DB/REST; Khoa tiếp tục adapter/receipt integration khi đầu vào sẵn sàng, Minh giữ trạng thái UI theo API thật. Chưa Java parity/DB crash/concurrency/HTTP E2E, chưa full acceptance/cross-owner review hoặc Done. Estimate/deadline gốc giữ nguyên; actual human effort chưa được cung cấp. Commit local được user cho phép, không push/PR/F07.
+- **Status / evidence (13/11/2026, Dũng chạy):** In Review. Job B05 thật trên `aidbridge_demo` (Flyway V13, một instance, signer D54 `0x95a9564899849CF566DE5713205C4B747F361f55`, registry `0x015D941c679b0c402c8262BE237adAD36cEf6726`): tạo hồ sơ (VOLUNTEER) → verify độc lập (VERIFIER) → job `CASE_VERIFIED` PENDING → worker → CONFIRMED, 1 attempt, nonce 0, tx `0x465140011495f85743088ada113097204a891e41bc0b985b15e653366cb8566a`, block 60959263. Kiểm chứng độc lập `contracts/scripts/c05-proof.mjs` (`collectProof`, runtime C03): PASS 17 checks; orgRef/caseRef/eventId/sequence 1/commitment/schema 1, `getEventRecord`/`payloadDigest` và `getCaseSummary` (verified, lastChainSequence 1) khớp DB. Not Run: API audit-trail T01/T02, worker cho mốc C06, Java decode event mới (C10). Chờ Khoa nghiệm thu.
 
 ### C06 - Full milestone contract
 
@@ -381,6 +385,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Required tests:** BR08-P/N, BR11-P/N, BR12-P/N; SC04-11.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
 - **Status / evidence:** In Progress (11/11/2026, phần 1/2 do Dũng hỗ trợ; Khoa primary owner và reviewer). Thêm vào `AidRegistry.sol` (chỉ thêm; `git diff --numstat` 0 dòng xóa; code C03 giữ nguyên): `recordAidCommitment`, `recordCommitmentReduction`, `recordGoodsReceipt`, `recordDelivery`; event `AidCommitted`, `CommitmentReduced`, `GoodsReceived`, `DeliveryRecorded`; error `CaseNotVerified`, `CaseHasOpenDispute`, `RefAlreadyUsed`, `RefNotFound`, `RefOrganizationMismatch`, `RefCaseMismatch`. Guard order D49 `C01-O05`; `payloadDigest` gồm selector + envelope + ref riêng. Quyết định user 11/11: reduction không có ref riêng (phân biệt bằng `eventId`); reduction/receipt không bị chặn khi có dispute mở; `DeliveryStatus { None, Recorded }`, nối thêm `Confirmed`/`Voided` ngày 12/11. Test mới `contracts/test/AidRegistry.milestones.test.ts`: happy path, BR12-N, SC09, BR11-N/SC04, C01-T17, SC05 refs, SC10 input, ABI allowlist. Lệnh trong `contracts/`: `npm run compile` PASS; `npx hardhat test test/AidRegistry.milestones.test.ts` 86 passing, 1 pending; `npm test` 130 passing, 1 pending (44 test C03/C02 vẫn xanh). ABI xuất từ compiler artifact: `docs/fixtures/c06/AidRegistry.milestones.abi.json` (14 entry). Not Run: `CaseHasOpenDispute` (cần `flagDispute`); `confirmDelivery`, `flagDispute`, `resolveDispute` (12/11); Java/Web3j decode (C05); Fuji (C04); Khoa review. Actual effort chưa ghi nhận. Chưa Done.
+- **Phần 2 (12/11/2026, Dũng hỗ trợ; Khoa review):** thêm `confirmDelivery`, `flagDispute`, `resolveDispute`; event `DeliveryConfirmed`, `DisputeFlagged`, `DisputeResolved`, `DeliveryVoided`; 5 error mới; `DeliveryStatus` nối thêm `Confirmed`, `Voided` (`git diff --numstat` 441/1, dòng duy nhất đổi là enum). Test mới `contracts/test/AidRegistry.disputes.test.ts` (SC06–SC11, BR11-N, BR12-N/P). `npm run compile` OK; `npm test` 194 passing, 1 pending (it.skip SC07 cũ trong milestones test, SC07 đầy đủ nằm ở file mới); bytecode deployed 11.693 byte. ABI: `docs/fixtures/c06/AidRegistry.c06.abi.json`. Quyết định: D55. Not Run: decode Java/Web3j hai log VOID (C10), redeploy Fuji, Khoa review phần 1 và 2. Chưa Done.
 
 ### C07 - Durable signing/submission worker
 
@@ -397,10 +402,9 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Phối hợp cụ thể:** Dũng làm hoặc hỗ trợ entity/repository/migration, SQL transaction/query job và kiểm tra persistence/idempotency; Khoa phụ trách signer/nonce/signed bytes/broadcast/worker chain lifecycle. Không RPC trong SQL transaction; không viết trùng repository.
 - **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
 - **Status / evidence (12/11/2026):** In Review; technical gate PASS tại 903f952, CI compile + 22 unit + 18 integration tests PASS, 0 skip. Đã sửa receipt timeout, signer session serialization/fencing, one open attempt/signer/job (V13), nonce journal và recovery/binding/sequence guards. [C07 review](../reviews/C07_WORKER_SAFETY_REVIEW.md) chứa bằng chứng và điều kiện rollout. C05 Fuji end-to-end vẫn PARTIAL; chờ cross-owner acceptance, không Done. Actual effort chưa được cung cấp.
+- **Status / evidence (13/11/2026, Dũng chạy trên Fuji):** Kịch bản restart 1 PASS: `BLOCKCHAIN_POLL_INTERVAL_MS=60000`, verify hồ sơ `e31ce4d6-9163-4e4f-aee1-a06698ee7ce2`, giết cứng backend khi job/attempt SUBMITTED (nonce 1, tx `0x97104a33730c05210da67a21c96b271876d744fcb61fbab46a5d87cff925f98e`), khởi động lại → CONFIRMED cùng tx hash, cùng nonce, 1 attempt; `c05-proof.mjs` PASS. Kịch bản 2 (dừng giữa PREPARED và broadcast): Not Run trên Fuji, chỉ có bằng chứng CI C07. Not Run: stress dài hạn. In Review, chờ Khoa nghiệm thu.
 
 ### C08 - Receipt/retry/log reconciliation
-
-- **Baseline Java C08:** đã nhận riêng commit36108eb trên khoa; giữ các task khác/Task5 nguyên trạng, không đồng nhất receipt polling với log scanner chưa triển khai.
 
 - **Feature / priority:** P0-06 / P0.
 - **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
@@ -413,8 +417,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Required tests:** BR10-P/N, BR11-P/N; IT02-04/13; SC09.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
 - **Phối hợp cụ thể:** Dũng chuẩn bị DB fixtures/assertions và hỗ trợ Java polling/retry/DB update khi có giờ; Khoa quyết định receipt/log/context hợp lệ, nonce/attempt và reconciliation. Hai bạn cùng kiểm tra null/revert/mismatch/restart.
-- **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Ghi công hỗ trợ:** Dũng phụ trách kiểm thử Java/HTTP/PostgreSQL của Task 6, slot 2h theo lịch 13/11. Giờ làm thực tế chưa ghi nhận.
+- **Status / evidence (14/11/2026):** In Progress. Chạy lại Task 6 trên snapshot `f225385` cùng bốn file Java C08 trong working tree. `CaseVerifiedWorkerIT`, `CaseVerifiedReceiptVerifierTest`, `Web3jBlockchainAdapterTest` và `VerificationApiIT` đạt 40/40, gồm 31 test trên PostgreSQL biệt lập với Flyway V1–V14. IT03 xác nhận attempt gốc sau timeout và rebroadcast khớp signed bytes trong journal. IT13 xác nhận các mã lỗi khi receipt sai context hoặc revert. IT04 khôi phục đúng một lần qua receipt polling sau SQL rollback. **Not Run:** log replay end-to-end do thiếu scanner/cursor/kho observation và kiểm tra API đọc projection live. Khoa review chain/context và chốt đường ingest, Dũng hỗ trợ SQL transaction và `LogReplayIT` khi có đường ingest. Chờ Khoa nghiệm thu trong Task 7. [Bằng chứng và bàn giao C08](../reviews/C08_DUNG_RECOVERY_2026_11_13.md)
 
 ### C09 - Full sanitized audit API
 
@@ -532,7 +536,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Acceptance criteria:** Case/consent/multi-need/evidence inputs, other-user review; self rejection/stale version handled; private error data absent.
 - **Required tests:** BR02-N, BR09-P; E2E02/07; loading/empty/400/403/409.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** **In Review (12/11/2026)**. C01–C05 + V01–V03 UI/client theo DTO B04/B05 main `051e40f`: minimal summary, creator.fullName, fixtures.title, expectedVersion0, local chain NOT_APPLICABLE; thiếu chain/history ghi UNKNOWN/unavailable. Creator edit → resubmit → người khác review; 403 self-review;409 refresh; giữ payload/key qua unknown response và CSRF retry. `npm test` F03/F04 chung **31/31** (không cộng lặp với F03); typecheck/build mock+real PASS; Playwright **13 mock pass,0 fail,1 real skipped**. Regression F07 không sửa source: `node --import tsx --test features/donor/model.test.ts` **18/18**. Real smoke/DB/outbox/Fuji **Not Run**; không sửa backend. [Bàn giao và điểm cần Dũng review](../handoffs/MINH_F03_F04_2026-11-12.md); chờ real HTTP/cross-owner approval. F05 để sau C05 worker/API. Actual human effort/ngày hoàn thành chưa có; chưa Done.
+- **Status / evidence:** **In Review (12/11/2026)**. C01–C05 + V01–V03 UI/client theo DTO B04/B05 main `051e40f`: minimal summary, creator.fullName, fixtures.title, expectedVersion0, local chain NOT_APPLICABLE; thiếu chain/history ghi UNKNOWN/unavailable. Creator edit → resubmit → người khác review; 403 self-review;409 refresh; giữ payload/key qua unknown response và CSRF retry. `npm test` F03/F04 chung **31/31** (không cộng lặp với F03); typecheck/build mock+real PASS; Playwright **13 mock pass,0 fail,1 real skipped**. Regression F07 không sửa source: `node --import tsx --test features/donor/model.test.ts` **18/18**. Real smoke/DB/outbox/Fuji **Not Run**; không sửa backend. [Bàn giao và điểm cần Dũng review](../handoffs/MINH_F03_F04_2026-11-12.md); chờ real HTTP/cross-owner approval. F05 fixture đã merge qua PR #17; live audit chờ API. Actual human effort/ngày hoàn thành chưa có; chưa Done.
 
 ### F05 - Audit vertical slice UI
 
@@ -542,14 +546,14 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Dependencies:** F04, C05; mock prework allowed, integrated acceptance waits.
 - **Schedule:** allocated 2026-11-08 through 2026-11-08; deadline 2026-11-09, Asia/Bangkok.
 - **Description / expected behavior:** Audit vertical slice UI; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
-- **Expected output files (future, not created):** AuditTimeline; ChainStatus; ExplorerLink; UI tests.
+- **Output:** AuditTimeline và ba badge fixture tại `/audit-preview`; test trong `campaign-audit.spec.ts`. ExplorerLink cho live proof chờ T01/T02.
 - **Acceptance criteria:** Hash alone not confirmed; exact backend proof shown; business verification distinct from pending/reverted/mismatch; actual Fuji link.
 - **Required tests:** BR10-P/N; E2E05; honest record-integrity wording.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
 - **Phối hợp cụ thể:** Minh ghép API/status UI; Dũng hỗ trợ DTO/auth/errors, Khoa xác nhận chain status/hash/link. Hash vừa gửi chưa được hiển thị confirmed.
 - **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
-- **Hỗ trợ Dũng (12/11/2026):** lập bảng trạng thái audit kỳ vọng `docs/reviews/F05_AUDIT_STATUS_EXPECTATIONS.md` (8 tình huống, GAP-1..7). Chưa có bằng chứng Fuji nên bảng chỉ dùng với fixture; GAP-1..3 (audit-trail, txHash/explorerUrl, trạng thái chain sống) chặn F05. Không phải Done.
+- **Status / evidence:** In Review (fixture, 12/11/2026). `npm run test:e2e -- --project=mock` 15/15 pass chung với F03/F04/F06. Ba badge tách business/evidence và chain; confirmed minh họa bằng proof C05 độc lập. PR #18 bổ sung bằng chứng hai CaseVerified trên Fuji và xác nhận SQL từ Dũng; F05 live vẫn chờ mapping DB/case và T01/T02. Chưa có số giờ thực tế hoặc ngày Done.
+- **Hỗ trợ Dũng (12/11/2026):** [Ma trận audit](../reviews/F05_AUDIT_STATUS_EXPECTATIONS.md) mô tả 8 tình huống và các khoảng trống đọc chain. Proof C05 độc lập không phải job B05.
 
 ### F06 - Campaign multi-item UI
 
@@ -559,11 +563,11 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Dependencies:** F02, B06; mock prework allowed, integrated acceptance waits.
 - **Schedule:** allocated 2026-11-09 through 2026-11-11; deadline 2026-11-11, Asia/Bangkok.
 - **Description / expected behavior:** Campaign multi-item UI; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
-- **Expected output files (future, not created):** frontend app/campaigns/detail; GoodsProgressTable; publish panel.
+- **Output:** CampaignPanel trên case detail, GoodsProgressTable, P01/P02 trong API client chung, P03/P04 qua routes F07 có sẵn, fixtures và Playwright smoke.
 - **Acceptance criteria:** Sanitized browse, fixed units and five progress columns per item, draft private, no PII; publish UI in case detail.
 - **Required tests:** BR03-N, BR08-P/N; E2E06/07; loading/empty/retry.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Review (12/11/2026). Admin dùng case đã duyệt để tạo nháp nhiều mặt hàng, công bố và mở cùng campaign qua routes F07. P01–P04 dùng client same-origin, không phụ thuộc thứ tự item. `npm test` 57/57, typecheck và Playwright mock 15/15 pass. PR #17 đã merge; F06 real staff smoke còn chờ URL môi trường test và tài khoản ORG_ADMIN, chưa tạo campaign thật trong lượt Minh. Chi tiết ở [bàn giao F05/F06](../handoffs/MINH_F05_F06_2026-11-12.md). Chưa có số giờ thực tế hoặc ngày Done.
 
 ### F07 - Donor pledge/history/cancel
 
@@ -603,11 +607,11 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Dependencies:** F08, B10, C09; mock prework allowed, integrated acceptance waits.
 - **Schedule:** allocated 2026-11-15 through 2026-11-17; deadline 2026-11-18, Asia/Bangkok.
 - **Description / expected behavior:** Confirmation/dispute/full timeline; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
-- **Expected output files (future, not created):** frontend confirmation/dispute/resolve/close panels; full audit UI.
+- **Output hiện tại:** D02/S01/S03 trong Goods demo của F08, dùng chung dữ liệu fixture và totals. P05 close và timeline đọc API còn chờ backend.
 - **Acceptance criteria:** Separate reviewer, self blocked, dispute guard, all item target completion, public/internal audit separation; no false chain claim.
 - **Required tests:** BR06-N, BR07-N, BR10-P/N; E2E04/05/06.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Review (fixture, 13/11/2026). F09 nối luồng D01 với xác nhận độc lập, mở/giải quyết tranh chấp và VOID_DELIVERY. Xem [bàn giao và kết quả kiểm thử](../handoffs/MINH_F09_2026-11-13.md). Live HTTP/SQL/Fuji của F09 chưa chạy.
 
 ### F10 - Public hosting/recovery
 
@@ -659,7 +663,7 @@ Không thuộc sáu P0 và không cộng vào 168h. Mục đích: một bản de
 
 | ID | Phụ trách chính | Hỗ trợ / kiểm tra | Giờ | Thời gian | Dependencies | Acceptance | Status |
 |---|---|---|---:|---|---|---|---|
-| ML-1 | Minh (F) | Dũng kiểm tra schema và không PII | 3 | 12–13/11 | D51 | Đặc tả; bộ sinh seed cố định ~10.000 hồ sơ, 3 hồ sơ tổ chức giả lập, nhiễu nhãn và thiếu giá trị; luật cơ sở; test bộ sinh và schema | Not Started |
+| ML-1 | Dũng (B) | Minh kiểm tra schema và đặc trưng (chuyển từ Minh sang Dũng 12/11) | 3 | 12–13/11 | D51 | Đặc tả; bộ sinh seed cố định ~10.000 hồ sơ, 3 hồ sơ tổ chức giả lập, nhiễu nhãn và thiếu giá trị; luật cơ sở; test bộ sinh và schema | Not Started |
 | ML-2 | Dũng (B) | Minh kiểm tra thước đo | 3 | 13–15/11 | ML-1 | Logistic Regression so với luật cơ sở; 5 seed x 5 fold, trung bình ± độ lệch chuẩn; ca sai; chỉ số theo nhóm; một lệnh chạy lại; smoke test pipeline | Not Started |
 | ML-3 | Dũng (B) | Minh kiểm tra wording | 1 | 20/11 | ML-2 | Giới hạn trung thực; phần "để thành bản chính thức cần gì" (dữ liệu thật có đồng ý, gán nhãn, đánh giá độc lập, thời gian huấn luyện, người duyệt quyết định và khiếu nại, kiểm tra thiên lệch) | Not Started |
 | ML-4 | Minh (F) | Khoa kiểm tra wording DEMO | 1,5 | 16–17/11 | ML-2 | Trang tĩnh đọc điểm tính sẵn, có biểu ngữ DEMO; không gọi backend; cắt nếu P0 trễ tại 17/11 | Not Started |
@@ -704,7 +708,7 @@ Status / evidence: tất cả Not Started; chưa có code, giờ thực tế hay
 | C02 (Hardhat 3 local toolchain & smoke tests) | 09/11/2026 | In Review | Chưa ghi nhận giờ làm thực tế của Dũng | Commit `84a042f` (PR `#3` merged vào `main`): `contracts/` với Solidity `0.8.28`, `evmVersion: paris`, `ToolchainSmokeProbe.sol` & `ToolchainSmoke.test.ts` (`3 passing`) | Khoa review và dùng làm nền triển khai `C03` (`AidRegistry.sol`) |
 | C01 & F02 (D49 cross-owner review & protocol freeze) | 10/11/2026 | In Review | Chưa ghi nhận giờ làm thực tế của Dũng | Dũng chạy `node docs/fixtures/c01/verify-c01.mjs --ethers` và `node docs/fixtures/f02/verify-f02.mjs` (`PASS`); chốt toàn bộ `C01-O01..O05` và `F02-A01..A05` tại `D49` | Bàn giao lại cho Khoa (`C03`/`C05`) và Minh (`F03`/`F04`/`F07`/`F08`) |
 | C03 (AidRegistry slice, Part 1 + Part 2 negative/privacy tests) | 10/11/2026 | In Review | Chưa ghi nhận giờ làm thực tế của Dũng | `AidRegistry.sol` + 2 file test; `npm run compile` PASS ("No contracts to compile" — artifact hiện có đã khớp source); `npm test` 44 passing (3 + 5 + 36); `verify-c01.mjs --ethers` PASS; ABI draft 4/4 khớp artifact | Khoa review contract, guard order và C01-T12 deviation trước C04 Fuji pilot (11/11); C06 mở rộng milestone khi được giao |
-| ML-1..ML-5 (D51 planning) | 11/11/2026 | Not Started | Chưa ghi nhận | User chọn bản demo ML offline trên dữ liệu giả lập quy mô rộng; chỉ cập nhật tài liệu (D51, AGENTS, MVP_SCOPE, DAILY_ROADMAP, TASK_BACKLOG); chưa có code hoặc test | Minh bắt đầu ML-1 (kiểm tra Python/thư viện trên máy); Dũng duyệt schema; theo dõi quy tắc cắt tại 17/11 |
+| ML-1..ML-5 (D51 planning) | 11/11/2026 | Not Started | Chưa ghi nhận | User chọn bản demo ML offline trên dữ liệu giả lập quy mô rộng; chỉ cập nhật tài liệu (D51, AGENTS, MVP_SCOPE, DAILY_ROADMAP, TASK_BACKLOG); chưa có code hoặc test | Dũng bắt đầu ML-1 (kiểm tra Python/thư viện trên máy; chuyển từ Minh 12/11); Minh duyệt schema; theo dõi quy tắc cắt tại 17/11 |
 | B06 (P01–P04 implementation & tests) | 11/11/2026 | In Review | Estimate gốc 6h (deadline gốc 10/11/2026); actual human effort chưa được cung cấp | V10 reconcile + `Campaign`/`CampaignItem` + `CampaignService`/`CampaignController`; sửa 2 lỗi do test phát hiện (off-by-one reviewed version, so sánh item phụ thuộc thứ tự); Dũng xác nhận `CampaignApiIT` 15/15 và `CampaignRequestValidationTest` 4/4 pass trên `aidbridge_test` | Khoa/Minh cross-owner review; bàn giao P01–P04 cho F06; chốt D50; B07 sẵn sàng khi được phê duyệt |
 | B07 (G01–G03 implementation & tests, T1–T5) | 12/11/2026 | In Review | Estimate gốc 7h (deadline 13/11/2026); actual human effort chưa được cung cấp | V11/V12 + package `contribution` + outbox AID_PLEDGED/COMMITMENT_REDUCED + số liệu pledge công khai; 37 IT + 9 unit B07 và hồi quy toàn bộ được Dũng xác nhận pass trên `aidbridge_test`; sửa lỗi làm tròn `pledgedAt` | Khoa review D53 + worker lọc `event_type`; Minh nối F07 với G01–G03; B08 sẵn sàng khi được phê duyệt |
 

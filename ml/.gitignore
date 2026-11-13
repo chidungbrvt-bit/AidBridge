@@ -1,0 +1,12 @@
+# Virtual environments (the team venv lives outside the repo, but guard against local ones)
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Generated datasets: only the small sample and the checksum file are committed
+data/*
+!data/sample_200.csv
+!data/checksums.sha256
+!data/manifest.json

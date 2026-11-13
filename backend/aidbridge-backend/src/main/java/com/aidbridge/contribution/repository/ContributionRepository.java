@@ -32,6 +32,14 @@ public interface ContributionRepository extends JpaRepository<Contribution, UUID
             """)
     Optional<CancelTarget> findCancelTarget(@Param("id") UUID id);
 
+    @Query("""
+            SELECT c.id AS contributionId, c.campaign.id AS campaignId, c.campaign.aidCase.id AS caseId,
+                   c.organizationId AS organizationId, c.donorUserId AS donorUserId
+            FROM Contribution c
+            WHERE c.id = :id AND c.organizationId IN :orgIds
+            """)
+    Optional<CancelTarget> findReceiptTarget(@Param("id") UUID id, @Param("orgIds") Collection<UUID> orgIds);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT c FROM Contribution c WHERE c.id = :id")
     Optional<Contribution> lockById(@Param("id") UUID id);

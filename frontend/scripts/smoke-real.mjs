@@ -155,7 +155,8 @@ try {
   assert.notEqual(a.me.userId, b.me.userId);
   const membership = browser => browser.me.memberships.find(item => item.organizationId === organizationId && item.status === 'ACTIVE');
   stage = 'required active roles';
-  assert.ok(membership(a)?.roles.includes('VOLUNTEER'));
+  assert.ok(membership(a)?.roles.includes('VOLUNTEER'), 'REAL_A must have VOLUNTEER in the test organization');
+  assert.ok(membership(a)?.roles.includes('VERIFIER'), 'REAL_A must also have VERIFIER to test the self-review guard');
   assert.ok(membership(b)?.roles.includes('VERIFIER'));
 
   stage = 'organization evidence allowlist';
@@ -218,7 +219,7 @@ try {
   const denied = await a.mutation(`${casePath}/verify`, decision);
   // Current B05 uses AccessDeniedException for self-review and missing role.
   problem(denied, 403, 'FORBIDDEN');
-  if (!membership(a).roles.includes('VERIFIER')) console.log('Not Run: dual-role self-review denial requires A to also have VERIFIER.');
+
   for (const action of ['reject', 'request-changes']) {
     stage = `${action} missing reason`;
     problem(await b.mutation(`${casePath}/${action}`, decision), 400, 'VALIDATION_ERROR');
@@ -274,7 +275,7 @@ try {
   assert.equal(rejected.data?.caseStatus, 'REJECTED');
   assert.equal(rejected.data?.blockchainStatus, 'NOT_APPLICABLE');
   report(stage, rejected.status);
-  console.log('Not Run: real idle-session expiry and cross-organization 404 require separate backend fixtures. F05 is deferred.');
+  console.log('Not Run: real idle-session expiry and cross-organization 404 require separate backend fixtures. F05 uses a separate fixture preview.');
 } catch (error) {
   failures++;
   const safeCode = ['MOCK_TARGET_REJECTED', 'NON_JSON_RESPONSE'].includes(error?.message)

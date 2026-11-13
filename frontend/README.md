@@ -1,6 +1,6 @@
 # AidBridge frontend — F03/F04
 
-Next.js App Router, TypeScript, Tailwind. Mặc định **API thật**, proxy cùng origin `/api` tới `http://127.0.0.1:8081`, không tự fallback sang mock. F05 chưa tích hợp, chờ worker C05 và projection API thật.
+Next.js App Router, TypeScript, Tailwind. Mặc định **API thật**, proxy cùng origin `/api` tới `http://127.0.0.1:8081`, không tự fallback sang mock. F05 có Audit preview bằng fixture. Timeline sống còn chờ T01/T02 và mapping case trong báo cáo Fuji.
 
 ## Chạy với backend trên máy Dũng
 
@@ -44,13 +44,25 @@ npm run test:e2e -- --project=real
 
 HTTP smoke tạo **hai hồ sơ giả**, giữ audit: changes/edit/resubmit/approve và reject. Script từ chối header mock trước khi gửi credentials; không log body/cookie/password. Thiếu cấu hình báo **Not Run**; Playwright real skipped không được tính pass.
 
-F07 G01–G03 đã tích hợp vào Next: `/campaigns`, `/campaigns/{id}`, `/me/commitments`; dùng session/cookie/CSRF và API client chung, cần donor grant thật. Preview riêng `dev/donor-preview` vẫn dùng mock và không được copy vào real path. B06 campaign authoring thuộc F06.
+F07 G01–G03 đã tích hợp vào Next: `/campaigns`, `/campaigns/{id}`, `/me/commitments`; dùng session/cookie/CSRF và API client chung, cần donor grant thật. Preview riêng `dev/donor-preview` vẫn dùng mock và không được copy vào real path.
 
 Test F07 HTTP contract trên server **real mode**: `npm run test:e2e -- --project=donor-api`. Playwright intercept API bằng fixtures trong tests; đây không phải Spring Boot/DB E2E. Project mock của F03/F04 loại donor-api để tránh trộn mode. `npm test` gồm session/case, donor adapter và donor model tests.
 
 Xem [bàn giao F07 B07](../docs/reviews/F07_B07_API_INTEGRATION.md) về routes, retry/idempotency, kết quả và môi trường còn thiếu.
 
-Xem [bàn giao hiện tại](../docs/handoffs/MINH_F03_F04_2026-11-12.md). Bàn giao cũ `MINH_F03_F04.md` là lịch sử.
+## Campaign staff và audit preview
+
+Trong mock mode, B duyệt case mẫu **Essential supplies for Household Willow**, sau đó đăng nhập `minh.admin@example.test` (cùng mật khẩu mock), mở case và chọn **Create campaign draft → Publish campaign → View published campaign**. Frontend dùng lại routes đọc campaign của F07.
+
+Real mode dùng cùng màn hình với B06 P01–P04. Smoke dành cho một case test mới, đã VERIFIED, cho public consent, có ít nhất hai mặt hàng và chưa có campaign. Đặt `REAL_F06_ADMIN_EMAIL`, `REAL_F06_ADMIN_PASSWORD`, `REAL_F06_VERIFIED_CASE_ID`, `REAL_ORGANIZATION_ID` và `REAL_UI_BASE_URL` rồi chạy:
+
+```powershell
+npm run test:e2e -- --project=real campaign-real.spec.ts
+```
+
+**Audit preview** trong workspace trình bày ba trạng thái fixture, gồm proof Fuji độc lập từ C05. Đây là màn minh họa; T01/T02 và chain status sống vẫn chờ backend.
+
+Xem [bàn giao F05/F06](../docs/handoffs/MINH_F05_F06_2026-11-12.md) và [bàn giao F03/F04](../docs/handoffs/MINH_F03_F04_2026-11-12.md).
 
 
 ## F07 E2E backend thật trên CI
@@ -58,3 +70,9 @@ Xem [bàn giao hiện tại](../docs/handoffs/MINH_F03_F04_2026-11-12.md). Bàn 
 [PR13](https://github.com/chidungbrvt-bit/AidBridge/pull/13) có workflow `F07 real backend E2E`: PostgreSQL16 + JDK21 trên runner, `DonorUiE2EIT` tạo fixture qua API và khởi động Next production proxy tới Spring Boot thật. Project `donor-real` chỉ bật khi AIDBRIDGE_F07_REAL_E2E=true và được Java test truyền schema/account test qua env; không dùng credentials thật hoặc seed production. Không chạy trực tiếp bộ này trên DB dev chưa được cấp.
 
 [Run43200835548](https://github.com/chidungbrvt-bit/AidBridge/actions/runs/43200835548) đã PASS5 browser E2E thật +SQL assertions, cùng57 frontend unit và9 backend validation; không skip. Received rows được seed theo fixture SQL B07, không phải receipt creation API. Xem [F07 evidence](../docs/reviews/F07_B07_API_INTEGRATION.md). Không cần cài Java/DB lên Windows.
+
+## Xác nhận giao hàng và tranh chấp (F09 fixture)
+
+Mở **Goods demo · MOCK** trong mock mode. Load S2, ghi D01 thành công bằng actor Field volunteer và chọn evidence. Trong **Delivery confirmation and disputes**, chọn D02 và tick đúng toàn bộ evidence version. Actor Independent delivery confirmer có thể xác nhận hoặc yêu cầu xem xét. Actor Delivery recorder with confirmer role bị chặn tự xác nhận.
+
+S01 mở tranh chấp cấp hồ sơ hoặc gắn một delivery. S03 dùng actor Platform admin để Uphold hoặc Void delivery. Giữ nguyên dữ liệu nhận hàng khi void; UI tính lại số đã giao và đã xác nhận. Các thao tác dùng chung dữ liệu mô phỏng trên trang. Xem [bàn giao F09](../docs/handoffs/MINH_F09_2026-11-13.md).

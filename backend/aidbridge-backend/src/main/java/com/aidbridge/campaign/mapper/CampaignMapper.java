@@ -3,6 +3,7 @@ package com.aidbridge.campaign.mapper;
 import com.aidbridge.campaign.dto.response.CampaignResponse;
 import com.aidbridge.campaign.entity.Campaign;
 import com.aidbridge.campaign.entity.CampaignItem;
+import com.aidbridge.campaign.repository.CampaignItemRepository.ItemProgress;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
@@ -17,24 +18,26 @@ public class CampaignMapper {
     }
 
     /**
-     * pledgedByItem holds active pledged quantity per campaign item (absent = 0).
-     * received/delivered/confirmed stay 0 until B08-B10 record them.
+     * Progress counts active pledges and actual receipts separately. Absent items have zero totals.
      */
-    public CampaignResponse toResponse(Campaign campaign, List<CampaignItem> items, Map<UUID, Long> pledgedByItem) {
+    public CampaignResponse toResponse(Campaign campaign, List<CampaignItem> items,
+            Map<UUID, ItemProgress> progressByItem) {
         var org = campaign.getOrganization();
         String publicRefHex = "0x" + HexFormat.of().formatHex(org.getPublicRef());
         var orgSummary = new CampaignResponse.OrganizationSummary(org.getName(), publicRefHex);
 
         var itemSummaries = items.stream()
                 .map(item -> {
-                    int pledged = Math.toIntExact(pledgedByItem.getOrDefault(item.getId(), 0L));
+                    var progress = progressByItem.get(item.getId());
+                    int pledged = progress == null ? 0 : Math.toIntExact(progress.getPledgedQty());
+                    int received = progress == null ? 0 : Math.toIntExact(progress.getReceivedQty());
                     return new CampaignResponse.ItemSummary(
                             item.getId(),
                             item.getItemName(),
                             item.getUnit(),
                             item.getTargetQuantity(),
                             pledged,
-                            0,
+                            received,
                             0,
                             0,
                             item.getTargetQuantity() - pledged);

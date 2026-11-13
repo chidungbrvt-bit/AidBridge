@@ -3,8 +3,9 @@ import { test, expect, type Page } from '@playwright/test';
 const required = ['REAL_A_EMAIL', 'REAL_A_PASSWORD', 'REAL_B_EMAIL', 'REAL_B_PASSWORD', 'REAL_ORGANIZATION_ID', 'REAL_EVIDENCE_FIXTURE_KEYS'] as const;
 const configured = required.every(name => !!process.env[name]?.trim());
 
+test.skip(!configured, 'Not Run: authorized backend test identities and organization fixtures are required.');
+
 test('real HTTP: separate A/B sessions, create, denied self-review, revise/resubmit, approve, logout', async ({ browser, baseURL }) => {
-  test.skip(!configured, 'Not Run: authorized backend test identities and organization fixtures are required.');
   test.setTimeout(120_000);
   const aContext = await browser.newContext({ baseURL });
   const bContext = await browser.newContext({ baseURL });
@@ -16,9 +17,14 @@ test('real HTTP: separate A/B sessions, create, denied self-review, revise/resub
   expect(preflight.status()).toBe(200);
   expect(preflight.headers()['x-aidbridge-mock']).toBeUndefined();
   for (const who of ['A', 'B']) {
-    expect(['minh.a@example.test', 'minh.b@example.test', 'minh.reader@example.test', 'minh.outsider@example.test'].includes(process.env[`REAL_${who}_EMAIL`]!.toLowerCase())).toBe(false);
+    expect(['minh.a@example.test', 'minh.b@example.test', 'minh.reader@example.test', 'minh.outsider@example.test', 'minh.admin@example.test'].includes(process.env[`REAL_${who}_EMAIL`]!.toLowerCase())).toBe(false);
     expect(process.env[`REAL_${who}_PASSWORD`] === 'Mock-only-123!').toBe(false);
   }
+  const selectOrganization = async (page: Page) => {
+    const control = page.getByLabel('Active organization');
+    await control.selectOption(org);
+    await expect(control).toHaveValue(org);
+  };
   const login = async (page: Page, who: 'A' | 'B') => {
     await page.goto('/login');
     await expect(page.getByText('REAL API', { exact: true })).toBeVisible();
@@ -26,9 +32,12 @@ test('real HTTP: separate A/B sessions, create, denied self-review, revise/resub
     await page.getByLabel('Password', { exact: true }).fill(process.env[`REAL_${who}_PASSWORD`]!);
     await page.getByRole('button', { name: 'Sign in →', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Every need starts here.' })).toBeVisible();
-    await page.getByLabel('Active organization').selectOption(org);
+    await selectOrganization(page);
     const me = await (await page.request.get('/api/auth/me')).json();
-    expect(me.memberships.some((membership: { organizationId: string; status: string }) => membership.organizationId === org && membership.status === 'ACTIVE')).toBe(true);
+    const membership = me.memberships.find((item: { organizationId: string; status?: string; active?: boolean }) =>
+      item.organizationId === org && (item.status === 'ACTIVE' || item.active === true));
+    expect(membership?.roles).toContain('VERIFIER');
+    if (who === 'A') expect(membership?.roles).toContain('VOLUNTEER');
     return me;
   };
   const acknowledge = async () => {
@@ -40,6 +49,7 @@ test('real HTTP: separate A/B sessions, create, denied self-review, revise/resub
     expect(aMe.userId !== bMe.userId).toBe(true);
     const title = `F04 fictional browser smoke ${Date.now()}`;
     await a.goto('/cases/new');
+    await selectOrganization(a);
     await a.getByLabel('Fictional beneficiary alias', { exact: true }).fill('Demo Household A');
     await a.getByLabel('Approximate area', { exact: true }).fill('Fictional test district');
     await a.getByLabel('Internal title', { exact: true }).fill(title);
@@ -70,22 +80,30 @@ test('real HTTP: separate A/B sessions, create, denied self-review, revise/resub
     expect(denied.status()).toBe(403);
     expect((await denied.json()).code).toBe('FORBIDDEN');
     await b.goto(`/cases/${item.id}`);
+    await selectOrganization(b);
     await acknowledge();
+    const evidence = await b.request.get(`/api/evidence-versions/${item.evidenceVersions[0].id}/content`);
+    expect(evidence.status()).toBe(200);
+    expect(evidence.headers()['content-disposition']).toMatch(/^attachment/i);
+    expect(evidence.headers()['cache-control']).toContain('no-store');
     await b.getByLabel('Review reason').fill('Clarify the fictional household quantity.');
     await b.getByRole('button', { name: 'Request changes', exact: true }).click();
     await expect(b.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('CHANGES REQUESTED');
     await a.goto(`/cases/${item.id}/edit`);
+    await selectOrganization(a);
     await a.getByLabel('Item 1 quantity', { exact: true }).fill('3');
     await a.getByRole('button', { name: 'Save revision', exact: true }).click();
     await expect(a.getByText(/Revision saved/)).toBeVisible();
     await a.getByRole('button', { name: 'Resubmit for review', exact: true }).click();
     await expect(a.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('SUBMITTED');
     await b.reload();
+    await selectOrganization(b);
     await acknowledge();
     await b.getByRole('button', { name: 'Approve case', exact: true }).click();
     await expect(b.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('VERIFIED');
     await expect(b.locator('.status-card').filter({ hasText: 'BLOCKCHAIN SYNC' })).toContainText('PENDING ON CHAIN');
     await b.reload();
+    await selectOrganization(b);
     await expect(b.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('VERIFIED');
     // B04 detail does not project chain state. Do not invent confirmation after refresh.
     await expect(b.locator('.status-card').filter({ hasText: 'BLOCKCHAIN SYNC' })).toContainText('UNKNOWN');
