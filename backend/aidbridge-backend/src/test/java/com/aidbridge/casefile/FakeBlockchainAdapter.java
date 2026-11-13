@@ -23,6 +23,7 @@ class FakeBlockchainAdapter implements BlockchainAdapter {
     private final Web3jBlockchainAdapter signer;
     final List<String> broadcasts = new ArrayList<>();
     Runnable beforeSign = () -> { };
+    long chainId = 31337;
     BigInteger pendingNonce = BigInteger.ZERO;
     BigInteger gasPrice = BigInteger.valueOf(1_000_000_000L);
     BlockchainRpcException nextBroadcastFailure;
@@ -34,7 +35,7 @@ class FakeBlockchainAdapter implements BlockchainAdapter {
         this.signer = new Web3jBlockchainAdapter(Web3j.build(new HttpService("http://127.0.0.1:1")), properties);
     }
 
-    @Override public long readChainId() { return 31337; }
+    @Override public long readChainId() { return chainId; }
     @Override public String relayerAddress() { return signer.relayerAddress(); }
     @Override public BigInteger pendingNonce(String address) { return pendingNonce; }
     @Override public BigInteger gasPrice() { return gasPrice; }

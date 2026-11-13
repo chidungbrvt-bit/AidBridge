@@ -319,6 +319,11 @@ public class CaseVerifiedWorker {
         Optional<String> canonical = Optional.empty();
         try {
             guard.assertHeld();
+            if (adapter.readChainId() != properties.chainId()) {
+                String code = "INVALID_CHAIN_ID";
+                deferWithRetry(item, code, RECEIPT_POLL_DELAY, guard);
+                return new PollResult(item.jobId(), PollOutcome.PENDING, code);
+            }
             receipt = adapter.getReceipt(item.txHash());
             if (receipt.isPresent() && receipt.get().blockNumber() != null) {
                 canonical = adapter.canonicalBlockHash(receipt.get().blockNumber());

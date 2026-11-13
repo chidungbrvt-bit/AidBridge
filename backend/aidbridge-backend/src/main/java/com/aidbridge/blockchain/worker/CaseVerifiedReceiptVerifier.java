@@ -51,14 +51,14 @@ public final class CaseVerifiedReceiptVerifier {
             return new Mismatch("BLOCK_NOT_CANONICAL");
         }
         long blockNumber = receipt.blockNumber().longValueExact();
-        if (receipt.status() != 1) {
-            return new Reverted(blockNumber, receipt.blockHash());
-        }
         if (!same(receipt.to(), expected.registryAddress())) {
             return new Mismatch("RECEIPT_WRONG_CONTRACT");
         }
         if (!same(receipt.from(), expected.signerAddress())) {
             return new Mismatch("RECEIPT_WRONG_SIGNER");
+        }
+        if (receipt.status() != 1) {
+            return new Reverted(blockNumber, receipt.blockHash());
         }
 
         List<ChainReceipt.ChainLog> events = receipt.logs().stream()
