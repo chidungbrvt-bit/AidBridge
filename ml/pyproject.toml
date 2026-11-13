@@ -1,0 +1,4 @@
+[tool.pytest.ini_options]
+# Lets `pytest` (run from ml/) import the package from src/ without installing it.
+pythonpath = ["src"]
+testpaths = ["tests"]
