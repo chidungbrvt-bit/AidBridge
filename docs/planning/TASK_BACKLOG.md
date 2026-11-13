@@ -582,6 +582,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### F08 - Receipt/delivery UI
 
+- **Bổ sung Khoa ngày13/11 (Task5):** giữ In Review; hoàn thiện mock R01/D01 từ PR14, không viết lại phép tính đúng. Feedback 400/409 theo dòng hàng và kết quả mock có outcome/reason; tests tập trung partial receipt, delivery success/over-limit/FAILED và bất biến stock. Bằng chứng cập nhật tại [F08 mock workspace](../reviews/F08_MOCK_GOODS_WORKSPACE.md). Chưa B08/B09/DB thật, không thay owner/estimate/lịch baseline. [Kết luận Task4](../reviews/C06_PART2_D55_REVIEW.md) chỉ lưu review PASS đã thực hiện, không chạy lại C06.
+
 - **Feature / priority:** P0-05 / P0.
 - **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Minh (F) / Dũng / Khoa / Dũng kiểm tra auth/API; Khoa kiểm tra chain status.
 - **Complexity / estimate:** M / 5h.
