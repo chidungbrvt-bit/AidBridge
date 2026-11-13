@@ -135,4 +135,28 @@ class CaseVerifiedReceiptVerifierTest {
         assertThat(verify(withLog(log -> new ChainReceipt.ChainLog(REGISTRY, log.topics(), dirtyHighBytes, BigInteger.ZERO, false))))
                 .isEqualTo(new Mismatch("RECEIPT_DATA_MALFORMED"));
     }
+
+    @Test
+    void invalidLogIndicesRemainUnconfirmedButZeroIsValid() {
+        for (BigInteger index : new BigInteger[]{null, BigInteger.valueOf(-1), BigInteger.ONE.shiftLeft(63)}) {
+            var verdict = verify(withLog(log -> new ChainReceipt.ChainLog(REGISTRY,
+                    log.topics(), log.data(), index, false)));
+            assertThat(verdict).isEqualTo(new Mismatch("RECEIPT_LOG_INDEX_INVALID"));
+            assertThat(((Mismatch) verdict).transientCondition()).isTrue();
+        }
+        assertThat(verify(good())).isInstanceOf(Confirmed.class);
+        assertThat(((Confirmed) verify(good())).logIndex()).isZero();
+    }
+
+    @Test
+    void abnormalStatusesAreNeitherConfirmedNorReverted() {
+        for (int status : new int[]{-1, 2, Integer.MAX_VALUE}) {
+            var verdict = verify(receipt(status, REGISTRY, SIGNER, List.of(goodLog())));
+            assertThat(verdict).isEqualTo(new Mismatch("RECEIPT_STATUS_INVALID"));
+            assertThat(((Mismatch) verdict).transientCondition()).isTrue();
+        }
+        assertThat(verify(receipt(0, REGISTRY, SIGNER, List.of()))).isInstanceOf(Reverted.class);
+        assertThat(verify(receipt(0, OTHER, SIGNER, List.of()))).isEqualTo(new Mismatch("RECEIPT_WRONG_CONTRACT"));
+    }
+
 }
