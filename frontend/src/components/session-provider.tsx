@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { activeMemberships, ApiClient, ApiError, mockTransport, realTransport } from '@/lib/api-client';
+import { createSessionWork } from '@/lib/session-work';
 import type { LoginRequest, MeResponse } from '@/lib/types';
 
 type SessionContextValue = {
@@ -9,6 +10,7 @@ type SessionContextValue = {
   organizationId: string; setOrganizationId: (id: string) => void;
   login: (request: LoginRequest) => Promise<void>; logout: () => Promise<void>;
   refreshUser: () => Promise<void>; notice: string; error: string; generation: number;
+  work: ReturnType<typeof createSessionWork>; checkingFailed: boolean;
   navigationLocked: boolean; setNavigationLocked: (locked: boolean) => void;
 };
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -22,21 +24,27 @@ export function SessionProvider({ children, mode }: { children: React.ReactNode;
   const [generation, setGeneration] = useState(0);
   const [navigationLocked, setNavigationLocked] = useState(false);
   const epoch = useRef(0);
-  const hadUser = useRef(false);
+  const activeUserId = useRef<string | null>(null);
+  const work = useMemo(createSessionWork, []);
+  const [checkingFailed, setCheckingFailed] = useState(false);
   const clear = useCallback(() => {
     epoch.current += 1;
-    if (hadUser.current) setNotice('Your session ended. Sign in again to continue.');
-    hadUser.current = false;
+    if (activeUserId.current) setNotice('Your session ended. Sign in again to continue.');
+    activeUserId.current = null;
+    work.clear();
+    setCheckingFailed(false);
     setUser(null); setOrg(''); setLoading(false); setNavigationLocked(false); setGeneration(value => value + 1);
-  }, []);
+  }, [work]);
   const api = useMemo(() => new ApiClient(mode === 'mock' ? mockTransport : realTransport, clear), [mode, clear]);
   const apply = useCallback((next: MeResponse) => {
     if (next.status !== 'ACTIVE') { clear(); return; }
-    hadUser.current = true;
+    if (activeUserId.current && activeUserId.current !== next.userId) work.clear();
+    activeUserId.current = next.userId;
+    setCheckingFailed(false);
     setUser(next); setError('');
     const memberships = activeMemberships(next);
     setOrg(current => memberships.some(item => item.organizationId === current) ? current : memberships[0]?.organizationId ?? '');
-  }, [clear]);
+  }, [clear, work]);
   const refreshUser = useCallback(async () => {
     const started = epoch.current;
     try {
@@ -46,10 +54,12 @@ export function SessionProvider({ children, mode }: { children: React.ReactNode;
       if (cause instanceof ApiError && cause.status === 401) return;
       if (started === epoch.current) {
         // Hide private state when current permissions cannot be established.
-        clear(); setError('Session could not be checked. Retry when the API is available.');
+        setUser(null);
+        setCheckingFailed(true);
+        setError('Session could not be checked. Retry when the API is available.');
       }
     } finally { setLoading(false); }
-  }, [api, apply, clear]);
+  }, [api, apply]);
   useEffect(() => {
     let live = true;
     void api.csrf().then(() => { if (live) return refreshUser(); }).catch(() => {
@@ -58,7 +68,7 @@ export function SessionProvider({ children, mode }: { children: React.ReactNode;
     return () => { live = false; };
   }, [api, refreshUser]);
   useEffect(() => {
-    const focus = () => { if (hadUser.current) void refreshUser(); };
+    const focus = () => { if (activeUserId.current) void refreshUser(); };
     window.addEventListener('focus', focus);
     return () => window.removeEventListener('focus', focus);
   }, [refreshUser]);
@@ -76,7 +86,7 @@ export function SessionProvider({ children, mode }: { children: React.ReactNode;
   return <SessionContext.Provider value={{ user, api, mode, loading, organizationId,
     setOrganizationId: id => {
       if (activeMemberships(user).some(item => item.organizationId === id)) setOrg(id);
-    }, login, logout, refreshUser, notice, error, generation, navigationLocked, setNavigationLocked }}>{children}</SessionContext.Provider>;
+    }, login, logout, refreshUser, notice, error, generation, work, checkingFailed, navigationLocked, setNavigationLocked }}>{children}</SessionContext.Provider>;
 }
 export function useSession() {
   const context = useContext(SessionContext);

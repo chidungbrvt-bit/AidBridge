@@ -1,3 +1,4 @@
+import type { CreateCampaignRequest } from "./campaign";
 import type { CampaignResponse, CommitmentRequest, CommitmentResponse, CancellationRequest, Page } from "../../features/donor/model";
 import type { BlockchainStatus, CaseDetailResponse, CaseListQuery, CaseSummary, CreateCaseRequest, CsrfResponse, DecisionRequest, DecisionResponse, EvidenceFixture, FieldError, LoginRequest, LoginResponse, MeResponse, Membership, MockControlAction, OrganizationRole, PageResponse, PatchCaseRequest, ProblemDetail, ResubmitCaseRequest, ReviewAction } from "./types";
 
@@ -49,6 +50,7 @@ export const activeMemberships = (user: MeResponse | null): Membership[] => user
 const rolesFor = (user: MeResponse | null, organizationId: string) => activeMemberships(user).find((membership) => membership.organizationId === organizationId)?.roles ?? [];
 export const canReadCases = (user: MeResponse | null, organizationId: string): boolean => rolesFor(user, organizationId).length > 0;
 export const canCreateCases = (user: MeResponse | null, organizationId: string): boolean => rolesFor(user, organizationId).includes("VOLUNTEER");
+export const canManageCampaigns = (user: MeResponse | null, organizationId: string): boolean => rolesFor(user, organizationId).includes("ORG_ADMIN");
 export const canReviewCases = (user: MeResponse | null, organizationId: string): boolean => rolesFor(user, organizationId).includes("VERIFIER");
 
 export function normalizeBlockchainStatus(value: unknown): BlockchainStatus {
@@ -138,6 +140,8 @@ export class ApiClient {
   async patchCase(id: string, body: PatchCaseRequest, key: string): Promise<CaseDetailResponse> { return normalizeCaseDetail(await this.mutate(`/api/cases/${encodeURIComponent(id)}`, body, key, "PATCH")); }
   async resubmitCase(id: string, body: ResubmitCaseRequest, key: string): Promise<CaseDetailResponse> { return normalizeCaseDetail(await this.mutate(`/api/cases/${encodeURIComponent(id)}/resubmit`, body, key)); }
   async reviewCase(id: string, action: ReviewAction, body: DecisionRequest, key: string): Promise<DecisionResponse> { return normalizeDecision(await this.mutate(`/api/cases/${encodeURIComponent(id)}/${action}`, body, key)); }
+  async createCampaign(body: CreateCampaignRequest, key: string): Promise<CampaignResponse> { return this.mutate("/api/campaigns", body, key); }
+  async publishCampaign(id: string, key: string): Promise<CampaignResponse> { return this.mutate(`/api/campaigns/${encodeURIComponent(id)}/publish`, {}, key); }
   async listCampaigns(page = 0): Promise<Page<CampaignResponse>> { return this.request(`/api/campaigns?${new URLSearchParams({page: String(page), size: '20'})}`); }
   async getCampaign(id: string): Promise<CampaignResponse> { return this.request(`/api/campaigns/${encodeURIComponent(id)}`); }
   async getCommitments(page = 0): Promise<Page<CommitmentResponse>> { return this.request(`/api/me/commitments?${new URLSearchParams({page: String(page), size: '20'})}`); }
