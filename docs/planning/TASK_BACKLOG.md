@@ -400,6 +400,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### C08 - Receipt/retry/log reconciliation
 
+- **Baseline Java C08:** đã nhận riêng commit36108eb trên khoa; giữ các task khác/Task5 nguyên trạng, không đồng nhất receipt polling với log scanner chưa triển khai.
+
 - **Feature / priority:** P0-06 / P0.
 - **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
 - **Complexity / estimate:** L / 7h.
