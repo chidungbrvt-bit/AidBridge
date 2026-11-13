@@ -2,6 +2,8 @@
 
 ## Kết luận và phạm vi
 
+**Cập nhật12/11, thay thế mô tả checkout ngày11 bên dưới:** worker/adapter đã ở main qua PR10/12; C07 CI PASS. Dũng xác nhận worker tắt, không old-signer obligations; [rotation/funding D54](FUJI_RELAYER_HANDOFF_2026_11_12.md) đã PASS. Chưa chạy job B05 thật trên Fuji trong lượt này: **C05 vẫn PARTIAL**. Không tiếp tục coi thiếu code worker là blocker hiện hành; DB binding/job/runtime proof do Dũng tiếp nhận. Proof ngày11 vẫn là independent smoke, backendJobId=null.
+
 **C05 PARTIAL: bằng chứng contract Fuji PASS; tích hợp B05 BLOCKED.** Phần được giao ngày 11/11 yêu cầu một bằng chứng Fuji cho luồng xác minh hoặc trạng thái chờ/lỗi có lý do để Dũng/Minh tiếp nhận. Đã có bằng chứng CaseVerified thật và ghi rõ lý do chưa ghép được job B05. Không tuyên bố toàn bộ C05 trong backlog hoàn thành: task gốc còn Java adapter, SQL attempt/job effects và audit API. Giữ C05 **Blocked** vì chưa đủ đầu vào tích hợp; chờ review nhóm trước Done. Không đổi trạng thái B05/C03/C04 hoặc task của thành viên khác.
 
 Baseline trước C05: nhánh `khoa`, HEAD `e44423ce215bd7ad6a96663bd5885f311fa9aacc`; source contract C03 `61cc738385e8b374d38996e8a725a9da6fa7f12b`. Không sửa/redeploy contract, ABI D49/schemaVersion 1 không đổi. Người dùng đã cho phép một giao dịch Fuji bằng Relayer hiện có; không dùng Admin ký hoặc thay đổi quyền.

@@ -4,6 +4,8 @@
 
 ## Deployment thực tế
 
+Cập nhật12/11: bảng dưới giữ lịch sử deployment/registration. **Relayer hiện hành là D54 của Dũng**, xem [rotation/funding/readback](FUJI_RELAYER_HANDOFF_2026_11_12.md). Source/ABI/runtime/address không đổi; không dùng ví cũ cho worker mới.
+
 | Trường | Giá trị |
 |---|---|
 | Chain | Avalanche Fuji C-Chain 43113 |

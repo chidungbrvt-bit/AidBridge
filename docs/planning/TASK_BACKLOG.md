@@ -57,7 +57,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | F05 | P0-06 | Minh (F) | Dũng / Khoa | L | 4 | F04, C05 | 2026-11-09 | 2026-11-08 | Not Started |
 | F06 | P0-04 | Minh (F) | Dũng / Khoa | M | 6 | F02, B06 | 2026-11-11 | 2026-11-11 | Not Started |
 | F07 | P0-04 | Minh (F) | Dũng / Khoa | M | 5 | F06, B07 | 2026-11-13 | 2026-11-13 | In Review |
-| F08 | P0-05 | Minh (F) | Dũng / Khoa | M | 5 | F04, B08, B09 | 2026-11-15 | 2026-11-15 | Not Started |
+| F08 | P0-05 | Minh (F) | Dũng / Khoa | M | 5 | F04, B08, B09 | 2026-11-15 | 2026-11-15 | In Review |
 | F09 | P0-05/P0-06 | Minh (F) | Dũng / Khoa | L | 5 | F08, B10, C09 | 2026-11-18 | 2026-11-17 | Not Started |
 | F10 | Deployment | Minh (F) | Dũng / Khoa | L | 4 | F09, C10 | 2026-11-18 | 2026-11-18 | Not Started |
 | F11 | Quality | Minh (F) | Dũng / Khoa | L | 6 | F10, B11, C11 | 2026-11-20 | 2026-11-20 | Not Started |
@@ -589,7 +589,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Acceptance criteria:** Partial OA receipt distinct from FV handover and review; stock limits and safe errors; FAILED zero effect; no PII in public.
 - **Required tests:** BR05-P/N; IT10/16 UI; E2E01/07.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Review — Khoa thực hiện khung mock R01/D01 ngày 12/11 theo phân công, giữ owner/estimate/lịch baseline. `/goods-demo` dùng F02 trong shell chung, role mô phỏng, partial receipt/delivery/FAILED và 403/409 không sai stock; không gọi B08/B09. 8 unit + 5 browser (desktop/mobile/keyboard), lint/typecheck và Turbopack build PASS; Webpack production build lỗi nội bộ WasmHash trên máy hiện tại, đã ghi rõ. [Bằng chứng và bàn giao F08](../reviews/F08_MOCK_GOODS_WORKSPACE.md). Chưa integrated acceptance/Done, còn B08/B09 và review Minh/Dũng; actual effort con người chưa đo.
 
 ### F09 - Confirmation/dispute/full timeline
 
@@ -809,3 +809,10 @@ Giữ In Review; Khoa thực hiện theo phân công ngày12, không đổi owne
 ### F07 — kiểm chứng backend thật PASS trên CI, 12/11/2026
 
 Giữ In Review, **PASS** theo [CI run43200835548](https://github.com/chidungbrvt-bit/AidBridge/actions/runs/43200835548), SHA80e0b88:57 unit frontend,9 Java validation,5 browser E2E và1 host IT, không skips/errors/failures. PostgreSQL assertions xác minh multi-item pledge, own history, partial cancel, received409/no-write, G01/G03 commit504/replay chỉ ghi một lần và CSRF/validation/revoked donor403 không ghi DB. [Review/evidence](../reviews/F07_B07_API_INTEGRATION.md). Thay thế kết luận PARTIAL trước đó cho CI; Windows vẫn không cài/chạy JDK/DB. Receipt seed chỉ là fixture như B07 tests (B08/R01 chưa kiểm), worker/chain tắt. PR13 đã tạo, chưa merge, không thay task khác/owner/estimate hoặc làm F08.
+
+### Bàn giao ngày12/11 — F08 mock và Fuji Relayer D54
+
+- **F08 In Review**, Khoa thực hiện phạm vi ngày12: [R01/D01 mock workspace](../reviews/F08_MOCK_GOODS_WORKSPACE.md), commit b387309. 8 unit +5 browser desktop/mobile/keyboard, lint/typecheck/Turbopack build PASS; Webpack production build lỗi nội bộ WasmHash trên Windows, không giấu kết quả. Chưa B08/B09/production E2E, giữ owner/estimate/lịch baseline.
+- **C04 operational handoff PASS**, giữ In Review chờ nhóm review. Dũng xác nhận worker/DB không có nghĩa vụ signer cũ qua người dùng. Đã rotation orgRef sang D54 và funding0,149679527 test AVAX, receipts/current authorization readback PASS. [Hashes, bằng chứng và điều kiện worker](../reviews/FUJI_RELAYER_HANDOFF_2026_11_12.md). Ví cũ0AVAX/không RELAYER_ROLE, Admin nguyên quyền; không redeploy/đổi ABI. Faucet chưa claim thêm vì Console Wallet khóa và UI chưa có đường gửi an toàn, mục tiêu khoảng0,5 chưa đạt; không lấy funding từ Admin.
+- **C05 vẫn PARTIAL**, không gửi job B05/worker nghiệp vụ trong lượt này. Implementation worker/C07 đã có trên main, không còn blocker thiếu code; phần DB seed/binding D54/job thật/receipt projection do Dũng xác minh và chạy tiếp. Không dùng independent smoke, rotation hay funding thay B05 E2E. Không đổi trạng thái task của Dũng/Minh hoặc Done.
+- Hai recovery CLIXML mới trong contracts/deployment bị ignore, chỉ chứa signed bytes DPAPI; hai ví gốc/Console Wallet giữ nguyên. Không tạo output/source ngoài repo, không cleanup/push/PR/merge.
