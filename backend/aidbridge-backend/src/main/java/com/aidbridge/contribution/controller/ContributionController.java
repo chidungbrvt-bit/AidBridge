@@ -2,9 +2,12 @@ package com.aidbridge.contribution.controller;
 
 import com.aidbridge.contribution.dto.request.CancellationRequest;
 import com.aidbridge.contribution.dto.request.CommitmentRequest;
+import com.aidbridge.contribution.dto.request.ReceiptRequest;
 import com.aidbridge.contribution.dto.response.CommitmentPage;
 import com.aidbridge.contribution.dto.response.CommitmentResponse;
+import com.aidbridge.contribution.dto.response.ReceiptResponse;
 import com.aidbridge.contribution.service.ContributionService;
+import com.aidbridge.contribution.service.GoodsReceiptService;
 import com.aidbridge.shared.idempotency.IdempotencyService.Result;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -21,11 +24,12 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-// No class-level mapping: G01-G03 live under /api/campaigns, /api/me and /api/commitments.
+// The contribution endpoints live under /api/campaigns, /api/me and /api/commitments.
 @RestController
 @RequiredArgsConstructor
 public class ContributionController {
     private final ContributionService service;
+    private final GoodsReceiptService receipts;
 
     @PostMapping("/api/campaigns/{id}/commitments")
     public ResponseEntity<CommitmentResponse> pledge(
@@ -56,6 +60,16 @@ public class ContributionController {
             @Valid @RequestBody CancellationRequest request
     ) {
         return toResponse(service.cancel(authentication, contributionId, idempotencyKey, request));
+    }
+
+    @PostMapping("/api/commitments/{id}/receipts")
+    public ResponseEntity<ReceiptResponse> receive(
+            Authentication authentication,
+            @PathVariable("id") UUID contributionId,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            @Valid @RequestBody ReceiptRequest request
+    ) {
+        return toResponse(receipts.receive(authentication, contributionId, idempotencyKey, request));
     }
 
     private static <T> ResponseEntity<T> toResponse(Result<T> result) {

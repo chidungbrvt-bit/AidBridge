@@ -6,6 +6,9 @@ import com.aidbridge.blockchain.entity.BlockchainJob;
 import com.aidbridge.blockchain.repository.BlockchainJobRepository;
 import com.aidbridge.contribution.entity.Contribution;
 import com.aidbridge.contribution.entity.ContributionItem;
+import com.aidbridge.contribution.entity.GoodsReceipt;
+import com.aidbridge.shared.util.ChainRefs;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +56,30 @@ public class ContributionOutboxService {
 
     /** One cancelled line as recorded in the private audit payload. */
     public record CancelledLine(UUID contributionItemId, UUID campaignItemId, int quantity) {
+    }
+
+    public record ReceivedLine(UUID contributionItemId, UUID campaignItemId, int quantity) {
+    }
+
+    /** Caller holds the case lock. Persist the receipt reference with the immutable event for C10. */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public UUID enqueueReceipt(UUID caseId, Contribution contribution, GoodsReceipt receipt, List<ReceivedLine> lines) {
+        var hex = HexFormat.of();
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("payloadVersion", 1);
+        payload.put("receiptId", receipt.getId());
+        payload.put("contributionId", contribution.getId());
+        payload.put("receiptRef", "0x" + hex.formatHex(ChainRefs.randomBytes32()));
+        payload.put("commitmentRef", "0x" + hex.formatHex(contribution.getPublicRef()));
+        payload.put("receivedAt", receipt.getReceivedAt());
+        payload.put("lines", lines);
+
+        long nextSequence = jobs.maxChainSequence(caseId) + 1;
+        var event = events.save(new AuditEvent(contribution.getOrganizationId(), caseId,
+                receipt.getRecorderId(), "GOODS_RECEIPT", receipt.getId(), "GOODS_RECEIVED",
+                receipt.getId(), json.writeValueAsString(payload)));
+        jobs.saveAndFlush(new BlockchainJob(event, nextSequence));
+        return event.getId();
     }
 
     /**

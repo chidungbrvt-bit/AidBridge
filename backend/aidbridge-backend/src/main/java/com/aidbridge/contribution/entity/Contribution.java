@@ -90,6 +90,10 @@ public class Contribution {
         }
     }
 
+    public void settleAfterReceipt(long outstandingQuantity) {
+        this.status = outstandingQuantity == 0 ? Status.RECEIVED : Status.PARTIALLY_RECEIVED;
+    }
+
     public enum Status {
         PLEDGED,
         PARTIALLY_RECEIVED,

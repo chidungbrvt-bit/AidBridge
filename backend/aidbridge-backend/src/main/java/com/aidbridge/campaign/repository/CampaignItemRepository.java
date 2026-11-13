@@ -25,22 +25,27 @@ public interface CampaignItemRepository extends JpaRepository<CampaignItem, UUID
     @Query("SELECT ci FROM CampaignItem ci WHERE ci.campaign.id = :campaignId AND ci.id IN :ids ORDER BY ci.id")
     List<CampaignItem> lockByIds(@Param("campaignId") UUID campaignId, @Param("ids") Collection<UUID> ids);
 
-    interface ItemTotal {
+    interface ItemProgress {
         UUID getItemId();
-        Long getQuantity();
+        long getPledgedQty();
+        long getReceivedQty();
     }
 
     /**
-     * Public read model: active pledged quantity per campaign item (absent = 0). Native SQL on purpose,
-     * so the campaign module does not import the contribution module (contribution depends on campaign).
-     * Same formula as ContributionItemRepository.activeTotals. Callers must pass a non-empty collection.
+     * Read both totals from one statement so concurrent commits cannot mix their snapshots.
+     * Aggregate receipts separately to avoid counting a pledge once per receipt.
      */
     @Query(value = """
             SELECT ci.campaign_item_id AS "itemId",
-                   SUM(ci.pledged_quantity - ci.cancelled_quantity) AS "quantity"
+                   SUM(ci.pledged_quantity - ci.cancelled_quantity) AS "pledgedQty",
+                   SUM(COALESCE(r.total, 0))::bigint AS "receivedQty"
             FROM contribution_items ci
+            LEFT JOIN LATERAL (
+                SELECT SUM(gri.received_quantity) AS total
+                FROM goods_receipt_items gri WHERE gri.contribution_item_id = ci.id
+            ) r ON true
             WHERE ci.campaign_item_id IN (:ids)
             GROUP BY ci.campaign_item_id
             """, nativeQuery = true)
-    List<ItemTotal> activePledgedTotals(@Param("ids") Collection<UUID> campaignItemIds);
+    List<ItemProgress> progressTotals(@Param("ids") Collection<UUID> campaignItemIds);
 }

@@ -1,7 +1,9 @@
 package com.aidbridge.contribution.repository;
 
+import com.aidbridge.contribution.entity.Contribution;
 import com.aidbridge.contribution.entity.ContributionItem;
 import jakarta.persistence.LockModeType;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -33,8 +35,8 @@ public interface ContributionItemRepository extends JpaRepository<ContributionIt
     List<ItemQuantity> activeTotals(@Param("campaignItemIds") Collection<UUID> campaignItemIds);
 
     /**
-     * Received quantity per contribution item. Native because goods receipts have no entity before B08;
-     * read-only here. Quoted aliases keep camelCase keys (PostgreSQL lowercases unquoted aliases).
+     * Received quantity per contribution item from immutable receipt lines.
+     * Quoted aliases keep camelCase keys (PostgreSQL lowercases unquoted aliases).
      * Callers must pass a non-empty collection.
      */
     @Query(value = """
@@ -71,4 +73,36 @@ public interface ContributionItemRepository extends JpaRepository<ContributionIt
             ORDER BY lower(item.itemName), lower(item.unit), item.id
             """)
     List<ContributionItem> findDisplayOrdered(@Param("contributionIds") Collection<UUID> contributionIds);
+
+    interface OutstandingLine {
+        UUID getContributionId();
+        Contribution.Status getStatus();
+        Instant getPledgedAt();
+        UUID getContributionItemId();
+        UUID getCampaignItemId();
+        String getItemName();
+        String getUnit();
+        int getPledgedQty();
+        long getReceivedQty();
+        long getOutstandingQty();
+    }
+
+    @Query("""
+            SELECT c.id AS contributionId, c.status AS status, c.pledgedAt AS pledgedAt,
+                   ci.id AS contributionItemId, i.id AS campaignItemId, i.itemName AS itemName,
+                   i.unit AS unit, ci.pledgedQuantity AS pledgedQty,
+                   COALESCE(SUM(r.receivedQuantity), 0L) AS receivedQty,
+                   ci.pledgedQuantity - ci.cancelledQuantity - COALESCE(SUM(r.receivedQuantity), 0L) AS outstandingQty
+            FROM ContributionItem ci JOIN ci.contribution c
+            JOIN CampaignItem i ON i.id = ci.campaignItemId
+            LEFT JOIN GoodsReceiptItem r ON r.contributionItemId = ci.id
+            WHERE c.campaign.aidCase.id = :caseId AND c.organizationId = :orgId
+              AND c.status IN (:statuses)
+            GROUP BY c.id, c.status, c.pledgedAt, ci.id, ci.pledgedQuantity, ci.cancelledQuantity,
+                     i.id, i.itemName, i.unit
+            HAVING ci.pledgedQuantity - ci.cancelledQuantity > COALESCE(SUM(r.receivedQuantity), 0L)
+            ORDER BY c.pledgedAt DESC, c.id, lower(i.itemName), lower(i.unit), i.id
+            """)
+    List<OutstandingLine> findOutstandingForCase(@Param("caseId") UUID caseId, @Param("orgId") UUID orgId,
+            @Param("statuses") Collection<Contribution.Status> statuses);
 }
