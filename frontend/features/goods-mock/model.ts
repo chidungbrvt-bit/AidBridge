@@ -6,7 +6,9 @@ export type Action = 'receipt' | 'delivery';
 export type Actor = 'organizationAdmin' | 'fieldVolunteer' | 'caseVerifier' | 'donor';
 export type Line = { id: string; quantity: number };
 export class GoodsError extends Error {
-  constructor(public status: number, public code: string) { super(`${status} ${code}`); }
+  constructor(public status: number, public code: string, public lineId?: string, detail?: string) {
+    super(`${status} ${code}${detail ? ' — ' + detail : ''}`);
+  }
 }
 export const evidenceIds = fixture.evidenceIds;
 export const contributionId = fixture.states.S1.focalContribution.id;
@@ -36,8 +38,8 @@ export function apply(snapshot: Snapshot, command: Command, conflict = false): S
     const available = limits(snapshot, command.action);
     for (const line of command.lines) {
       const item = available.find(item => item.id === line.id);
-      if (!item || !Number.isSafeInteger(line.quantity) || line.quantity < 1 || line.quantity > 1_000_000) throw new GoodsError(400, 'VALIDATION_ERROR');
-      if (line.quantity > item.available) throw new GoodsError(409, 'QUANTITY_EXCEEDED');
+      if (!item || !Number.isSafeInteger(line.quantity) || line.quantity < 1 || line.quantity > 1_000_000) throw new GoodsError(400, 'VALIDATION_ERROR', line.id, 'Enter a whole quantity from 1 to 1,000,000 for a known item.');
+      if (line.quantity > item.available) throw new GoodsError(409, 'QUANTITY_EXCEEDED', line.id, `${item.name}: only ${item.available} ${item.unit} ${command.action === 'receipt' ? 'remain unreceived' : 'are available to deliver'}.`);
     }
     if (command.action === 'delivery' && (!command.evidence.length || command.evidence.some(id => !evidenceIds.includes(id)))) throw new GoodsError(400, 'EVIDENCE_REQUIRED');
   }
