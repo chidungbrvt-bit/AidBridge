@@ -14,6 +14,12 @@ Minh tiếp nhận UI/feedback/actor mô phỏng và kiểm tra tích hợp shel
 
 ## Phạm vi và cách mở
 
+### Kiểm tra tích hợp bàn giao cuối ngày13 (thực hiện14/11)
+
+Đồng bộ main tại `7b7ab6e` bằng merge giữ lịch sử trên `khoa`; giải quyết phần giao nhau với F09 của Minh bằng cách giữ review state, dispute guard và reset generation của main, cộng feedback/kết quả Task5. Không thay logic F09 hoặc đưa mock sang API thật.
+
+Chạy thực tế trên phiên bản đã kết hợp: **13 F08 +3 delivery-review unit tests PASS**, **7 F08 +1 F08→F09 browser tests PASS** (Edge, desktop/mobile/keyboard), ESLint bốn file F08 thay đổi PASS, TypeScript `--noEmit --incremental false -p frontend` PASS. Browser gồm receipt một phần, delivery/FAILED, 403/409/atomic rejection, reset, loading/empty/error, rồi confirmation/dispute/VOID trên cùng totals. Không chạy build, Java/DB, Actions hay Fuji. Các số 8/5 tests và build bên dưới là bằng chứng lịch sử ngày12, không phải kết quả chạy lại hôm nay.
+
 - Route `/goods-demo` trong Next.js shell chung; navigation chỉ xuất hiện khi `NEXT_PUBLIC_API_MODE=mock`. Real mode hiển thị thông báo chưa tích hợp, không cho thao tác mock.
 - Trong `frontend`: đặt `NEXT_PUBLIC_API_MODE=mock`, chạy `node node_modules/next/dist/bin/next dev --webpack --hostname 127.0.0.1 --port 3001`. Mở `http://127.0.0.1:3001/login`, dùng tài khoản demo `minh.a@example.test`, mật khẩu demo `Mock-only-123!`, chọn **Goods demo · MOCK**.
 - Session đăng nhập vẫn do shared session/client quản lý. Bộ chọn actor chỉ mô phỏng F02, không cấp quyền, không thay session, không phải UI quản trị role. Organization của fixture khác organization session và được ghi rõ là mô phỏng.

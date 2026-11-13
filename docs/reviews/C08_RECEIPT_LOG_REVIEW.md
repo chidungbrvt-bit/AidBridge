@@ -34,7 +34,7 @@ Người dùng cho phép Khoa sửa đúng R1/R2 và cập nhật PR21. Baseline
 
 Polling cập nhật job/attempt trong cùng short SQL transaction; không tạo event/job/sequence mới ở đường confirm. Recovery không ký giao dịch mới; khi receipt vắng có thể **rebroadcast đúng signed bytes/hash/nonce đã journal** theo C07, khác với tạo giao dịch hoặc mutation nghiệp vụ thứ hai. Khi đã nhận proof hợp lệ, đường confirm không rebroadcast. Không tuyên bố log scanner/replay đã được kiểm chứng từ các tests này.
 
-## Findings cần Dũng sửa
+## Findings lịch sử tại36108eb — đã giải quyết trong9a9f7fb
 
 ### C08-R1 — Medium: nhận proof không có log index hợp lệ
 
@@ -50,7 +50,7 @@ Polling cập nhật job/attempt trong cùng short SQL transaction; không tạo
 - Tái hiện: adapter nhận raw status null/`0x2`, hoặc gọi verifier với ChainReceipt.status=2; đường đi hiện tại phân loại revert. **Chưa chạy Java test mới**.
 - Đề xuất: adapter parse/validate status chỉ0/1 theo JSON-RPC; malformed/missing status trả lỗi riêng, giữ attempt chưa có kết quả xác định. Verifier phòng thủ cũng phải reject int ngoài0/1. Bổ sung tests adapter/verifier/worker, giữ test revert0 thật và context trước revert.
 
-Hai finding là fail-closed validation với RPC proof bất thường, không khẳng định giao dịch Ethereum hợp lệ tự sinh index âm/status2. Chúng vẫn ảnh hưởng trực tiếp tiêu chí không nhận proof thiếu/sai của C08. Bốn tests mới hiện không bao phủ các input này.
+Hai finding là fail-closed validation với RPC proof bất thường, không khẳng định giao dịch Ethereum hợp lệ tự sinh index âm/status2. Bốn tests tại36108eb chưa bao phủ các input này; regression tests trong9a9f7fb đã bổ sung và PASS theo bằng chứng CI ở đầu tài liệu. Các mô tả lỗi và đề xuất trong mục này chỉ ghi lại trạng thái trước bản sửa.
 
 ## Log replay và boundary đề xuất — chưa triển khai
 
@@ -64,8 +64,8 @@ Adapter chỉ có getReceipt/canonicalBlockHash, chưa readLogs/readEventRecord;
 4. C10/D55 VOID: một resolveDispute/job/eventId/sequence, **hai observations** DeliveryVoided → DisputeResolved. Đối chiếu cùng tx/registry/org/case/commitment/sequence, đúng fields/ref/resolution và thứ tự logIndex; thiếu/sai/duplicate bộ log không confirmed. Không áp quy tắc “mỗi eventId chỉ được một log” của CASE_VERIFIED lên VOID.
 5. LogReplayIT sau này: replay cùng observations hai lần, crash/SQL rollback giữa chừng, thiếu/sai log, noncanonical, hai log VOID chỉ apply một logical operation. Live audit projection API và các milestone C06 chưa được nghiệm thu trong review CASE_VERIFIED này.
 
-Khoa chốt receipt/log semantics và phối hợp boundary; Dũng tiếp nhận sửa Java, transaction/observation/cursor tests khi triển khai phần log ingest; Minh phối hợp API audit projection. Chưa thực hiện scanner hoặc mở task mới trong lượt review.
+Khoa phối hợp thống nhất receipt/log semantics và boundary; Dũng tiếp nhận transaction/observation/cursor tests khi triển khai phần log ingest; Minh phối hợp API audit projection. R1/R2 đã được Khoa sửa và kiểm chứng, không còn là việc chờ Dũng. Chưa thực hiện scanner hoặc mở task mới trong lượt review.
 
 ## Điều kiện chốt
 
-Dũng sửa R1/R2 và bổ sung regression evidence để receipt recovery đạt PASS đầy đủ với input bất thường. Scanner/replay giữ PENDING riêng đến khi được triển khai/kiểm thử, không tự biến thành lỗi của Khoa hoặc giả PASS toàn C08. Không cần chạy lại C03/C04/C07/F07/F08 để xử lý hai finding này.
+**Receipt recovery PASS:** R1/R2 đã sửa tại9a9f7fb, 26 unit +32 IT PASS trên run43473786126; PR21 đã merge vào main tại7b7ab6e. Không còn blocker của hai finding này. Scanner/replay giữ PENDING riêng đến khi được triển khai/kiểm thử, không giả PASS toàn C08. Lượt bàn giao cuối không chạy lại Java/DB hoặc Actions.
