@@ -71,4 +71,28 @@ class Web3jBlockchainAdapterTest {
         assertThatThrownBy(() -> new BlockchainProperties(true, "http://127.0.0.1:8545", 31337, "0x1234", HARDHAT_KEY_0, null, null).validate())
                 .hasMessageStartingWith("INVALID_REGISTRY_ADDRESS");
     }
+
+    @Test
+    void missingAndAbnormalRpcStatusesAreRejectedBeforeProjection() {
+        for (String status : new String[]{null, "", "0x", "0x2", "0x01", "garbage"}) {
+            var raw = new org.web3j.protocol.core.methods.response.TransactionReceipt();
+            raw.setStatus(status);
+            assertThatThrownBy(() -> Web3jBlockchainAdapter.toReceipt(raw))
+                    .isInstanceOfSatisfying(BlockchainRpcException.class,
+                            e -> assertThat(e.code()).isEqualTo("RECEIPT_STATUS_INVALID"));
+        }
+    }
+
+    @Test
+    void canonicalRpcZeroAndOneKeepTheirActualStatus() {
+        for (int status : new int[]{0, 1}) {
+            var raw = new org.web3j.protocol.core.methods.response.TransactionReceipt();
+            raw.setStatus(status == 0 ? "0x0" : "0x1");
+            raw.setTransactionHash("0x" + "aa".repeat(32));
+            raw.setBlockNumber("0x1"); raw.setBlockHash("0x" + "bb".repeat(32));
+            raw.setFrom(HARDHAT_ADDRESS_0); raw.setTo(REGISTRY); raw.setLogs(java.util.List.of());
+            assertThat(Web3jBlockchainAdapter.toReceipt(raw).status()).isEqualTo(status);
+        }
+    }
+
 }

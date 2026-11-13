@@ -166,8 +166,8 @@ class ContributionSchemaIT extends AbstractCampaignHttpIT {
         UUID hygieneLine = insertLine(contributionId, campaignId, ORG_A, items.get(1), 2, 0);
 
         // Receipts belong to B08; seeded directly so the B07 cancel rule can be tested later.
-        insertReceiptLine(insertReceipt(contributionId, orgAdmin.id()), foodLine, 1);
-        insertReceiptLine(insertReceipt(contributionId, orgAdmin.id()), foodLine, 1);
+        insertReceiptLine(insertReceipt(contributionId, orgAdmin.id()), contributionId, foodLine, 1);
+        insertReceiptLine(insertReceipt(contributionId, orgAdmin.id()), contributionId, foodLine, 1);
 
         Map<UUID, Long> totals = toMap(contributionItems.receivedTotals(List.of(foodLine, hygieneLine)));
         assertThat(totals).containsEntry(foodLine, 2L).doesNotContainKey(hygieneLine);
@@ -252,11 +252,11 @@ class ContributionSchemaIT extends AbstractCampaignHttpIT {
         return id;
     }
 
-    private void insertReceiptLine(UUID receiptId, UUID contributionItemId, int quantity) {
+    private void insertReceiptLine(UUID receiptId, UUID contributionId, UUID contributionItemId, int quantity) {
         jdbc.update("""
-                INSERT INTO goods_receipt_items (id, goods_receipt_id, contribution_item_id, received_quantity)
-                VALUES (?, ?, ?, ?)
-                """, UUID.randomUUID(), receiptId, contributionItemId, quantity);
+                INSERT INTO goods_receipt_items (id, goods_receipt_id, contribution_id, contribution_item_id, received_quantity)
+                VALUES (?, ?, ?, ?, ?)
+                """, UUID.randomUUID(), receiptId, contributionId, contributionItemId, quantity);
     }
 
     private static void assertRejected(ThrowingCallable statement) {

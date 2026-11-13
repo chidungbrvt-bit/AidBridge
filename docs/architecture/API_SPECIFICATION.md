@@ -161,6 +161,14 @@ Implemented and covered by `ContributionPledgeIT`, `ContributionCancelIT`, `Cont
 - **`CampaignResponse` (P03/P04)**: `pledgedQty` = Σ(pledged − cancelled), live; `remainingPledgeQty = targetQty − pledgedQty`; `receivedQty`/`deliveredQty`/`confirmedQty` stay 0 until B08–B10.
 - **Private audit payloads**: `AID_PLEDGED {payloadVersion, contributionId, lines[{campaignItemId, quantity}]}`; `COMMITMENT_REDUCED` adds `contributionItemId` per line and `reason`. No donor name or email.
 
+### B08 receipt implementation (13/11/2026)
+
+- **R01 `POST /api/commitments/{id}/receipts`** dùng session của `ORG_ADMIN` đang hoạt động trong tổ chức sở hữu cam kết, CSRF và `Idempotency-Key`. Nhận qua từng dòng trong cùng transaction. Trả `201 ReceiptResponse`, `Location: /api/receipts/{id}` và `PENDING_ON_CHAIN`. Body gồm `id`, `contributionId`, `items[{contributionItemId,quantity}]`, `receivedAt`, `recordedAt`, `recorderId`, `auditEventId` và `blockchainStatus`.
+- **Staff C03 theo D49** có tại `GET /api/org/cases/{id}`. Trả trường của `CaseDetailResponse` cùng `outstandingCommitments[]`. Dùng projection này để chọn dòng và refresh sau R01. G02 đọc số lượng nhận cho donor sở hữu cam kết. P03/P04 trả aggregate `receivedQty` riêng với delivered/confirmed.
+- **Lỗi:** `403 FORBIDDEN` cho active member cùng org thiếu role. `404 RESOURCE_NOT_FOUND` cho cam kết ngoài phạm vi hoặc không tồn tại. `409 QUANTITY_EXCEEDED` khi nhận quá lượng còn lại, `409 INVALID_STATE` khi dòng không thuộc cam kết hoặc trạng thái không cho phép, `409 DISPUTE_OPEN` khi case đang bị chặn bởi tranh chấp và `409 IDEMPOTENCY_CONFLICT` khi dùng lại key với payload khác. Replay hợp lệ giữ body/Location/status gốc.
+
+Ví dụ HTTP và kết quả kiểm tra tại [B08 R01 handoff](../reviews/B08_R01_HANDOFF.md).
+
 ## End-to-end request example
 
 Donor authenticated with CSRF sends `POST /api/campaigns/{id}/commitments`, `Idempotency-Key: <new UUID>`:

@@ -375,8 +375,8 @@ class ContributionCancelIT extends AbstractCampaignHttpIT {
         jdbc.update("INSERT INTO goods_receipts (id, contribution_id, received_by, idempotency_key) VALUES (?, ?, ?, ?)",
                 receiptId, contributionId, recorderId, UUID.randomUUID());
         jdbc.update("""
-                INSERT INTO goods_receipt_items (id, goods_receipt_id, contribution_item_id, received_quantity)
-                VALUES (?, ?, ?, ?)
-                """, UUID.randomUUID(), receiptId, contributionItemId, quantity);
+                INSERT INTO goods_receipt_items (id, goods_receipt_id, contribution_id, contribution_item_id, received_quantity)
+                VALUES (?, ?, ?, ?, ?)
+                """, UUID.randomUUID(), receiptId, contributionId, contributionItemId, quantity);
     }
 }

@@ -1,9 +1,11 @@
 package com.aidbridge.casefile;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.aidbridge.blockchain.adapter.BlockchainProperties;
 import com.aidbridge.blockchain.adapter.BlockchainRpcException;
+import com.aidbridge.blockchain.adapter.ChainReceipt;
 import com.aidbridge.blockchain.crypto.JobSecretCipher;
 import com.aidbridge.blockchain.envelope.AidRegistryAbi;
 import com.aidbridge.blockchain.envelope.CanonicalJson;
@@ -17,11 +19,15 @@ import com.aidbridge.blockchain.worker.SignerSessionLock;
 import com.aidbridge.verification.service.VerificationOutboxService;
 import java.security.SecureRandom;
 import java.time.Clock;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -216,6 +222,154 @@ class CaseVerifiedWorkerIT extends AbstractCaseHttpIT {
                 .containsEntry("confirmed_at", null);
     }
 
+    @ParameterizedTest
+    @CsvSource({
+        "WRONG_CONTRACT, SUBMITTED, RECEIPT_WRONG_CONTRACT",
+        "MISSING_EVENT, SUBMITTED, RECEIPT_EVENT_MISSING",
+        "REVERTED, REVERTED, TX_REVERTED",
+        "FOREIGN_REVERT, SUBMITTED, RECEIPT_WRONG_CONTRACT"
+    })
+    void rejectsReceiptWithoutMatchingProof(String fixture, String attemptStatus, String reason)
+            throws Exception {
+        UUID jobId = newLocalCaseVerifiedJob();
+        assertThat(worker.processNextJob().orElseThrow().jobId()).isEqualTo(jobId);
+        var before = receiptState(jobId);
+        node.mine(node.broadcasts.get(0), REGISTRY, 104, null);
+        String hash = (String) before.get("tx_hash");
+        ChainReceipt valid = node.receipts.get(hash);
+        String destination = fixture.equals("WRONG_CONTRACT") || fixture.equals("FOREIGN_REVERT")
+                ? "0x" + "99".repeat(20) : valid.to();
+        int status = fixture.equals("REVERTED") || fixture.equals("FOREIGN_REVERT") ? 0 : 1;
+        var logs = fixture.equals("MISSING_EVENT") || status == 0 ? List.<ChainReceipt.ChainLog>of() : valid.logs();
+        node.receipts.put(hash, new ChainReceipt(hash, status, valid.blockNumber(), valid.blockHash(),
+                valid.from(), destination, logs));
+
+        assertThat(worker.pollSubmitted()).containsExactly(
+                new CaseVerifiedWorker.PollResult(jobId, CaseVerifiedWorker.PollOutcome.FAILED, reason));
+        assertThat(receiptState(jobId)).containsEntry("job_status", "FAILED").containsEntry("attempt_status", attemptStatus)
+                .containsEntry("last_error", reason).containsEntry("error_message", reason)
+                .containsEntry("receipt_status", fixture.equals("REVERTED") ? 0 : null)
+                .containsEntry("confirmed_at", null).containsEntry("attempt_id", before.get("attempt_id"))
+                .containsEntry("tx_hash", hash).containsEntry("nonce", before.get("nonce"));
+        assertThat(node.broadcasts).hasSize(1);
+    }
+
+    @Test
+    void defersOnWrongRpcChainAndNoncanonicalBlockBeforeConfirmingOriginalAttempt() throws Exception {
+        UUID jobId = newLocalCaseVerifiedJob();
+        assertThat(worker.processNextJob().orElseThrow().jobId()).isEqualTo(jobId);
+        var before = receiptState(jobId);
+        node.mine(node.broadcasts.get(0), REGISTRY, 105, null);
+        node.chainId = 43113;
+        assertThat(worker.pollSubmitted()).containsExactly(
+                new CaseVerifiedWorker.PollResult(jobId, CaseVerifiedWorker.PollOutcome.PENDING, "INVALID_CHAIN_ID"));
+        assertThat(receiptState(jobId)).containsEntry("job_status", "SUBMITTED")
+                .containsEntry("attempt_status", "SUBMITTED").containsEntry("confirmed_at", null);
+
+        node.chainId = 31337;
+        var block = java.math.BigInteger.valueOf(105);
+        String canonicalHash = node.canonicalBlocks.put(block, "0x" + "ee".repeat(32));
+        jdbc.update("UPDATE blockchain_jobs SET next_retry_at = NULL WHERE id = ?", jobId);
+        assertThat(worker.pollSubmitted()).containsExactly(new CaseVerifiedWorker.PollResult(
+                jobId, CaseVerifiedWorker.PollOutcome.PENDING, "BLOCK_NOT_CANONICAL"));
+        assertThat(receiptState(jobId)).containsEntry("job_status", "SUBMITTED")
+                .containsEntry("attempt_status", "SUBMITTED").containsEntry("confirmed_at", null);
+
+        node.canonicalBlocks.put(block, canonicalHash);
+        jdbc.update("UPDATE blockchain_jobs SET next_retry_at = NULL WHERE id = ?", jobId);
+        assertThat(worker.pollSubmitted()).containsExactly(
+                new CaseVerifiedWorker.PollResult(jobId, CaseVerifiedWorker.PollOutcome.CONFIRMED, null));
+        assertThat(receiptState(jobId)).containsEntry("job_status", "CONFIRMED").containsEntry("attempt_status", "CONFIRMED")
+                .containsEntry("attempt_id", before.get("attempt_id")).containsEntry("tx_hash", before.get("tx_hash"))
+                .containsEntry("nonce", before.get("nonce"));
+        assertThat(node.broadcasts).hasSize(1);
+    }
+
+    @Test
+    void receiptTimeoutKeepsApprovalPendingAndLateProofConfirmsTheOriginalAttempt() throws Exception {
+        var submitted = create();
+        UUID caseId = UUID.fromString(submitted.path("id").asText());
+        var evidenceIds = new ArrayList<String>();
+        submitted.path("evidenceVersions").forEach(version -> evidenceIds.add(version.path("id").asText()));
+        var request = Map.of("expectedVersion", submitted.path("version").asLong(), "reviewedEvidenceVersionIds", evidenceIds);
+        String path = "/api/cases/" + caseId + "/verify";
+        String key = UUID.randomUUID().toString();
+        var approved = verifier.browser().send("POST", path, request, key, true);
+        status(approved, 200);
+        var approval = node(approved);
+        assertThat(approval.path("blockchainStatus").asText()).isEqualTo("PENDING_ON_CHAIN");
+        UUID auditId = UUID.fromString(approval.path("auditEventId").asText());
+        UUID jobId = jdbc.queryForObject("SELECT id FROM blockchain_jobs WHERE audit_event_id = ?", UUID.class, auditId);
+        jdbc.update("UPDATE blockchain_jobs SET chain_id = 31337 WHERE id = ?", jobId);
+        assertThat(worker.processNextJob().orElseThrow().jobId()).isEqualTo(jobId);
+        var before = receiptState(jobId);
+
+        node.mine(node.broadcasts.get(0), REGISTRY, 106, null);
+        node.nextReceiptFailure = new BlockchainRpcException("RPC_UNAVAILABLE", "Simulated receipt timeout");
+        assertThat(worker.pollSubmitted()).containsExactly(
+                new CaseVerifiedWorker.PollResult(jobId, CaseVerifiedWorker.PollOutcome.PENDING, "RPC_UNAVAILABLE"));
+        assertThat(receiptState(jobId)).containsEntry("job_status", "SUBMITTED").containsEntry("attempt_status", "SUBMITTED")
+                .containsEntry("last_error", "RPC_UNAVAILABLE").containsEntry("receipt_status", null)
+                .containsEntry("confirmed_at", null);
+        assertThat(jdbc.queryForObject("SELECT status FROM aid_cases WHERE id = ?", String.class, caseId)).isEqualTo("VERIFIED");
+        var replay = verifier.browser().send("POST", path, request, key, true);
+        status(replay, 200);
+        assertThat(replay.headers().firstValue("Idempotent-Replayed")).contains("true");
+        assertThat(node(replay).path("blockchainStatus").asText()).isEqualTo("PENDING_ON_CHAIN");
+
+        jdbc.update("UPDATE blockchain_jobs SET next_retry_at = NULL WHERE id = ?", jobId);
+        assertThat(worker.pollSubmitted()).containsExactly(
+                new CaseVerifiedWorker.PollResult(jobId, CaseVerifiedWorker.PollOutcome.CONFIRMED, null));
+        assertThat(receiptState(jobId)).containsEntry("job_status", "CONFIRMED").containsEntry("attempt_status", "CONFIRMED")
+                .containsEntry("attempt_id", before.get("attempt_id")).containsEntry("tx_hash", before.get("tx_hash"))
+                .containsEntry("nonce", before.get("nonce")).containsEntry("receipt_status", 1);
+        assertThat(count("verifications", "aid_case_id", caseId)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM audit_events WHERE aid_case_id = ? AND event_type = 'CASE_VERIFIED'",
+                Long.class, caseId)).isEqualTo(1);
+        assertThat(count("blockchain_jobs", "audit_event_id", auditId)).isEqualTo(1);
+        assertThat(node.broadcasts).hasSize(1);
+    }
+
+    @Test
+    void receiptPollingRepairsRolledBackConfirmationWithoutNewRecords() throws Exception {
+        UUID jobId = newLocalCaseVerifiedJob();
+        assertThat(worker.processNextJob().orElseThrow().jobId()).isEqualTo(jobId);
+        var before = receiptState(jobId);
+        UUID auditId = jdbc.queryForObject("SELECT audit_event_id FROM blockchain_jobs WHERE id = ?", UUID.class, jobId);
+        UUID caseId = jdbc.queryForObject("SELECT aid_case_id FROM blockchain_jobs WHERE id = ?", UUID.class, jobId);
+        node.mine(node.broadcasts.get(0), REGISTRY, 107, null);
+
+        // Fail the confirmation commit for this fixture only, after the worker sees a valid receipt.
+        jdbc.execute("ALTER TABLE blockchain_jobs ADD CONSTRAINT c08_fixture_reject_confirmation "
+                + "CHECK (id <> '" + jobId + "'::uuid OR status <> 'CONFIRMED')");
+        try {
+            assertThatThrownBy(() -> worker.pollSubmitted())
+                    .rootCause().isInstanceOfSatisfying(org.postgresql.util.PSQLException.class,
+                            error -> assertThat(error.getSQLState()).isEqualTo("23514"));
+            assertThat(receiptState(jobId)).isEqualTo(before);
+        } finally {
+            jdbc.execute("ALTER TABLE blockchain_jobs DROP CONSTRAINT c08_fixture_reject_confirmation");
+        }
+
+        // Model time after the original polling lease expires while keeping the same RPC observation.
+        jdbc.update("UPDATE blockchain_jobs SET lease_until = now() - interval '1 minute' WHERE id = ?", jobId);
+        assertThat(worker.pollSubmitted()).containsExactly(
+                new CaseVerifiedWorker.PollResult(jobId, CaseVerifiedWorker.PollOutcome.CONFIRMED, null));
+        var repaired = receiptState(jobId);
+        assertThat(repaired).containsEntry("job_status", "CONFIRMED").containsEntry("attempt_status", "CONFIRMED")
+                .containsEntry("attempt_id", before.get("attempt_id")).containsEntry("tx_hash", before.get("tx_hash"))
+                .containsEntry("nonce", before.get("nonce")).containsEntry("event_id", before.get("event_id"))
+                .containsEntry("receipt_status", 1).containsEntry("block_number", 107L);
+        assertThat((String) repaired.get("receipt")).contains((String) before.get("tx_hash"));
+        assertThat(worker.pollSubmitted()).isEmpty();
+        assertThat(receiptState(jobId)).isEqualTo(repaired);
+        assertThat(count("verifications", "aid_case_id", caseId)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM audit_events WHERE aid_case_id = ? AND event_type = 'CASE_VERIFIED'",
+                Long.class, caseId)).isEqualTo(1);
+        assertThat(count("blockchain_jobs", "audit_event_id", auditId)).isEqualTo(1);
+        assertThat(node.broadcasts).hasSize(1);
+    }
+
     @Test
     void waitsWhileNotMinedThenRebroadcastsTheSamePersistedBytes() throws Exception {
         UUID jobId = newLocalCaseVerifiedJob();
@@ -226,7 +380,12 @@ class CaseVerifiedWorkerIT extends AbstractCaseHttpIT {
 
         var pending = worker.pollSubmitted().stream().filter(r -> r.jobId().equals(jobId)).findFirst().orElseThrow();
         assertThat(pending.outcome()).isEqualTo(CaseVerifiedWorker.PollOutcome.PENDING);
+        assertThat(pending.reasonCode()).isEqualTo("RECEIPT_PENDING");
         assertThat(jdbc.queryForObject("SELECT status FROM blockchain_jobs WHERE id = ?", String.class, jobId)).isEqualTo("SUBMITTED");
+        var before = receiptState(jobId);
+        byte[] ciphertext = jdbc.queryForObject("SELECT signed_tx_ciphertext FROM blockchain_transactions WHERE id = ?",
+                byte[].class, before.get("attempt_id"));
+        String persistedRaw = Numeric.toHexString(cipher.decrypt(ciphertext, JobSecretCipher.associatedData(jobId, "signed-tx")));
 
         // Three minutes later, still no receipt: the same bytes are re-sent, nothing is re-signed.
         jdbc.update("UPDATE blockchain_transactions SET submitted_at = now() - interval '3 minutes' WHERE blockchain_job_id = ?", jobId);
@@ -234,10 +393,22 @@ class CaseVerifiedWorkerIT extends AbstractCaseHttpIT {
         var rebroadcast = worker.pollSubmitted().stream().filter(r -> r.jobId().equals(jobId)).findFirst().orElseThrow();
 
         assertThat(rebroadcast.outcome()).isEqualTo(CaseVerifiedWorker.PollOutcome.REBROADCAST);
+        assertThat(rebroadcast.reasonCode()).isEqualTo("REBROADCAST");
         assertThat(node.broadcasts).hasSize(2);
-        assertThat(node.broadcasts.get(1)).isEqualTo(node.broadcasts.get(0));
+        assertThat(node.broadcasts).containsExactly(persistedRaw, persistedRaw);
+        assertThat(TransactionDecoder.decode(node.broadcasts.get(1)).getNonce().longValueExact()).isEqualTo(before.get("nonce"));
+        assertThat(org.web3j.crypto.Hash.sha3(node.broadcasts.get(1))).isEqualTo(before.get("tx_hash"));
         assertThat(count("blockchain_transactions", "blockchain_job_id", jobId)).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT status FROM blockchain_jobs WHERE id = ?", String.class, jobId)).isEqualTo("SUBMITTED");
+
+        node.mine(persistedRaw, REGISTRY, 108, null);
+        jdbc.update("UPDATE blockchain_jobs SET next_retry_at = NULL WHERE id = ?", jobId);
+        assertThat(worker.pollSubmitted()).containsExactly(
+                new CaseVerifiedWorker.PollResult(jobId, CaseVerifiedWorker.PollOutcome.CONFIRMED, null));
+        assertThat(receiptState(jobId)).containsEntry("job_status", "CONFIRMED").containsEntry("attempt_status", "CONFIRMED")
+                .containsEntry("attempt_id", before.get("attempt_id")).containsEntry("event_id", before.get("event_id"))
+                .containsEntry("tx_hash", before.get("tx_hash")).containsEntry("nonce", before.get("nonce"));
+        assertThat(node.broadcasts).hasSize(2);
     }
 
     @Test
@@ -405,6 +576,17 @@ class CaseVerifiedWorkerIT extends AbstractCaseHttpIT {
         assertThat(node.broadcasts).isEmpty();
     }
 
+    private Map<String, Object> receiptState(UUID jobId) {
+        return jdbc.queryForMap("""
+                SELECT j.status AS job_status, j.last_error, t.id AS attempt_id, t.status AS attempt_status,
+                       encode(j.logical_event_id, 'hex') AS event_id, t.tx_hash, t.nonce, t.error_message,
+                       CAST(t.receipt_status AS integer) AS receipt_status, t.confirmed_at, t.block_number,
+                       CAST(t.receipt_private AS text) AS receipt
+                FROM blockchain_jobs j JOIN blockchain_transactions t ON t.blockchain_job_id = j.id
+                WHERE j.id = ?
+                """, jobId);
+    }
+
     private UUID newLocalCaseVerifiedJob() throws Exception {
         UUID jobId = newCaseVerifiedJob();
         // B05 creates Fuji jobs (43113); this local run targets the Hardhat chain only.
@@ -432,4 +614,54 @@ class CaseVerifiedWorkerIT extends AbstractCaseHttpIT {
         new SecureRandom().nextBytes(bytes);
         return bytes;
     }
+
+    @ParameterizedTest
+    @CsvSource({"MISSING_INDEX, RECEIPT_LOG_INDEX_INVALID", "NEGATIVE_INDEX, RECEIPT_LOG_INDEX_INVALID",
+        "OVERSIZED_INDEX, RECEIPT_LOG_INDEX_INVALID", "STATUS_TWO, RECEIPT_STATUS_INVALID",
+        "STATUS_NEGATIVE, RECEIPT_STATUS_INVALID", "RAW_STATUS_MISSING, RECEIPT_STATUS_INVALID",
+        "RAW_STATUS_INVALID, RECEIPT_STATUS_INVALID"})
+    void malformedProofRemainsPendingAndValidProofRecoversSameAttempt(String fixture, String reason) throws Exception {
+        UUID jobId = newLocalCaseVerifiedJob();
+        worker.processNextJob().orElseThrow();
+        var before = receiptState(jobId);
+        String hash = (String) before.get("tx_hash");
+        node.mine(node.broadcasts.get(0), REGISTRY, 109, null);
+        ChainReceipt valid = node.receipts.get(hash);
+        if (fixture.startsWith("RAW_STATUS")) {
+            // Adapter unit tests cover parsing null/abnormal JSON-RPC status into this RPC error.
+            node.nextReceiptFailure = new BlockchainRpcException(reason, "Malformed RPC status");
+        } else if (fixture.startsWith("STATUS")) {
+            node.receipts.put(hash, new ChainReceipt(hash, fixture.equals("STATUS_TWO") ? 2 : -1,
+                    valid.blockNumber(), valid.blockHash(), valid.from(), valid.to(), valid.logs()));
+        } else {
+            var log = valid.logs().get(0);
+            java.math.BigInteger index = fixture.equals("MISSING_INDEX") ? null
+                    : fixture.equals("NEGATIVE_INDEX") ? java.math.BigInteger.valueOf(-1)
+                    : java.math.BigInteger.ONE.shiftLeft(63);
+            var badLog = new ChainReceipt.ChainLog(log.address(), log.topics(), log.data(), index, false);
+            node.receipts.put(hash, new ChainReceipt(hash, 1, valid.blockNumber(), valid.blockHash(),
+                    valid.from(), valid.to(), List.of(badLog)));
+        }
+        assertThat(worker.pollSubmitted()).containsExactly(new CaseVerifiedWorker.PollResult(
+                jobId, CaseVerifiedWorker.PollOutcome.PENDING, reason));
+        assertThat(receiptState(jobId)).containsEntry("job_status", "SUBMITTED")
+                .containsEntry("attempt_status", "SUBMITTED").containsEntry("receipt_status", null)
+                .containsEntry("confirmed_at", null).containsEntry("receipt", null)
+                .containsEntry("attempt_id", before.get("attempt_id")).containsEntry("event_id", before.get("event_id"))
+                .containsEntry("nonce", before.get("nonce")).containsEntry("tx_hash", hash);
+        node.receipts.put(hash, valid);
+        jdbc.update("UPDATE blockchain_jobs SET next_retry_at = NULL WHERE id = ?", jobId);
+        assertThat(worker.pollSubmitted()).containsExactly(new CaseVerifiedWorker.PollResult(
+                jobId, CaseVerifiedWorker.PollOutcome.CONFIRMED, null));
+        var recovered = receiptState(jobId);
+        assertThat(recovered).containsEntry("attempt_id", before.get("attempt_id"))
+                .containsEntry("event_id", before.get("event_id")).containsEntry("nonce", before.get("nonce"))
+                .containsEntry("tx_hash", hash).containsEntry("receipt_status", 1);
+        assertThat(worker.pollSubmitted()).isEmpty();
+        assertThat(receiptState(jobId)).isEqualTo(recovered);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM blockchain_transactions WHERE blockchain_job_id = ?",
+                Long.class, jobId)).isEqualTo(1);
+        assertThat(node.broadcasts).hasSize(1);
+    }
+
 }

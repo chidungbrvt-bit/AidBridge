@@ -33,7 +33,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | B05 | P0-03 | Dũng (B) | Khoa / Minh | L | 4 | B04, C01 | 2026-11-08 | 2026-11-08 | In Review |
 | B06 | P0-04 | Dũng (B) | Khoa / Minh | M | 6 | B05 | 2026-11-10 | 2026-11-10 | In Review |
 | B07 | P0-04 | Dũng (B) | Khoa / Minh | L | 7 | B06 | 2026-11-13 | 2026-11-13 | In Review |
-| B08 | P0-05 | Dũng (B) | Khoa / Minh | M | 5 | B07 | 2026-11-14 | 2026-11-14 | Not Started |
+| B08 | P0-05 | Dũng (B) | Khoa / Minh | M | 5 | B07 | 2026-11-14 | 2026-11-14 | Testing |
 | B09 | P0-05 | Dũng (B) | Khoa / Minh | L | 5 | B08 | 2026-11-15 | 2026-11-15 | Not Started |
 | B10 | P0-05 | Dũng (B) | Khoa / Minh | L | 6 | B09 | 2026-11-18 | 2026-11-17 | Not Started |
 | B11 | Quality | Dũng (B) | Khoa / Minh | L | 6 | B03, B04, B05, B06, B07, B08, B09, B10 | 2026-11-20 | 2026-11-20 | Not Started |
@@ -45,7 +45,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | C05 | P0-03/P0-06 | Khoa (C) | Dũng / Minh | L | 6 | B05, C04 | 2026-11-09 | 2026-11-08 | Blocked |
 | C06 | P0-04/P0-05/P0-06 | Khoa (C) | Dũng / Minh | L | 6 | C03 | 2026-11-11 | 2026-11-11 | In Progress |
 | C07 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C05 | 2026-11-14 | 2026-11-14 | In Review |
-| C08 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C06, C07 | 2026-11-15 | 2026-11-15 | Not Started |
+| C08 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C06, C07 | 2026-11-15 | 2026-11-15 | In Progress |
 | C09 | P0-06 | Khoa (C) | Dũng / Minh | M | 3 | C08 | 2026-11-16 | 2026-11-16 | Not Started |
 | C10 | P0-05/P0-06 | Khoa (C) | Dũng / Minh | L | 4 | B08, B09, C08 | 2026-11-17 | 2026-11-17 | Not Started |
 | C11 | Quality | Khoa (C) | Dũng / Minh | L | 6 | C06, C07, C08, C09, C10 | 2026-11-20 | 2026-11-20 | Not Started |
@@ -222,13 +222,16 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Dependencies:** B07; mock prework allowed, integrated acceptance waits.
 - **Schedule:** allocated 2026-11-13 through 2026-11-14; deadline 2026-11-14, Asia/Bangkok.
 - **Description / expected behavior:** Partial goods receipts; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
-- **Expected output files (future, not created):** backend receipt controller/service/repository; receipt migrations; ReceiptApiIT.
+- **Output:** R01 trong `ContributionController`, `GoodsReceiptService` và các receipt DTO/entity/repository, staff read projection, migration V14, `ReceiptApiIT`, `ReceiptSchemaIT` và `ReceiptRequestValidationTest`.
 - **Acceptance criteria:** Immutable receipt per contribution line; received<=active pledge; repeat once; same org/line; not delivered.
 - **Required tests:** BR05-P/N, BR11-P/N; IT05, IT10; receipt/cancel concurrency.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
 - **Phối hợp cụ thể:** Dũng giữ receipt quantities/immutable records; bàn giao snapshot nhận hàng cho Khoa map C10. Minh hiển thị received riêng pledged/delivered.
-- **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Ghi công hỗ trợ:** Chưa ghi nhận số giờ thực tế của Dũng, Khoa hoặc Minh.
+- **Status / evidence (13/11/2026):** Testing. Dũng duyệt triển khai. V14 giữ receipt lịch sử, ràng buộc sở hữu và bảo vệ bất biến. R01 nối transaction, replay và outbox `GOODS_RECEIVED`. Staff đọc `GET /api/org/cases/{id}` với `outstandingCommitments`. P03/P04 và G02 đọc tổng thực nhận. [B08 R01 handoff](../reviews/B08_R01_HANDOFF.md) có ví dụ, mã lỗi, luồng refresh và contract C10 cần review.
+- **Kiểm chứng 13/11 (Maven):** `mvn -o -B -ntp "-Dtest=ReceiptRequestValidationTest,ReceiptApiIT,ReceiptSchemaIT,ContributionCancelIT,ContributionConcurrencyIT,ContributionSchemaIT,CampaignApiIT" test` build thành công, 5 validation tests pass, 45 test entries PostgreSQL skip vì thiếu `AIDBRIDGE_TEST_DATABASE_*`. Hibernate repository bootstrap và shape staff JSON pass offline. `node docs/fixtures/f02/verify-f02.mjs` pass 5 snapshots và 10 mock scenarios.
+- **Kiểm chứng 13/11 (IntelliJ):** Dũng xác nhận toàn bộ test đã chạy đều pass sau khi chạy bộ B08 với `aidbridge_test`, gồm `ReceiptApiIT` và `ReceiptSchemaIT`. Nguồn kết quả là xác nhận của Dũng trong chat, chưa có báo cáo IntelliJ để đối chiếu số test hoặc các lớp hồi quy đã chạy. Kết quả skip của lượt Maven ghi ở trên vẫn là lịch sử của lượt đó.
+- **Còn lại trước khi Done:** Khoa review payload/refs/sequence `GOODS_RECEIVED`. Minh xác nhận F08 gọi R01 và refresh staff view với backend thật. F08 browser E2E và Fuji receipt sync chưa có kết quả cho R01. Fuji receipt sync thuộc C10.
 
 ### B09 - Delivery records/failed attempts
 
@@ -414,8 +417,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Required tests:** BR10-P/N, BR11-P/N; IT02-04/13; SC09.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
 - **Phối hợp cụ thể:** Dũng chuẩn bị DB fixtures/assertions và hỗ trợ Java polling/retry/DB update khi có giờ; Khoa quyết định receipt/log/context hợp lệ, nonce/attempt và reconciliation. Hai bạn cùng kiểm tra null/revert/mismatch/restart.
-- **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Ghi công hỗ trợ:** Dũng phụ trách kiểm thử Java/HTTP/PostgreSQL của Task 6, slot 2h theo lịch 13/11. Giờ làm thực tế chưa ghi nhận.
+- **Status / evidence (14/11/2026):** In Progress. Chạy lại Task 6 trên snapshot `f225385` cùng bốn file Java C08 trong working tree. `CaseVerifiedWorkerIT`, `CaseVerifiedReceiptVerifierTest`, `Web3jBlockchainAdapterTest` và `VerificationApiIT` đạt 40/40, gồm 31 test trên PostgreSQL biệt lập với Flyway V1–V14. IT03 xác nhận attempt gốc sau timeout và rebroadcast khớp signed bytes trong journal. IT13 xác nhận các mã lỗi khi receipt sai context hoặc revert. IT04 khôi phục đúng một lần qua receipt polling sau SQL rollback. **Not Run:** log replay end-to-end do thiếu scanner/cursor/kho observation và kiểm tra API đọc projection live. Khoa review chain/context và chốt đường ingest, Dũng hỗ trợ SQL transaction và `LogReplayIT` khi có đường ingest. Chờ Khoa nghiệm thu trong Task 7. [Bằng chứng và bàn giao C08](../reviews/C08_DUNG_RECOVERY_2026_11_13.md)
 
 ### C09 - Full sanitized audit API
 
