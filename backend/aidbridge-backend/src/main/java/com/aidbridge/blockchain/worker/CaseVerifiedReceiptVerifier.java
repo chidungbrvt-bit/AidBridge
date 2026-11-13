@@ -32,10 +32,12 @@ public final class CaseVerifiedReceiptVerifier {
     public record Reverted(long blockNumber, String blockHash) implements Verdict {
     }
 
-    /** {@code BLOCK_NOT_CANONICAL} is transient (wait and re-check); every other code is an integrity failure. */
+    /** Incomplete/malformed RPC proof remains pending until a valid observation is available. */
     public record Mismatch(String reasonCode) implements Verdict {
         public boolean transientCondition() {
-            return "BLOCK_NOT_CANONICAL".equals(reasonCode);
+            return "BLOCK_NOT_CANONICAL".equals(reasonCode)
+                    || "RECEIPT_STATUS_INVALID".equals(reasonCode)
+                    || "RECEIPT_LOG_INDEX_INVALID".equals(reasonCode);
         }
     }
 
@@ -57,7 +59,10 @@ public final class CaseVerifiedReceiptVerifier {
         if (!same(receipt.from(), expected.signerAddress())) {
             return new Mismatch("RECEIPT_WRONG_SIGNER");
         }
-        if (receipt.status() != 1) {
+        if (receipt.status() != 0 && receipt.status() != 1) {
+            return new Mismatch("RECEIPT_STATUS_INVALID");
+        }
+        if (receipt.status() == 0) {
             return new Reverted(blockNumber, receipt.blockHash());
         }
 
@@ -106,7 +111,10 @@ public final class CaseVerifiedReceiptVerifier {
         if (schema.get().intValueExact() != envelope.schemaVersion()) {
             return new Mismatch("RECEIPT_SCHEMA_MISMATCH");
         }
-        long logIndex = log.logIndex() == null ? -1 : log.logIndex().longValueExact();
+        if (log.logIndex() == null || log.logIndex().signum() < 0 || log.logIndex().bitLength() > 63) {
+            return new Mismatch("RECEIPT_LOG_INDEX_INVALID");
+        }
+        long logIndex = log.logIndex().longValueExact();
         return new Confirmed(blockNumber, receipt.blockHash(), logIndex, timestamp.get().longValueExact());
     }
 

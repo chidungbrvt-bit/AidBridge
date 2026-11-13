@@ -614,4 +614,54 @@ class CaseVerifiedWorkerIT extends AbstractCaseHttpIT {
         new SecureRandom().nextBytes(bytes);
         return bytes;
     }
+
+    @ParameterizedTest
+    @CsvSource({"MISSING_INDEX, RECEIPT_LOG_INDEX_INVALID", "NEGATIVE_INDEX, RECEIPT_LOG_INDEX_INVALID",
+        "OVERSIZED_INDEX, RECEIPT_LOG_INDEX_INVALID", "STATUS_TWO, RECEIPT_STATUS_INVALID",
+        "STATUS_NEGATIVE, RECEIPT_STATUS_INVALID", "RAW_STATUS_MISSING, RECEIPT_STATUS_INVALID",
+        "RAW_STATUS_INVALID, RECEIPT_STATUS_INVALID"})
+    void malformedProofRemainsPendingAndValidProofRecoversSameAttempt(String fixture, String reason) throws Exception {
+        UUID jobId = newLocalCaseVerifiedJob();
+        worker.processNextJob().orElseThrow();
+        var before = receiptState(jobId);
+        String hash = (String) before.get("tx_hash");
+        node.mine(node.broadcasts.get(0), REGISTRY, 109, null);
+        ChainReceipt valid = node.receipts.get(hash);
+        if (fixture.startsWith("RAW_STATUS")) {
+            // Adapter unit tests cover parsing null/abnormal JSON-RPC status into this RPC error.
+            node.nextReceiptFailure = new BlockchainRpcException(reason, "Malformed RPC status");
+        } else if (fixture.startsWith("STATUS")) {
+            node.receipts.put(hash, new ChainReceipt(hash, fixture.equals("STATUS_TWO") ? 2 : -1,
+                    valid.blockNumber(), valid.blockHash(), valid.from(), valid.to(), valid.logs()));
+        } else {
+            var log = valid.logs().get(0);
+            java.math.BigInteger index = fixture.equals("MISSING_INDEX") ? null
+                    : fixture.equals("NEGATIVE_INDEX") ? java.math.BigInteger.valueOf(-1)
+                    : java.math.BigInteger.ONE.shiftLeft(63);
+            var badLog = new ChainReceipt.ChainLog(log.address(), log.topics(), log.data(), index, false);
+            node.receipts.put(hash, new ChainReceipt(hash, 1, valid.blockNumber(), valid.blockHash(),
+                    valid.from(), valid.to(), List.of(badLog)));
+        }
+        assertThat(worker.pollSubmitted()).containsExactly(new CaseVerifiedWorker.PollResult(
+                jobId, CaseVerifiedWorker.PollOutcome.PENDING, reason));
+        assertThat(receiptState(jobId)).containsEntry("job_status", "SUBMITTED")
+                .containsEntry("attempt_status", "SUBMITTED").containsEntry("receipt_status", null)
+                .containsEntry("confirmed_at", null).containsEntry("receipt", null)
+                .containsEntry("attempt_id", before.get("attempt_id")).containsEntry("event_id", before.get("event_id"))
+                .containsEntry("nonce", before.get("nonce")).containsEntry("tx_hash", hash);
+        node.receipts.put(hash, valid);
+        jdbc.update("UPDATE blockchain_jobs SET next_retry_at = NULL WHERE id = ?", jobId);
+        assertThat(worker.pollSubmitted()).containsExactly(new CaseVerifiedWorker.PollResult(
+                jobId, CaseVerifiedWorker.PollOutcome.CONFIRMED, null));
+        var recovered = receiptState(jobId);
+        assertThat(recovered).containsEntry("attempt_id", before.get("attempt_id"))
+                .containsEntry("event_id", before.get("event_id")).containsEntry("nonce", before.get("nonce"))
+                .containsEntry("tx_hash", hash).containsEntry("receipt_status", 1);
+        assertThat(worker.pollSubmitted()).isEmpty();
+        assertThat(receiptState(jobId)).isEqualTo(recovered);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM blockchain_transactions WHERE blockchain_job_id = ?",
+                Long.class, jobId)).isEqualTo(1);
+        assertThat(node.broadcasts).hasSize(1);
+    }
+
 }

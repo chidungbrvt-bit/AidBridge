@@ -2,7 +2,17 @@
 
 Phạm vi lịch 13/11/2026, review cập nhật ngày 14/11/2026 (Asia/Saigon). Reviewer: Khoa/Codex.
 
-**Verdict: NEEDS FIX cho validation receipt proof; log replay PENDING.** Hai sửa đổi chain/context và bốn tests được bàn giao đã được xác nhận; không còn blocker “chưa push implementation” của lượt trước. Không đánh C08 Done hoặc PASS toàn bộ.
+**Kết luận hiện hành: receipt recovery PASS sau sửa hai findings; log replay PENDING.** Hai sửa đổi chain/context và bốn tests được bàn giao đã được xác nhận; không còn blocker “chưa push implementation” của lượt trước. Không đánh C08 Done hoặc PASS toàn bộ.
+
+## Cập nhật sửa lỗi ngày14/11/2026
+
+Người dùng cho phép Khoa sửa đúng R1/R2 và cập nhật PR21. Baseline36108eb được cherry-pick riêng vào khoa (`76d2e79`), giữ Task5f89a2dd và review30cc805. Candidate gửi PR21 là **9a9f7fb8cccc1f914b8050585ffb467c03e8eb51**, chỉ6 file C08, parent là head Dũng f4319d0; không mang lịch sử Task5 vào PR, không force push.
+
+- R1 **RESOLVED**: verifier reject logIndex null/âm/vượt long; worker không clamp thành0. Proof sai pending, không tạo receipt hoặc confirmed state. Index0 hợp lệ giữ nguyên.
+- R2 **RESOLVED**: adapter chỉ nhận raw status canonical0x0/0x1; thiếu/bất thường ném RECEIPT_STATUS_INVALID. Verifier cũng phòng thủ int ngoài0/1; context vẫn kiểm trước revert0 hợp lệ. Poll giữ pending/attempt gốc, không REVERTED giả.
+- [Existing manual C07 workflow run43473786126](https://github.com/chidungbrvt-bit/AidBridge/actions/runs/43473786126) **SUCCESS** trên đúng candidate: Java compile, **26 unit +32 IT PASS**, 0 failures/errors/skips. Đã đọc XML artifact trong bộ nhớ: verifier8, adapter5, crypto3, golden8, disabled2; WorkerIT28, persistence3, Hardhat local E2E1.
+- Tests mới: null/negative/overflow index, raw status null/empty/0x2/malformed, verifier abnormal ints, status0/1 và index0 hợp lệ. Bảy WorkerIT cases kiểm pending/no receipt/no confirmed, giữ eventId/hash/nonce/attempt, phục hồi bằng proof hợp lệ rồi poll tiếp không cập nhật lại. Tests timeout/retry/rollback C08 cũ vẫn trong suite PASS.
+- Không tạo/sửa workflow hoặc cài Java/DB lên Windows. Chỉ chạy workflow thủ công hiện có trên runner GitHub, không Fuji/wallet. Log scanner/cursor/LogReplayIT không triển khai, giữ PENDING riêng. Findings và phương pháp bên dưới là lịch sử review trước bản sửa, không còn là blocker R1/R2 hiện hành.
 
 ## Phiên bản và phương pháp
 

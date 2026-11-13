@@ -99,11 +99,15 @@ public class Web3jBlockchainAdapter implements BlockchainAdapter {
         return Optional.ofNullable(response.getBlock()).map(EthBlock.Block::getHash);
     }
 
-    private static ChainReceipt toReceipt(TransactionReceipt receipt) {
+    static ChainReceipt toReceipt(TransactionReceipt receipt) {
+        String rawStatus = receipt.getStatus();
+        if (!"0x0".equals(rawStatus) && !"0x1".equals(rawStatus)) {
+            throw new BlockchainRpcException("RECEIPT_STATUS_INVALID", "Missing or invalid receipt status");
+        }
         List<ChainReceipt.ChainLog> logs = receipt.getLogs().stream()
                 .map(Web3jBlockchainAdapter::toLog)
                 .toList();
-        int status = "0x1".equals(receipt.getStatus()) ? 1 : 0;
+        int status = "0x1".equals(rawStatus) ? 1 : 0;
         return new ChainReceipt(
                 receipt.getTransactionHash(),
                 status,

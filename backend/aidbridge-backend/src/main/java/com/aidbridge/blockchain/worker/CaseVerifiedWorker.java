@@ -344,7 +344,7 @@ public class CaseVerifiedWorker {
                     "blockHash", confirmed.blockHash().toLowerCase(),
                     "blockNumber", confirmed.blockNumber(),
                     "blockTimestamp", confirmed.blockTimestamp(),
-                    "logIndex", Math.max(confirmed.logIndex(), 0),
+                    "logIndex", confirmed.logIndex(),
                     "status", 1,
                     "transactionHash", item.txHash().toLowerCase()));
             tx.executeWithoutResult(status -> {
