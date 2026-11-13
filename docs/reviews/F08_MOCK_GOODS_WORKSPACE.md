@@ -2,6 +2,16 @@
 
 Status: **In Review — PASS trong phạm vi mock R01/D01**. Khoa thực hiện theo phân công ngày 12/11; giữ owner/estimate baseline của F08. Chưa nghiệm thu nhóm, chưa tích hợp B08/B09.
 
+## Bổ sung Task 5 ngày 13/11
+
+Không viết lại logic đã đúng: F02 S1→S2 nhận một phần, S2→S3 giao thành công và FAILED zero stock effect đã có từ PR14. Bổ sung thông báo 400/409 cụ thể theo dòng hàng, giới hạn tồn hiện hành, `aria-invalid`/liên kết feedback; UI có Latest mock result thể hiện hàng/số lượng, trạng thái hoặc reason FAILED. Kết quả chỉ là state trong bộ nhớ, không phải persisted API/audit/blockchain record. Fixture snapshot không đổi, tiếp tục parity với F02; receipt note giữ cap500 đã sửa.
+
+Task 5 kiểm tra bốn tình huống: partial receipt để lại outstanding3kg/1box; delivery4kg/1box cập nhật pooled delivered5kg/1box, confirmed vẫn0; over-delivery của một dòng trả409, tất cả dòng giữ nguyên; FAILED yêu cầu reason và items/evidence rỗng, không tăng delivered/confirmed hay giảm available. Chuỗi R01→D01→FAILED giữ contribution outstanding độc lập với campaign delivery pool.
+
+Kiểm tra ngày13: unit F08 **13/13 PASS**, gồm thêm chuỗi R01/D01/FAILED, atomic multi-item over-delivery, zero/negative/fractional/unknown goods; lint và typecheck PASS. Browser F08 **7/7 PASS** trên Edge hiện có (desktop/mobile/keyboard): 5 tests cũ + over-delivery/recovery và chuỗi partial receipt→FAILED/reason. Lần đầu test mới lỗi ký tự phân cách trong assertion do encoding; đã chuẩn hóa assertion và chạy lại toàn bộ 7/7 PASS, không đổi logic để né lỗi. Không chạy build hoặc điều tra lại WasmHash; không cài môi trường, Actions, B08/B09/DB/Fuji E2E.
+
+Minh tiếp nhận UI/feedback/actor mô phỏng và kiểm tra tích hợp shell. Dũng cung cấp B08/B09 và read projections theo D49 trước ghép API thật ngày14; không chuyển mock controls sang production. Giữ In Review, chưa Done toàn phần. [Kết luận Task4 đã lưu](C06_PART2_D55_REVIEW.md), không review lại C06 trong Task5.
+
 ## Phạm vi và cách mở
 
 - Route `/goods-demo` trong Next.js shell chung; navigation chỉ xuất hiện khi `NEXT_PUBLIC_API_MODE=mock`. Real mode hiển thị thông báo chưa tích hợp, không cho thao tác mock.

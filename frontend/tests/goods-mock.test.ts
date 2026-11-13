@@ -62,3 +62,31 @@ test('R01 rejects a 501-character receipt note atomically', () => {
   assert.equal(before.campaign.items[0].receivedQty, 2);
   assert.equal(before.campaign.items[1].receivedQty, 0);
 });
+
+test('R01 -> D01 -> FAILED preserves pooled stock and contribution outstanding', () => {
+  const received = apply(initialSnapshot(), receipt());
+  const delivered = apply(received, delivery());
+  const failed = apply(delivered, {...delivery(), outcome: 'FAILED', lines: [], evidence: [], reason: 'Fictional road blocked'});
+  assert.deepEqual(failed, delivered);
+  assert.deepEqual(failed.focalContribution.items.map(x => x.outstandingQty), [3,1]);
+  for (const x of failed.campaign.items) {
+    assert.ok(x.confirmedQty <= x.deliveredQty && x.deliveredQty <= x.receivedQty && x.receivedQty <= x.pledgedQty);
+  }
+  assert.deepEqual(limits(failed, 'delivery').map(x => x.available), [2,0]);
+});
+test('D01 over-delivery is atomic across items and identifies the conflicting line', () => {
+  const before = initialSnapshot(true), cmd = delivery();
+  cmd.lines[1].quantity = 2;
+  assert.throws(() => apply(before, cmd), (e:unknown) => {
+    assert.ok(e instanceof Error); assert.match(e.message, /409 QUANTITY_EXCEEDED.*Drinking Water: only 1 box/); return true;
+  });
+  assert.deepEqual(before, initialSnapshot(true));
+});
+test('D01 rejects non-positive, fractional and unknown goods without stock changes', () => {
+  for (const quantity of [0,-1,0.25,NaN,1_000_001]) {
+    const before = initialSnapshot(true), cmd = delivery(); cmd.lines[1].quantity = quantity;
+    assert.throws(() => apply(before, cmd), /400/); assert.deepEqual(before,initialSnapshot(true));
+  }
+  const before=initialSnapshot(true),cmd=delivery();cmd.lines[1].id='not-a-campaign-item';
+  assert.throws(()=>apply(before,cmd),/400/); assert.deepEqual(before,initialSnapshot(true));
+});
