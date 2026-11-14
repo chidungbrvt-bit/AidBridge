@@ -38,3 +38,15 @@ test('lost response after commit retries same logical receipt; double submit rej
   const first=submitReceipt(api,work,{id:'pledge',body:body()});await assert.rejects(()=>submitReceipt(api,work));release();await assert.rejects(()=>first);
   const retry=submitReceipt(api,work);release();await retry;assert.equal(seen.size,1);
 });
+for(const rejection of [403,409])test(`504 then ${rejection} cannot discard an unresolved receipt key`,async()=>{
+  const work:ReceiptWork={};const requests:string[]=[];let attempts=0,saved=0;
+  const api={receiveGoods:async(id:string,b:unknown,key:string)=>{
+    requests.push(JSON.stringify({id,b,key}));attempts++;
+    if(attempts===1){saved++;throw new ApiError({type:'urn:test',status:504,code:'LOST_RESPONSE',title:'Lost response'});}
+    if(attempts===2)throw new ApiError({type:'urn:test',status:rejection,code:'REJECTED',title:'Rejected retry'});
+    return {id:'saved-receipt'} as never;
+  }};
+  await assert.rejects(()=>submitReceipt(api,work,{id:'pledge',body:body()}));
+  await assert.rejects(()=>submitReceipt(api,work));assert.ok(work.pending);assert.equal(work.uncertain,true);
+  await submitReceipt(api,work);assert.equal(new Set(requests).size,1);assert.equal(saved,1);assert.equal(work.pending,undefined);
+});
