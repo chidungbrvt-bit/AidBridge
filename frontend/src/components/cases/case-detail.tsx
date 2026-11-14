@@ -8,6 +8,7 @@ import type { CaseDetailResponse, DecisionResponse } from "@/lib/types";
 import { describeError, ErrorNotice, LoadingCard, StatusBadge, type ErrorInfo } from "./shared";
 import { CampaignPanel } from "@/components/campaigns/campaign-panel";
 import { ReviewPanel } from "./review-panel";
+import { ReceiptPanel } from "@/components/goods/receipt-panel";
 
 export function CaseDetail({ id }: { id: string }) {
   const { user, organizationId } = useSession();
@@ -78,6 +79,7 @@ function ScopedCaseDetail({ id }: { id: string }) {
       <ReviewPanel detail={detail} onDecision={applyDecision} onRefresh={() => setRefreshCount(value => value + 1)} onBusyChange={setReviewBusy} />
     </div>
     <CampaignPanel detail={detail} onBusyChange={setCampaignBusy} onPublished={() => setRefreshCount(value => value + 1)} />
+    <ReceiptPanel detail={detail} />
     {mode === "mock" && <details className="card mock-controls"><summary>Mock review test controls</summary><p className="muted">These controls affect this local simulation only.</p><div className="actions"><button type="button" className="button secondary" disabled={controlBusy || reviewBusy || detail.status !== "SUBMITTED"} onClick={() => void mockAction("stale-case")}>Simulate a stale revision</button><button type="button" className="button secondary" disabled={controlBusy || reviewBusy || detail.status !== "SUBMITTED"} onClick={() => void mockAction("lose-next-response")}>Lose next mutation response</button></div>{controlMessage && <p role="status">{controlMessage}</p>}</details>}
   </div>;
 }

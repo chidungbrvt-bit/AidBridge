@@ -71,8 +71,12 @@ Xem [bàn giao F05/F06](../docs/handoffs/MINH_F05_F06_2026-11-12.md) và [bàn g
 
 [Run43200835548](https://github.com/chidungbrvt-bit/AidBridge/actions/runs/43200835548) đã PASS5 browser E2E thật +SQL assertions, cùng57 frontend unit và9 backend validation; không skip. Received rows được seed theo fixture SQL B07, không phải receipt creation API. Xem [F07 evidence](../docs/reviews/F07_B07_API_INTEGRATION.md). Không cần cài Java/DB lên Windows.
 
+## Nhận hàng với B08 (R01)
+
+Trong real mode, đăng nhập bằng ORG_ADMIN sở hữu hồ sơ. Mở case detail và chọn một cam kết trong **Record goods receipt**. Sau 201, giữ receipt ID để đối chiếu và kiểm tra outstanding đã cập nhật. Có thể chạy `npm run test:e2e -- --project=receipt-api` với server real mode để kiểm tra browser bằng HTTP fixture. Dùng workflow **F07 real backend E2E** để chạy qua Spring Boot và PostgreSQL.
+
 ## Xác nhận giao hàng và tranh chấp (F09 fixture)
 
 Mở **Goods demo · MOCK** trong mock mode. Load S2, ghi D01 thành công bằng actor Field volunteer và chọn evidence. Trong **Delivery confirmation and disputes**, chọn D02 và tick đúng toàn bộ evidence version. Actor Independent delivery confirmer có thể xác nhận hoặc yêu cầu xem xét. Actor Delivery recorder with confirmer role bị chặn tự xác nhận.
 
-S01 mở tranh chấp cấp hồ sơ hoặc gắn một delivery. S03 dùng actor Platform admin để Uphold hoặc Void delivery. Giữ nguyên dữ liệu nhận hàng khi void; UI tính lại số đã giao và đã xác nhận. Các thao tác dùng chung dữ liệu mô phỏng trên trang. Xem [bàn giao F09](../docs/handoffs/MINH_F09_2026-11-13.md).
+S01 mở tranh chấp cấp hồ sơ hoặc gắn một delivery. S03 dùng actor Platform admin để Uphold hoặc Void delivery. Giữ nguyên dữ liệu nhận hàng khi void, UI tính lại số đã giao và đã xác nhận. Hàng chờ xác nhận và timeline dùng dữ liệu trả về từ fixture D01. Xem [bàn giao R01/F09 và trạng thái tích hợp](../docs/handoffs/MINH_F08_F09_2026-11-14.md).
