@@ -3,9 +3,12 @@ package com.aidbridge.delivery.service;
 import com.aidbridge.audit.entity.AuditEvent;
 import com.aidbridge.audit.repository.AuditEventRepository;
 import com.aidbridge.campaign.entity.Campaign;
+import com.aidbridge.campaign.repository.CampaignItemRepository;
 import com.aidbridge.campaign.repository.CampaignRepository;
 import com.aidbridge.casefile.entity.AidCase;
+import com.aidbridge.casefile.entity.EvidenceVersion;
 import com.aidbridge.casefile.repository.AidCaseRepository;
+import com.aidbridge.casefile.repository.EvidenceRepository;
 import com.aidbridge.delivery.dto.request.DeliveryRequest;
 import com.aidbridge.delivery.dto.response.DeliveryResponse;
 import com.aidbridge.delivery.entity.Delivery;
@@ -21,6 +24,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
@@ -39,6 +44,8 @@ public class DeliveryService {
     private final AuditEventRepository auditEvents;
     private final IdempotencyService idempotency;
     private final ObjectMapper json;
+    private final CampaignItemRepository campaignItems;
+    private final EvidenceRepository evidence;
 
     @Transactional
     public Result<DeliveryResponse> record(
@@ -90,6 +97,8 @@ public class DeliveryService {
             throw BusinessException.state();
         }
         if (!"FAILED".equals(request.outcome())) {
+            validateAvailableStock(campaign.getId(), request);
+            resolveEvidenceSnapshot(caseId, orgId, request.evidenceVersionIds());
             throw new BusinessException(
                     HttpStatus.NOT_IMPLEMENTED, "NOT_IMPLEMENTED",
                     "Successful delivery recording is not available yet"
@@ -120,5 +129,45 @@ public class DeliveryService {
                 event.getId(), "NOT_APPLICABLE", null
         );
         return new Result<>(response, 201, "/api/deliveries/" + deliveryId, false);
+    }
+
+    private void validateAvailableStock(UUID campaignId, DeliveryRequest request) {
+        var itemIds = request.items().stream()
+                .map(DeliveryRequest.Line::campaignItemId)
+                .toList();
+        var lockedItems = campaignItems.lockByIds(campaignId, itemIds);
+        if (lockedItems.size() != itemIds.size()) {
+            throw BusinessException.state();
+        }
+        var receivedByItem = campaignItems.progressTotals(itemIds).stream()
+                .collect(Collectors.toMap(
+                        CampaignItemRepository.ItemProgress::getItemId,
+                        CampaignItemRepository.ItemProgress::getReceivedQty));
+        var deliveredByItem = deliveries.deliveredTotals(campaignId, itemIds).stream()
+                .collect(Collectors.toMap(
+                        DeliveryRepository.DeliveredTotal::getItemId,
+                        DeliveryRepository.DeliveredTotal::getQuantity));
+        for (var line : request.items()) {
+            UUID itemId = line.campaignItemId();
+            long available = receivedByItem.getOrDefault(itemId, 0L)
+                    - deliveredByItem.getOrDefault(itemId, 0L);
+            if (line.quantity() > available) {
+                throw BusinessException.quantityExceeded();
+            }
+        }
+    }
+
+    private List<UUID> resolveEvidenceSnapshot(
+            UUID caseId, UUID orgId, List<UUID> requestedIds
+    ) {
+        var allowedIds = evidence.findCurrent(caseId, orgId).stream()
+                .map(EvidenceVersion::getId)
+                .collect(Collectors.toSet());
+
+        if (!allowedIds.containsAll(requestedIds)) {
+            throw BusinessException.invalid();
+        }
+
+        return List.copyOf(requestedIds);
     }
 }
