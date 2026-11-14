@@ -585,6 +585,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### F08 - Receipt/delivery UI
 
+- **Khoa Task4 ngày14/11:** In Review, R01 API integration implemented tại `/cases/{id}/receipts`, shared session/CSRF/idempotency và staff projection/refetch; D01/F09 vẫn fixture độc lập. PASS WITH LIMITATIONS: frontend unit/HTTP-fixture browser đã kiểm chứng, Spring Boot/PostgreSQL E2E chưa xác minh vì backend local chưa chạy. Xem [F08 evidence](../reviews/F08_MOCK_GOODS_WORKSPACE.md). Không đổi owner/estimate hoặc nghiệm thu Done toàn F08.
+
 - **Bổ sung Khoa ngày13/11 (Task5):** giữ In Review; hoàn thiện mock R01/D01 từ PR14, không viết lại phép tính đúng. Feedback 400/409 theo dòng hàng và kết quả mock có outcome/reason; tests tập trung partial receipt, delivery success/over-limit/FAILED và bất biến stock. Bằng chứng cập nhật tại [F08 mock workspace](../reviews/F08_MOCK_GOODS_WORKSPACE.md). Chưa B08/B09/DB thật, không thay owner/estimate/lịch baseline. [Kết luận Task4](../reviews/C06_PART2_D55_REVIEW.md) chỉ lưu review PASS đã thực hiện, không chạy lại C06.
 
 - **Feature / priority:** P0-05 / P0.
