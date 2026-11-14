@@ -117,7 +117,7 @@ public class DeliveryService {
         Instant recordedAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
         Delivery delivery = deliveries.save(new Delivery(
                 caseId, campaign.getId(), recorderId, Delivery.Outcome.FAILED,
-                request.reason(), null, recordedAt
+                request.reason(), null, recordedAt, null
         ));
         UUID deliveryId = delivery.getId();
 
@@ -152,7 +152,8 @@ public class DeliveryService {
         // Flush the header first: child rows reference its ID through composite foreign keys.
         Delivery delivery = deliveries.saveAndFlush(new Delivery(
                 caseId, campaign.getId(), recorderId, Delivery.Outcome.DELIVERED,
-                request.reason(), handedOverAt, recordedAt
+                request.reason(), handedOverAt, recordedAt,
+                ChainRefs.randomBytes32() // generated once here; never regenerated on retry or recovery (D56)
         ));
         deliveryItems.saveAll(request.items().stream()
                 .map(line -> new DeliveryItem(delivery, line.campaignItemId(), line.quantity()))
@@ -188,8 +189,8 @@ public class DeliveryService {
         payload.put("payloadVersion", 1);
         payload.put("deliveryId", delivery.getId());
         payload.put("campaignId", delivery.getCampaignId());
-        // PROVISIONAL: stable bytes32 deliveryRef for C10 (recordDelivery / flagDispute), as receiptRef in B08.
-        payload.put("deliveryRef", "0x" + HexFormat.of().formatHex(ChainRefs.randomBytes32()));
+        // Same value as deliveries.delivery_ref (single source of truth); flagDispute/resolveDispute reuse it (D55).
+        payload.put("deliveryRef", "0x" + HexFormat.of().formatHex(delivery.getDeliveryRef()));
         payload.put("handedOverAt", delivery.getHandedOverAt());
         payload.put("lines", lines);
         payload.put("evidenceVersionIds", evidenceIds);

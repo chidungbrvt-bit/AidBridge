@@ -1,6 +1,7 @@
 package com.aidbridge.casefile;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -48,6 +49,14 @@ class DeliveryApiIT extends AbstractDeliveryHttpIT {
                 SELECT payload_private::text FROM audit_events WHERE event_key = ?
                 """, String.class, deliveryId);
         assertThat(json.readTree(payload).path("deliveryRef").asText()).matches("0x[0-9a-f]{64}");
+        // The column and the audit snapshot must carry the same ref, and the column is immutable.
+        assertThat(jdbc.queryForObject("SELECT encode(delivery_ref, 'hex') FROM deliveries WHERE id = ?",
+                String.class, deliveryId))
+                .isEqualTo(json.readTree(payload).path("deliveryRef").asText().substring(2));
+        UUID immutableTarget = deliveryId;
+        assertThatThrownBy(() -> jdbc.update(
+                "UPDATE deliveries SET delivery_ref = delivery_ref WHERE id = ?", immutableTarget))
+                .hasMessageContaining("Immutable business records cannot be changed");
 
         var replay = deliver(volunteer, stock.caseId(), body, key);
         status(replay, 201);
@@ -95,6 +104,9 @@ class DeliveryApiIT extends AbstractDeliveryHttpIT {
 
         UUID attemptId = UUID.fromString(attempt.path("id").asText());
         assertThat(count("delivery_items", "delivery_id", attemptId)).isZero();
+        // A failed attempt has no ref and no blockchain job.
+        assertThat(jdbc.queryForObject("SELECT delivery_ref IS NULL FROM deliveries WHERE id = ?",
+                Boolean.class, attemptId)).isTrue();
         assertThat(jdbc.queryForObject("SELECT event_type FROM audit_events WHERE event_key = ?",
                 String.class, attemptId)).isEqualTo("DELIVERY_ATTEMPT_FAILED");
         assertThat(sequences(stock.caseId())).containsExactly("CASE_VERIFIED:1", "AID_PLEDGED:2", "GOODS_RECEIVED:3");

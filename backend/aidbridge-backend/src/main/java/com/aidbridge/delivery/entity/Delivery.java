@@ -52,6 +52,10 @@ public class Delivery {
     @Column(name = "created_at", nullable = false)
     private Instant recordedAt;
 
+    /** Opaque bytes32 for the registry (D56). Generated once at creation; null for FAILED attempts. */
+    @Column(name = "delivery_ref", updatable = false, columnDefinition = "bytea")
+    private byte[] deliveryRef;
+
     public Delivery(
             UUID caseId,
             UUID campaignId,
@@ -59,8 +63,14 @@ public class Delivery {
             Outcome outcome,
             String reason,
             Instant handedOverAt,
-            Instant recordedAt
+            Instant recordedAt,
+            byte[] deliveryRef
     ) {
+        // Mirrors chk_delivery_ref_by_outcome: only DELIVERED carries a ref, and it must be a full bytes32.
+        if ((outcome == Outcome.DELIVERED) != (deliveryRef != null)
+                || (deliveryRef != null && deliveryRef.length != 32)) {
+            throw new IllegalArgumentException("deliveryRef is required for DELIVERED only and must be 32 bytes");
+        }
         this.caseId = caseId;
         this.campaignId = campaignId;
         this.recorderId = recorderId;
@@ -68,5 +78,6 @@ public class Delivery {
         this.reason = reason;
         this.handedOverAt = handedOverAt;
         this.recordedAt = recordedAt;
+        this.deliveryRef = deliveryRef;
     }
 }
