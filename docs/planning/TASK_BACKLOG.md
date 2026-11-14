@@ -406,6 +406,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### C08 - Receipt/retry/log reconciliation
 
+- **Task9 Khoa,14/11/2026:** chốt receipt recovery PASS sau PR21/R1/R2, tái sử dụng CI26 unit+32 IT; không chạy lại. Full C08 chưa Done vì durable log scanner/cursor/replay chưa triển khai. C07 technical gate giữ PASS; C10 goods chưa có worker/registry C06 Fuji/receipt evidence. Phương án owner/cutover mới còn PROPOSED, chưa thấy D56; phải inventory cả jobs chưa ký trước đổi registry. Xem [chốt C08/C10](../reviews/C08_RECEIPT_LOG_REVIEW.md), không thay owner/estimate task khác.
+
 - **Feature / priority:** P0-06 / P0.
 - **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
 - **Complexity / estimate:** L / 7h.

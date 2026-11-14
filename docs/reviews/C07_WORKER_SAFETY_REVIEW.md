@@ -2,6 +2,8 @@
 
 ## Kết luận hiện hành
 
+**Task9 ngày14/11/2026:** C07 technical gate tiếp tục PASS cho CASE_VERIFIED. Đã fetch main5122281/dung9c441eb/minhc64bb4e; không có diff worker/adapter/repository/tests blockchain từ9a9f7fb đến dung hiện tại. Tái sử dụng CI43191763706 (22 unit+18 IT) và CI43473786126 (26 unit+32 IT sau C08 fixes), không chạy lại. Các đoạn “C05 chưa có job Fuji” bên dưới là lịch sử ngày12: [B05 real Fuji run](B05_REAL_FUJI_RUN_2026_11_13.md) ngày13 nay có hai receipt CaseVerified và Dũng xác nhận SQL, nhưng vẫn giữ các mục B2/D1/DB NOT_VERIFIED của báo cáo đó. Không nâng bằng chứng này thành nghiệm thu độc lập toàn bộ C05/C10. [Chốt C08/C10 và cutover Task9](C08_RECEIPT_LOG_REVIEW.md#task9-ngày14112026--chốt-c07c08-và-điều-kiện-c10) là trạng thái tích hợp mới nhất; không có lệnh rollout/redeploy.
+
 Cập nhật12/11 cuối ngày: đã nhận xác nhận worker/DB không còn nghĩa vụ signer cũ từ Dũng qua người dùng; [rotation/funding D54 và independent readback](FUJI_RELAYER_HANDOFF_2026_11_12.md) PASS. Các ghi chú chờ xác nhận/rotation bên dưới là lịch sử trước bàn giao, không còn blocker hiện hành. C05 B05 Fuji E2E vẫn PARTIAL, chưa chạy worker trong lượt bàn giao.
 
 **PASS về kỹ thuật C07, đã xác minh lại tại commit `4795c9a368fd33c725ad3b182b8cb0eb5fc78dc7`**, có bằng chứng CI compile + 22 unit tests + 18 integration tests, 0 failures/errors/skips. Giữ task **In Review** cho nhóm nghiệm thu, không tự đánh Done. Signed persistence/recovery, one in-flight/signer, nonce và session-loss fencing đã chạy trên PostgreSQL thật và Hardhat local; đây không phải Fuji end-to-end. C05 vẫn PARTIAL: chưa có job B05 thật do worker xác nhận trên Fuji. Không thay contract/ABI hoặc ví. Các điều kiện rollout và bàn giao bên dưới vẫn bắt buộc.
