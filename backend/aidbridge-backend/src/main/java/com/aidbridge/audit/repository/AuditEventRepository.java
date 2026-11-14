@@ -1,6 +1,7 @@
 package com.aidbridge.audit.repository;
 
 import com.aidbridge.audit.entity.AuditEvent;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,7 +11,7 @@ import org.springframework.data.repository.query.Param;
 public interface AuditEventRepository extends JpaRepository<AuditEvent, UUID> {
 
     /**
-     * One row per audit event for the T01 audit trail. Read-only: it never touches payload_private,
+     * One row per audit event for the T01/T02 audit trails. Read-only: it never touches payload_private,
      * manifest_private, salt_ciphertext, signed_tx_ciphertext or receipt_private.
      */
     interface TrailRow {
@@ -85,4 +86,29 @@ public interface AuditEventRepository extends JpaRepository<AuditEvent, UUID> {
             WHERE a.aid_case_id = :caseId AND a.organization_id = :orgId
             """, nativeQuery = true)
     long countInternalTrail(@Param("caseId") UUID caseId, @Param("orgId") UUID orgId);
+
+    /**
+     * T02: allow-listed event types only. Actor and entity columns are NULL at SQL level, so no identity can
+     * reach the public mapper even by mistake.
+     */
+    @Query(value = """
+            SELECT a.id AS "eventId", a.event_type AS "eventType", CAST(NULL AS varchar) AS "entityType",
+            """ + OCCURRED_AT + """
+            , CAST(NULL AS uuid) AS "actorId", CAST(NULL AS varchar) AS "actorName",
+            """ + CHAIN_COLUMNS + """
+            FROM audit_events a
+            """ + CHAIN_JOINS + """
+            WHERE a.aid_case_id = :caseId AND a.organization_id = :orgId AND a.event_type IN (:types)
+            ORDER BY a.occurred_at ASC, a.id ASC
+            LIMIT :limit OFFSET :offset
+            """, nativeQuery = true)
+    List<TrailRow> findPublicTrail(@Param("caseId") UUID caseId, @Param("orgId") UUID orgId,
+            @Param("types") Collection<String> types, @Param("limit") int limit, @Param("offset") long offset);
+
+    @Query(value = """
+            SELECT count(*) FROM audit_events a
+            WHERE a.aid_case_id = :caseId AND a.organization_id = :orgId AND a.event_type IN (:types)
+            """, nativeQuery = true)
+    long countPublicTrail(@Param("caseId") UUID caseId, @Param("orgId") UUID orgId,
+            @Param("types") Collection<String> types);
 }

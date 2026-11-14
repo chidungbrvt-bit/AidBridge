@@ -2,6 +2,7 @@ package com.aidbridge.audit.controller;
 
 import com.aidbridge.audit.dto.response.AuditTrailPage;
 import com.aidbridge.audit.dto.response.InternalAuditEventResponse;
+import com.aidbridge.audit.dto.response.PublicAuditEventResponse;
 import com.aidbridge.audit.service.AuditTrailService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -27,5 +28,15 @@ public class AuditTrailController {
             @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(service.caseTrail(auth, caseId, page, size));
+    }
+
+    /** T02: public audit trail of a published campaign. No login; role labels only, no private data. */
+    @GetMapping("/api/campaigns/{id}/audit-trail")
+    public ResponseEntity<AuditTrailPage<PublicAuditEventResponse>> campaignTrail(
+            @PathVariable("id") UUID campaignId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(service.campaignTrail(campaignId, page, size));
     }
 }
