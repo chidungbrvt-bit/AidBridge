@@ -1,5 +1,17 @@
 # Bàn giao Khoa — 14/11/2026
 
+## Phạm vi bàn giao đã điều chỉnh sau review overlap
+
+**PR24 hiện chỉ bàn giao docs/review. R01 UI chính là PR23 của Minh theo thống nhất nhóm.** Các phần triển khai R01 của Khoa đã được hoàn nguyên bằng commit mới; mọi commit cũ vẫn giữ nguyên, không rewrite/force-push. Không còn frontend R01 của Khoa trong net diff vào main và không tạo hai UI song song. Các mô tả integration/tests bên dưới là bằng chứng lịch sử của bản đã rút, không phải kiểm chứng PR23.
+
+Minh tiếp nhận sticky-uncertain retry từ `d6e255b` (`frontend/features/receipts/model.ts`) cùng regression tests trong `frontend/tests/receipts-api.test.ts`: server commit rồi504→retry403 hoặc409→success vẫn một key/body/receipt. Không xóa pending chỉ vì retry bị từ chối sau outcome unknown. Tests timeout/retry/refetch trong2713675 cũng có thể tham khảo; source chỉ còn trong lịch sử, không được merge qua PR24. **Chưa port/chưa kiểm thử bản Minh trong lượt xử lý overlap này.**
+
+Đã fetch xác nhận PR23/24 đều OPEN, main5122281 chưa có frontend PR23. Bốn shared files của Khoa (api-client/session-work/playwright/case-detail) chỉ bỏ các hunks thêm R01, giữ nguyên baseline main; không lấy hoặc xóa thay đổi riêng của Minh trên nhánh minh. Các file features/receipts, route và tests chỉ Khoa thêm được rút khỏi net diff. Kiểm tra nhẹ: diff-only-docs, frontend giống main, refs docs và diff check; không chạy E2E/Actions mới.
+
+PR24 không còn khẳng định nghiệm thu UI chính: Task3/Task9 review PASS WITH NOTES; Task4 là kết quả triển khai thử đã chuyển giao cho Minh, chỉ giữ evidence lịch sử và khuyến nghị retry. Không đánh F08 Done hay claim38 tests/4 browser của Khoa chứng minh bản Minh.
+
+## Bằng chứng lịch sử trước điều chỉnh phạm vi
+
 **READY WITH KNOWN LIMITATIONS.** Ba task hoàn thành trong phạm vi review/frontend integration; không nghiệm thu backend/DB E2E, goods Fuji hoặc scanner chưa triển khai. Nhánh khoa giữ nguyên7ee46b5/736f5f7/2713675/e31521f; PR22 đã MERGED tại5122281, không đưa lại nội dung ngày13 vào diff mới.
 
 | Task | Kết quả | Bằng chứng |
@@ -32,4 +44,4 @@ D55 VOID có hai observations DeliveryVoided→DisputeResolved cùng eventId/seq
 - **Khoa cùng nhóm:** chốt D56/owner/slot, gate C06 và C10 independent verification khi đủ backend/registry; scanner/replay là phần chưa làm, không nhận đã hoàn thành. Không triển khai trong handoff này.
 - **Dũng+Minh:** URI mục tiêu theo D49 `/api/public/cases/{publicCaseRef}/audit`; chờ Minh xác nhận/API thực thi và docs T02 đồng bộ trước bật link. Minh đã align mock URI ởc64bb4e, không chứng minh endpoint thật. Không suy txHash là CONFIRMED.
 
-PR chỉ chứa thay đổi ngày14 của Khoa; không workflow/backend/contract/secret/dependency/cache/build output. Không merge PR bàn giao mới. Các dependency tích hợp trên là giới hạn đã biết, không cần người dùng xử lý blocker trước khi nhóm review PR.
+Sau điều chỉnh, PR chỉ chứa sáu tài liệu/review ngày14 của Khoa; không frontend/workflow/backend/contract/secret/dependency/cache/build output. Không merge PR bàn giao mới. Dependency của UI chính và port regression do Minh tiếp nhận qua PR23; PR24 không tự giải quyết hoặc nghiệm thu thay.

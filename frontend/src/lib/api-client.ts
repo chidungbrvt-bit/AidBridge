@@ -1,5 +1,4 @@
 import type { CreateCampaignRequest } from "./campaign";
-import type { ReceiptRequest, ReceiptResponse, StaffContext } from '../../features/receipts/model';
 import type { CampaignResponse, CommitmentRequest, CommitmentResponse, CancellationRequest, Page } from "../../features/donor/model";
 import type { BlockchainStatus, CaseDetailResponse, CaseListQuery, CaseSummary, CreateCaseRequest, CsrfResponse, DecisionRequest, DecisionResponse, EvidenceFixture, FieldError, LoginRequest, LoginResponse, MeResponse, Membership, MockControlAction, OrganizationRole, PageResponse, PatchCaseRequest, ProblemDetail, ResubmitCaseRequest, ReviewAction } from "./types";
 
@@ -133,8 +132,6 @@ export class ApiClient {
     return { ...result, items: result.items.map(normalizeCaseSummary) };
   }
   async getCase(id: string): Promise<CaseDetailResponse> { return normalizeCaseDetail(await this.request(`/api/cases/${encodeURIComponent(id)}`)); }
-  async getReceiptContext(id:string):Promise<StaffContext>{return this.request(`/api/org/cases/${encodeURIComponent(id)}`);}
-  async receiveGoods(id:string,body:ReceiptRequest,key:string):Promise<ReceiptResponse>{return this.mutate(`/api/commitments/${encodeURIComponent(id)}/receipts`,body,key);}
   async evidenceFixtures(organizationId: string): Promise<EvidenceFixture[]> {
     const rows = await this.request<(EvidenceFixture & { title?: string })[]>(`/api/evidence-fixtures?${new URLSearchParams({ organizationId })}`);
     return rows.map(row => ({ ...row, label: row.title ?? row.label ?? "Evidence fixture" }));

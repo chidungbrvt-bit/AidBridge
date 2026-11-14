@@ -77,7 +77,6 @@ function ScopedCaseDetail({ id }: { id: string }) {
       </div>
       <ReviewPanel detail={detail} onDecision={applyDecision} onRefresh={() => setRefreshCount(value => value + 1)} onBusyChange={setReviewBusy} />
     </div>
-    {mode === 'real' && <Link className="button secondary" href={`/cases/${detail.id}/receipts`}>Receive goods · R01 API</Link>}
     <CampaignPanel detail={detail} onBusyChange={setCampaignBusy} onPublished={() => setRefreshCount(value => value + 1)} />
     {mode === "mock" && <details className="card mock-controls"><summary>Mock review test controls</summary><p className="muted">These controls affect this local simulation only.</p><div className="actions"><button type="button" className="button secondary" disabled={controlBusy || reviewBusy || detail.status !== "SUBMITTED"} onClick={() => void mockAction("stale-case")}>Simulate a stale revision</button><button type="button" className="button secondary" disabled={controlBusy || reviewBusy || detail.status !== "SUBMITTED"} onClick={() => void mockAction("lose-next-response")}>Lose next mutation response</button></div>{controlMessage && <p role="status">{controlMessage}</p>}</details>}
   </div>;

@@ -4,8 +4,7 @@ export default defineConfig({
   timeout: 45_000, expect: { timeout: 10_000 },
   reporter: [['list']],
   projects: [
-    { name: 'receipts-api', testMatch: '**/receipts-api.spec.ts' },
-    { name: 'mock', testIgnore: ['**/receipts-api.spec.ts','**/real-api.spec.ts', '**/campaign-real.spec.ts', '**/donor-api.spec.ts', '**/donor-real.spec.ts'] },
+    { name: 'mock', testIgnore: ['**/real-api.spec.ts', '**/campaign-real.spec.ts', '**/donor-api.spec.ts', '**/donor-real.spec.ts'] },
     // Run against a real-mode Next server; test-only HTTP routes simulate B07, not a live DB.
     { name: 'donor-api', testMatch: '**/donor-api.spec.ts' },
     ...(process.env.AIDBRIDGE_F07_REAL_E2E === 'true' ? [{ name: 'donor-real', testMatch: '**/donor-real.spec.ts', use: { trace: 'off' as const, screenshot: 'off' as const, video: 'off' as const } }] : []),

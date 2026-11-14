@@ -1,6 +1,14 @@
 # F08 — Khung nhận/giao hàng ngày 12/11
 
-## Task4 ngày14/11 — R01 API integration
+## Quyết định bàn giao hiện hành — R01 theo PR23 của Minh
+
+Nhóm thống nhất giữ R01 UI của Minh tại PR23 làm bản chính. **PR24 chỉ bàn giao tài liệu/review**, đã bỏ toàn bộ frontend R01 của Khoa, route `/cases/{id}/receipts`, shared-client/session/playwright hunks và receipt tests riêng. Không có UI R01 thứ hai được merge từ PR24. D01/F09 và frontend có trước giữ nguyên; không sửa nhánh Minh.
+
+Minh cần port cải tiến giữ request body/Idempotency-Key khi outcome chưa xác định, kể cả khi retry sau đó bị403/409. Tham khảo commit `d6e255b`: `frontend/features/receipts/model.ts` (sticky uncertain và pending key), `frontend/tests/receipts-api.test.ts` (hai regression tests504→403/409→success: cùng key/body, một logical receipt). `2713675` giữ integration baseline và bốn browser HTTP-fixture tests tại `frontend/tests/e2e/receipts-api.spec.ts`. Source/tests chỉ còn trong lịch sử Git, không còn trong working tree hoặc net diff PR24; đây là yêu cầu chuyển giao, **chưa xác minh đã port sang PR23**.
+
+Phần Task4 và tests phía dưới là lịch sử thử nghiệm bản Khoa, không phải hướng dẫn UI hiện hành sẽ merge. Minh cập nhật run guide/evidence của bản chính qua PR23; không suy tests của Khoa là PASS cho implementation Minh. E2E thật backend/PostgreSQL vẫn chưa được chứng minh trong lượt Khoa.
+
+## Lịch sử Task4 ngày14/11 — R01 API integration của Khoa (đã rút khỏi PR24)
 
 **PASS WITH LIMITATIONS, In Review.** R01 production path đã nối B08 qua shared ApiClient/session/CSRF, nhưng chưa xác minh Spring Boot/PostgreSQL E2E trên máy này (read-only TCP probe127.0.0.1:8080/8081 không có listener). Các phần mock/historical bên dưới giữ làm bằng chứng trước đây; không còn mô tả toàn bộ R01 chỉ là fixture.
 
