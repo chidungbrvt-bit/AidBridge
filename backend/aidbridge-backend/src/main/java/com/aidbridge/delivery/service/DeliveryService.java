@@ -2,6 +2,8 @@ package com.aidbridge.delivery.service;
 
 import com.aidbridge.audit.entity.AuditEvent;
 import com.aidbridge.audit.repository.AuditEventRepository;
+import com.aidbridge.blockchain.entity.BlockchainJob;
+import com.aidbridge.blockchain.repository.BlockchainJobRepository;
 import com.aidbridge.campaign.entity.Campaign;
 import com.aidbridge.campaign.repository.CampaignItemRepository;
 import com.aidbridge.campaign.repository.CampaignRepository;
@@ -12,6 +14,10 @@ import com.aidbridge.casefile.repository.EvidenceRepository;
 import com.aidbridge.delivery.dto.request.DeliveryRequest;
 import com.aidbridge.delivery.dto.response.DeliveryResponse;
 import com.aidbridge.delivery.entity.Delivery;
+import com.aidbridge.delivery.entity.DeliveryEvidenceLink;
+import com.aidbridge.delivery.entity.DeliveryItem;
+import com.aidbridge.delivery.repository.DeliveryEvidenceLinkRepository;
+import com.aidbridge.delivery.repository.DeliveryItemRepository;
 import com.aidbridge.delivery.repository.DeliveryRepository;
 import com.aidbridge.organization.entity.Organization;
 import com.aidbridge.organization.entity.OrganizationMembership;
@@ -19,15 +25,17 @@ import com.aidbridge.organization.service.OrganizationService;
 import com.aidbridge.shared.exception.BusinessException;
 import com.aidbridge.shared.idempotency.IdempotencyService;
 import com.aidbridge.shared.idempotency.IdempotencyService.Result;
+import com.aidbridge.shared.util.ChainRefs;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -46,6 +54,9 @@ public class DeliveryService {
     private final ObjectMapper json;
     private final CampaignItemRepository campaignItems;
     private final EvidenceRepository evidence;
+    private final DeliveryItemRepository deliveryItems;
+    private final DeliveryEvidenceLinkRepository evidenceLinks;
+    private final BlockchainJobRepository jobs;
 
     @Transactional
     public Result<DeliveryResponse> record(
@@ -97,12 +108,10 @@ public class DeliveryService {
             throw BusinessException.state();
         }
         if (!"FAILED".equals(request.outcome())) {
+            validateHandoverTime(campaign, request.handedOverAt());
             validateAvailableStock(campaign.getId(), request);
-            resolveEvidenceSnapshot(caseId, orgId, request.evidenceVersionIds());
-            throw new BusinessException(
-                    HttpStatus.NOT_IMPLEMENTED, "NOT_IMPLEMENTED",
-                    "Successful delivery recording is not available yet"
-            );
+            List<UUID> evidenceIds = resolveEvidenceSnapshot(caseId, orgId, request.evidenceVersionIds());
+            return recordDelivered(aidCase, campaign, orgId, recorderId, request, evidenceIds);
         }
 
         Instant recordedAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
@@ -129,6 +138,80 @@ public class DeliveryService {
                 event.getId(), "NOT_APPLICABLE", null
         );
         return new Result<>(response, 201, "/api/deliveries/" + deliveryId, false);
+    }
+
+    private Result<DeliveryResponse> recordDelivered(
+            AidCase aidCase, Campaign campaign, UUID orgId, UUID recorderId,
+            DeliveryRequest request, List<UUID> evidenceIds
+    ) {
+        UUID caseId = aidCase.getId();
+        Instant recordedAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
+        Instant handedOverAt = request.handedOverAt() == null
+                ? null : request.handedOverAt().truncatedTo(ChronoUnit.MICROS);
+
+        // Flush the header first: child rows reference its ID through composite foreign keys.
+        Delivery delivery = deliveries.saveAndFlush(new Delivery(
+                caseId, campaign.getId(), recorderId, Delivery.Outcome.DELIVERED,
+                request.reason(), handedOverAt, recordedAt
+        ));
+        deliveryItems.saveAll(request.items().stream()
+                .map(line -> new DeliveryItem(delivery, line.campaignItemId(), line.quantity()))
+                .toList());
+        // Immutable snapshot of the evidence versions shown at handover (BR-09).
+        evidenceLinks.saveAll(evidenceIds.stream()
+                .map(evidenceId -> new DeliveryEvidenceLink(delivery, evidenceId, recorderId, orgId))
+                .toList());
+
+        var lines = request.items().stream()
+                .map(line -> new DeliveryResponse.Item(line.campaignItemId(), line.quantity()))
+                .toList();
+        UUID auditEventId = enqueueDelivered(orgId, caseId, recorderId, delivery, lines, evidenceIds);
+
+        // PROVISIONAL (F02-A04): public audit route is not implemented yet.
+        String auditUrl = "/api/public/cases/0x" + HexFormat.of().formatHex(aidCase.getPublicRef()) + "/audit";
+        var response = new DeliveryResponse(
+                delivery.getId(), caseId, recorderId, Delivery.Outcome.DELIVERED.name(),
+                "PENDING", lines, evidenceIds, recordedAt, auditEventId, "PENDING_ON_CHAIN", auditUrl
+        );
+        return new Result<>(response, 201, "/api/deliveries/" + delivery.getId(), false);
+    }
+
+    /**
+     * DELIVERY_RECORDED + one PENDING job in the caller's transaction. The case row lock taken in record()
+     * is still held, so MAX(chain_sequence)+1 cannot race (D53). The handover note stays out of the payload.
+     */
+    private UUID enqueueDelivered(
+            UUID orgId, UUID caseId, UUID recorderId, Delivery delivery,
+            List<DeliveryResponse.Item> lines, List<UUID> evidenceIds
+    ) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("payloadVersion", 1);
+        payload.put("deliveryId", delivery.getId());
+        payload.put("campaignId", delivery.getCampaignId());
+        // PROVISIONAL: stable bytes32 deliveryRef for C10 (recordDelivery / flagDispute), as receiptRef in B08.
+        payload.put("deliveryRef", "0x" + HexFormat.of().formatHex(ChainRefs.randomBytes32()));
+        payload.put("handedOverAt", delivery.getHandedOverAt());
+        payload.put("lines", lines);
+        payload.put("evidenceVersionIds", evidenceIds);
+
+        long nextSequence = jobs.maxChainSequence(caseId) + 1;
+        AuditEvent event = auditEvents.save(new AuditEvent(
+                orgId, caseId, recorderId, "DELIVERY", delivery.getId(),
+                "DELIVERY_RECORDED", delivery.getId(), json.writeValueAsString(payload)
+        ));
+        jobs.saveAndFlush(new BlockchainJob(event, nextSequence));
+        return event.getId();
+    }
+
+    /** PROVISIONAL window, same rule as R01 receivedAt: not before publish, at most 5 minutes ahead. */
+    private static void validateHandoverTime(Campaign campaign, Instant handedOverAt) {
+        if (handedOverAt == null) {
+            return;
+        }
+        Instant start = campaign.getPublishedAt() == null ? campaign.getCreatedAt() : campaign.getPublishedAt();
+        if (handedOverAt.isBefore(start) || handedOverAt.isAfter(Instant.now().plusSeconds(300))) {
+            throw BusinessException.invalid();
+        }
     }
 
     private void validateAvailableStock(UUID campaignId, DeliveryRequest request) {

@@ -15,6 +15,12 @@ public interface DeliveryRepository extends JpaRepository<Delivery, UUID> {
         long getQuantity();
     }
 
+    /**
+     * Stock already consumed per campaign item: every DELIVERED row, confirmed or not (pending handovers
+     * already left the warehouse). FAILED rows carry no items. Meaningful only while the campaign item
+     * rows are locked. B10 must exclude voided deliveries here once voids exist (deliveries are immutable,
+     * so a void will be a separate record).
+     */
     @Query(value = """
         SELECT di.campaign_item_id AS "itemId",
                SUM(di.delivered_quantity) AS "quantity"
