@@ -45,6 +45,7 @@ test('F06 admin drafts, retries lost publish, and opens the same campaign in F07
     expect(Object.keys(created.request().postDataJSON()).sort()).toEqual(['caseId', 'publicSummary', 'title']);
     const draft = await created.json();
     expect(draft.status).toBe('DRAFT');
+    expect(draft.auditUrl).toMatch(/^\/api\/public\/cases\/0x[0-9a-f]{64}\/audit$/);
     expect(draft.items).toHaveLength(2);
     expect(draft.items.map(({ name, targetQty, unit }: { name: string; targetQty: number; unit: string }) => [name, targetQty, unit]))
       .toEqual(expect.arrayContaining([['Hygiene kit', 2, 'kit'], ['Rice', 2, 'bag']]));
@@ -76,7 +77,7 @@ test('F06 admin drafts, retries lost publish, and opens the same campaign in F07
     const publicCampaign = await request.get(`/api/campaigns/${draft.id}`);
     expect(publicCampaign.status()).toBe(200);
     const published = await publicCampaign.json();
-    expect(published).toMatchObject({ id: draft.id, status: 'PUBLISHED', title });
+    expect(published).toMatchObject({ id: draft.id, status: 'PUBLISHED', title, auditUrl: draft.auditUrl });
     expect(published.items.map((item: { id: string }) => item.id).sort()).toEqual(draft.items.map((item: { id: string }) => item.id).sort());
     expect(published).not.toHaveProperty('caseId');
     expect(published).not.toHaveProperty('beneficiaryAlias');
@@ -86,6 +87,7 @@ test('F06 admin drafts, retries lost publish, and opens the same campaign in F07
 
     await page.getByRole('link', { name: 'View published campaign' }).click();
     await expect(page.getByRole('heading', { name: title })).toBeVisible();
+    await expect(page.locator(`a[href="${published.auditUrl}"]`)).toHaveCount(0);
     await expect(page.getByRole('table', { name: 'Campaign goods progress' }).getByRole('rowheader')).toContainText(['Hygiene kit', 'Rice']);
     await expect(page.getByRole('button', { name: 'Pledge goods →' })).toBeDisabled();
   } finally {

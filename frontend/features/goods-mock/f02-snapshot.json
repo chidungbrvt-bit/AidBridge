@@ -91,7 +91,7 @@
             "remainingPledgeQty": 1
           }
         ],
-        "auditUrl": "/api/campaigns/10000000-0000-4000-8000-000000000001/audit-trail"
+        "auditUrl": "/api/public/cases/0xab7102e5104c4f30b1cdee53cadbc8ddba1105e677324d2e93e1934b0fa56837/audit"
       },
       "focalContribution": {
         "id": "30000000-0000-4000-8000-000000000001",
@@ -157,7 +157,7 @@
             "remainingPledgeQty": 1
           }
         ],
-        "auditUrl": "/api/campaigns/10000000-0000-4000-8000-000000000001/audit-trail"
+        "auditUrl": "/api/public/cases/0xab7102e5104c4f30b1cdee53cadbc8ddba1105e677324d2e93e1934b0fa56837/audit"
       },
       "focalContribution": {
         "id": "30000000-0000-4000-8000-000000000001",
