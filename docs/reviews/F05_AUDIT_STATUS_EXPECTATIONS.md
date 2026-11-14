@@ -39,10 +39,10 @@ Quy ước cột "Hỗ trợ": **Code** = đã có trong code đã commit; **Wor
 
 | Endpoint / DTO | Trạng thái |
 |---|---|
-| `T01 GET /api/cases/{id}/audit-trail` | Spec only (grep không có mapping) |
-| `T02 GET /api/campaigns/{id}/audit-trail` (public) | Spec only |
+| `T01 GET /api/cases/{id}/audit-trail` | Code (`277c205`), xem `T01_T02_AUDIT_TRAIL_HANDOFF.md` |
+| `T02 GET /api/campaigns/{id}/audit-trail` (public) | Code (commit T02), allowlist 5 event, không errorCode |
 | `T03 POST /api/audit-events/{eventId}/retry` | Spec only |
-| `AuditEventResponse.blockchain{status,chainId,contractAddress,txHash?,blockNumber?,explorerUrl?,errorCode?}` | Spec only |
+| `AuditEventResponse.blockchain{status,chainId,contractAddress,txHash?,blockNumber?,explorerUrl?,errorCode?}` | Code: thêm `network`; `errorCode` chỉ T01; `businessStatus`/`evidenceReviewStatus` chưa có |
 | `LocalAuditService` | Code, nhưng chỉ ghi (append/revision), không có read API |
 
 Endpoint có thật trả `blockchainStatus`: `POST /api/cases/{id}/verify|reject|request-changes`, `POST /api/campaigns/{id}/commitments`, `GET /api/me/commitments`, `POST /api/commitments/{id}/cancellations`.
@@ -73,11 +73,11 @@ Quy tắc explorer link:
 
 | ID | GAP | Mức |
 |---|---|---|
-| GAP-1 | Chưa có T01/T02/T03 audit-trail; timeline không có nguồn dữ liệu thật | Chặn F05 |
-| GAP-2 | Không API nào trả `txHash`/`blockNumber`/`explorerUrl` (chỉ có trong `blockchain_transactions`) | Chặn F05 |
-| GAP-3 | `DecisionResponse.blockchainStatus` là snapshot; cần endpoint đọc trạng thái sống để thấy CONFIRMED | Chặn F05 |
+| GAP-1 | ~~Chưa có T01/T02/T03~~ T01, T02 đã có (15/11, chưa merge); T03 retry chưa làm | Còn T03 |
+| GAP-2 | ~~Không API nào trả txHash/blockNumber/explorerUrl~~ T01/T02 trả theo bảng ánh xạ của handoff | Đã xử lý (chưa merge) |
+| GAP-3 | `DecisionResponse.blockchainStatus` vẫn là snapshot; trạng thái sống đọc qua T01/T02 | Đã xử lý qua T01/T02 (chưa merge) |
 | GAP-4 | Không phân biệt revert và mismatch; cần `errorCode` công khai an toàn hoặc chốt public chỉ thấy `FAILED_ON_CHAIN` | Nên làm cùng GAP-1..3 |
-| GAP-5 | Chưa có cấu hình explorer base URL trong `application.properties` (spec ghi configurable) | Nên làm cùng GAP-1..3 |
+| GAP-5 | ~~Chưa có cấu hình explorer base URL~~ `aidbridge.blockchain.explorer-tx-base-url` / `BLOCKCHAIN_EXPLORER_TX_BASE_URL` | Đã xử lý (chưa merge) |
 | GAP-6 | Fixture F02 chỉ có `PENDING_ON_CHAIN`/`NOT_APPLICABLE`, không có confirmed/failed/txHash | Minh/Dũng bổ sung fixture |
 | GAP-7 | Worker C05 chưa commit và chưa chạy Fuji; các dòng "Worker local" phụ thuộc mục này | Đang xử lý (Prompt 2, D54) |
 
@@ -86,3 +86,4 @@ Quy tắc explorer link:
 | Ngày | Thay đổi |
 |---|---|
 | 12/11/2026 | Tạo bảng (Prompt 3, phần hỗ trợ F05 của Dũng). Chưa có bằng chứng Fuji; F05 vẫn Not Started (owner Minh). |
+| 15/11/2026 | T01/T02 có code và test (GAP-1 trừ T03, GAP-2, GAP-3, GAP-5). Public chốt chỉ `FAILED_ON_CHAIN`, không errorCode; mismatch ẩn hash (GAP-4 theo hướng này). Chưa gọi trên dữ liệu Fuji thật: NOT_VERIFIED. |
