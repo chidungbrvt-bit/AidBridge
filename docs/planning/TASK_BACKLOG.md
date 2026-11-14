@@ -248,6 +248,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Phối hợp cụ thể:** Dũng giữ stock reservation/failed-attempt/evidence snapshot; Khoa map delivery milestone và causal refs ở C10; Minh dùng đúng outcome/review status.
 - **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence (14/11/2026, smoke D01 trên aidbridge_demo):** D01 FAILED outcome PASS. Dữ liệu chuẩn bị qua API: case `D01 smoke case 1` (consent publicSummaryAllowed=true) → verify → campaign `2257d7c3-75d5-429d-94d7-121e63cee754` PUBLISHED, case IN_PROGRESS. `POST /api/cases/{id}/deliveries` (VOLUNTEER, outcome FAILED, reason) trả 201; gửi lại cùng Idempotency-Key và body trả 201 + `Idempotent-Replayed: true`, cùng delivery `8319bf09-65f9-4046-9fae-f09c288e7df9`, audit event `45c36831-275c-43f8-a7c5-521788f8e81c` và Location; reviewStatus/blockchainStatus NOT_APPLICABLE. DB: 1 delivery FAILED cho case, 1 audit DELIVERY_ATTEMPT_FAILED, 0 blockchain job. Ghi chú chuẩn bị dữ liệu: case C05 cũ có publicSummaryAllowed=false nên P01 trả 409 INVALID_STATE (đúng thiết kế). Not Run: outcome DELIVERED có items/evidence (backend trả 501 NOT_IMPLEMENTED), confirm/dispute.
 
 ### B10 - Confirm/dispute/resolve/close
 
