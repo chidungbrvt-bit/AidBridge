@@ -69,3 +69,48 @@ Khoa phối hợp thống nhất receipt/log semantics và boundary; Dũng tiế
 ## Điều kiện chốt
 
 **Receipt recovery PASS:** R1/R2 đã sửa tại9a9f7fb, 26 unit +32 IT PASS trên run43473786126; PR21 đã merge vào main tại7b7ab6e. Không còn blocker của hai finding này. Scanner/replay giữ PENDING riêng đến khi được triển khai/kiểm thử, không giả PASS toàn C08. Lượt bàn giao cuối không chạy lại Java/DB hoặc Actions.
+
+## Task9 ngày14/11/2026 — chốt C07/C08 và điều kiện C10
+
+**PASS WITH NOTES cho Task9 (review/readiness), không phải PASS toàn bộ C08/C10.** Main5122281, dung9c441eb, minhc64bb4e sau fetch. Local khoa giữ2713675 và review B08. Không có thay đổi Java blockchain hoặc WorkerIT so với9a9f7fb trên dung/main; không chạy lại tests/Actions/RPC. Minh mới sửa mock auditUrl theo D49 trên nhánh riêng, chưa có API audit thật được chứng minh. Dũng hiện chỉ thêm B09 FAILED; không có worker goods mới. [Task3 payload mapping](B08_GOODS_CHAIN_REVIEW_2026_11_14.md) giữ nguyên kết luận, không review lại B08.
+
+### C07/C08 đã chốt
+
+- SignerSessionLock theo chain+signer dùng connection PostgreSQL riêng, session pooling bắt buộc; V13 unique open signer/job và nonce journal. Worker:110–128 dùng max(node pending nonce, reserved nonce+1), persist PREPARED encrypted signed bytes/hash trước broadcast ở short transaction; recovery reuse attempt/bytes/hash/nonce, không ký lại. Giữ journal nonce lịch sử kể cả khi đổi registry cùng signer/chain.
+- Guard assertHeld trước ký/persist/broadcast và sau RPC; lease hết không thay thế phiên còn giữ lock. Mất session fence bước kế tiếp; không hứa thu hồi RPC đã phát. Retry budget hết không coi missing receipt là revert, vẫn poll cùng attempt. Query previous-sequence phải CONFIRMED, không skip job trước chỉ vì worker chưa hỗ trợ operation đó.
+- C08 verifier kiểm transaction hash, canonical block, destination/signer trước valid revert0, exact event topics/data/refs/sequence/schema/commitment. Poll đọc lại chainId; proof thiếu logIndex/âm/overflow hoặc status không0/1 không CONFIRMED/REVERTED giả. Worker confirm DB job+attempt cùng transaction; rollback rồi poll sửa cùng records, không tạo logical event/sequence mới.
+- Bằng chứng giữ từ [C07 CI43191763706](https://github.com/chidungbrvt-bit/AidBridge/actions/runs/43191763706) và [C08 CI43473786126](https://github.com/chidungbrvt-bit/AidBridge/actions/runs/43473786126): lần lượt22+18 và26+32 tests PASS, compile PASS, không skips/errors/failures. Đây là PostgreSQL/Hardhat runner evidence đã xác minh trước, không chạy mới ngày14; không dùng số test làm bằng chứng Fuji goods.
+- Scanner/readLogs/readEventRecord/cursor/observation/LogReplayIT **chưa triển khai**. Receipt rollback recovery đã PASS không thay thế durable bounded log replay trong acceptance C08. Trạng thái toàn task C08 giữ In Progress/In Review theo review nhóm, không Done.
+
+### C10 — ranh giới kiểm chứng độc lập
+
+| Operation nghiệp vụ | Function → event thực tế | Readiness |
+|---|---|---|
+| CASE_VERIFIED | recordCaseVerification → CaseVerified | Worker/receipt verifier đã có; hai Fuji receipts trên C03 trong báo cáo B05. C10 có thể đối chiếu slice này, nhưng cần DB expected trực tiếp để hoàn tất chứng minh độc lập. |
+| AID_PLEDGED | recordAidCommitment → AidCommitted | B07 outbox + C06 source/tests/ABI có; worker/receipt Fuji chưa có bằng chứng. Không nhầm tên event là AidPledged. |
+| COMMITMENT_REDUCED | recordCommitmentReduction → CommitmentReduced | B07 outbox + C06 source/tests có; worker/receipt Fuji chưa có. |
+| GOODS_RECEIVED | recordGoodsReceipt → GoodsReceived | B08 private refs/payload/sequence đã review; worker và registry C06 Fuji chưa có. |
+| DELIVERY_RECORDED | recordDelivery → DeliveryRecorded | Contract C06 có; B09 DELIVERED/outbox chưa bàn giao, chưa có worker/receipt Fuji. FAILED không có job/sequence chain. |
+
+Expected phải lấy từ DB bất biến: audit→job→attempt; eventId=logical_event_id, org/case=public_ref, sequence/schema/commitment từ job, signer/registry/chain/hash từ attempt gắn deployment. Audit UUID/event_key/receiptId không thay eventId. Đối chiếu receipt status1, txHash, to/from, canonical blockHash/number, log transaction/block identity và index thật, exact topic0/indexed refs/data theo operation, thêm operation-bound digest/ref khi đọc getEventRecord. Không lấy calldata làm expected duy nhất, không đồng nhất evidenceCommitment với Keccak payloadDigest. Poll verifier hiện tại không tự chứng minh raw calldata/getEventRecord/full DB payload parity; C10 phải ghi rõ mức kiểm chứng.
+
+D55 VOID: một resolveDispute/job/eventId/sequence, hai observations DeliveryVoided→DisputeResolved. Kiểm đủ cả hai logs cùng tx/org/case/refs/sequence, đúng resolution và thứ tự logIndex; thiếu/sai/duplicate không đủ xác nhận. Không áp verifier “đúng một CaseVerified” cho mọi operation. Dedupe observation theo chain/txHash/logIndex và logical operation theo deployment/eventId; đây là yêu cầu thiết kế cho verifier/scanner tương lai, không phải implementation đang có.
+
+Fuji hiện có hai CaseVerified tx được ghi tại [B05 report](B05_REAL_FUJI_RUN_2026_11_13.md): `0x465140011495f85743088ada113097204a891e41bc0b985b15e653366cb8566a`, `0x97104a33730c05210da67a21c96b271876d744fcb61fbab46a5d87cff925f98e`. Report có RPC/explorer/readback, Dũng xác nhận DB; raw DB columns/B2/restart-time evidence vẫn có mục NOT_VERIFIED. Không xác minh RPC/DB lại hoặc đổi các mục đó thành PASS. Không có bằng chứng Fuji các operation goods/delivery/VOID trong phạm vi đã đọc.
+
+### Phương án phối hợp mới — PROPOSED, chưa D56 chính thức
+
+Không thấy D56 trong Decision Log trên main/dung/minh hiện tại. Đề xuất Dũng mở rộng worker/verifier operation, Khoa deploy/verify registry C06 sau B09 REST/SQL và contract gate là **tương thích kỹ thuật**, thay đề xuất owner worker ban đầu của Task3 nếu nhóm chấp thuận; không tự sửa phân công hoặc cấp phép deploy. Minh đã align mock campaign auditUrl theo D49 tại c64bb4e, nhưng chưa thay thế xác nhận cross-owner cho API URI. D49 `/api/public/cases/{publicCaseRef}/audit` là mục tiêu; endpoint thật và cập nhật T02/backend projection còn phải thống nhất, link chưa được coi là live.
+
+**Điều kiện cutover cần bổ sung rõ, không phải lỗi C07 hiện tại:** job hiện có chainId nhưng chưa pin registry; attempt mới pin contract_address khi ký. Chỉ đổi BLOCKCHAIN_REGISTRY_ADDRESS và kiểm PREPARED/SUBMITTED là chưa đủ: PENDING/PROCESSING cũ chưa có attempt vẫn có thể được claim theo config mới. Dũng phải dừng worker, kiểm cả unprepared jobs/leases lẫn signed attempts và scope organization; bảo đảm queue C03 không thể bị chọn ở config C06 (drain/reconcile hoặc explicit deployment-aware routing được review). Không xóa journal/đổi confirmed/nhảy sequence để lách. Đây là rollout gate trước deploy/config switch, **không chặn Task9 hoặc viết B09**. Nếu vẫn cần poll C03 sau cutover, phải có cấu hình/routing riêng đúng deployment và cùng signer lock/journal, không giả định một global address xử lý cả hai.
+
+Case demo mới trên C06 bắt đầu CASE_VERIFIED1 rồi pledge/reduction/receipt/delivery đúng sequence; state C03 không tự xuất hiện. Dũng phải hỗ trợ cả AID_PLEDGED/COMMITMENT_REDUCED cùng GOODS_RECEIVED/DELIVERY_RECORDED hoặc queue sẽ bị prefix pending chặn; không chỉ mở receipt/delivery. Giữ cùng orgRef/ví là khả thi sau register/authorization lại trên registry mới; giữ old proofs/address/ABI bất biến, không re-sign/broadcast signed bytes cũ sang address mới.
+
+### Owner và điều kiện còn thiếu
+
+- **Dũng, theo đề xuất mới chờ chốt:** B09 DELIVERED/outbox immutable snapshot; worker goods có đầy đủ prefix; verifier D55 theo operation; DB cutover inventory/routing/attempt proof và assertions. Không đánh implementation dự kiến là đã xong.
+- **Khoa:** giữ gate contract/ABI, map refs/digest/receipt độc lập cho C10; chuẩn bị deploy/verify khi được giao/phê duyệt riêng. Không dùng admin key/deploy trong Task9. C10 full goods cần registry C06 và actual receipts, không chỉ local contract tests.
+- **Khoa+Dũng:** thống nhất owner/slot scanner/log replay còn thiếu theo boundary đã đề xuất, không tự giao toàn phần mới cho Dũng; triển khai sau, không đưa scanner vào lượt này. Scanner là dependency của full C08/replay reconciliation, không phủ nhận bằng chứng receipt polling đã có.
+- **Dũng+Minh/Khoa:** sanitized audit read projection và D49/T02 contract (C09/T01/T02), live statuses/explorer chỉ từ verified proof; chưa API E2E. Không coi dependency API là receipt verifier FAIL.
+
+Không phát hiện regression mới cần sửa code trong scope C07/C08. Task9 hoàn thành review/readiness; C10 mới đủ phần thiết kế và slice CASE_VERIFIED có giới hạn bằng chứng DB, **chưa PASS goods integration**. Không chạy tests mới vì không có thay đổi worker hoặc nghi vấn regression; không sửa code/nhánh người khác, không push/PR/Actions/blockchain.

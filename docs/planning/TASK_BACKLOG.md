@@ -406,6 +406,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### C08 - Receipt/retry/log reconciliation
 
+- **Task9 Khoa,14/11/2026:** chốt receipt recovery PASS sau PR21/R1/R2, tái sử dụng CI26 unit+32 IT; không chạy lại. Full C08 chưa Done vì durable log scanner/cursor/replay chưa triển khai. C07 technical gate giữ PASS; C10 goods chưa có worker/registry C06 Fuji/receipt evidence. Phương án owner/cutover mới còn PROPOSED, chưa thấy D56; phải inventory cả jobs chưa ký trước đổi registry. Xem [chốt C08/C10](../reviews/C08_RECEIPT_LOG_REVIEW.md), không thay owner/estimate task khác.
+
 - **Feature / priority:** P0-06 / P0.
 - **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
 - **Complexity / estimate:** L / 7h.
@@ -584,6 +586,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Status / evidence (12/11/2026):** In Review; **F07 PASS trong phạm vi CI thật**: Next production → Spring Boot HTTP → PostgreSQL16. Run43200835548, SHA80e0b88:57 frontend unit +9 backend validation +5 browser E2E +1 Java host test PASS,0 skip/error/failure. [Bàn giao/JSON evidence](../reviews/F07_B07_API_INTEGRATION.md) có G01/G02/G03, session/CSRF, received409, commit504/exact replay, SQL audit/outbox và grant revocation. Received data là SQL fixture test, không phải R01/B08 E2E. PR13 OPEN, không merge; team review/dev provisioning còn riêng, không Done. Owner/estimate/lịch baseline giữ nguyên, actual human effort chưa có số liệu.
 
 ### F08 - Receipt/delivery UI
+
+- **Khoa Task4 ngày14/11 — điều chỉnh bàn giao:** giữ In Review; nhóm chọn R01 UI của Minh tại PR23 làm bản chính, đã rút frontend R01 của Khoa khỏi PR24 để PR24 chỉ còn docs/review. Bản thử Khoa/tests giữ trong lịch sử2713675/d6e255b, không phải UI sẽ merge và không chứng minh PASS cho PR23. Minh tiếp nhận sticky-uncertain Idempotency-Key cùng regression504→403/409→success; chưa xác minh đã port. E2E backend/PostgreSQL của Khoa chưa chứng minh. Xem [F08 evidence](../reviews/F08_MOCK_GOODS_WORKSPACE.md); không đổi owner/estimate hoặc đánh Done.
 
 - **Bổ sung Khoa ngày13/11 (Task5):** giữ In Review; hoàn thiện mock R01/D01 từ PR14, không viết lại phép tính đúng. Feedback 400/409 theo dòng hàng và kết quả mock có outcome/reason; tests tập trung partial receipt, delivery success/over-limit/FAILED và bất biến stock. Bằng chứng cập nhật tại [F08 mock workspace](../reviews/F08_MOCK_GOODS_WORKSPACE.md). Chưa B08/B09/DB thật, không thay owner/estimate/lịch baseline. [Kết luận Task4](../reviews/C06_PART2_D55_REVIEW.md) chỉ lưu review PASS đã thực hiện, không chạy lại C06.
 
