@@ -71,6 +71,16 @@ Nếu PDF có một đề xuất và Master Prompt đã yêu cầu dùng nó là
 | D53 | USER_CONFIRMED, chờ Khoa review | `chain_sequence` theo case: backend gán `MAX+1` dưới khóa case; V12 thêm `blockchain_jobs.aid_case_id` + `UNIQUE (aid_case_id, chain_sequence)`; constructor `BlockchainJob(AuditEvent, long)` lấy case từ chính event | User chọn mặc định ngày 11/11/2026; hiện thực hóa D49 / C01-O02 | Ảnh hưởng C05/C06/C07: worker chỉ được claim `event_type` mà nó hỗ trợ (`CASE_VERIFIED`; `AID_PLEDGED` và `COMMITMENT_REDUCED` chờ C06/C07). Comment V12 dùng số tạm D52 |
 | D54 | USER_CONFIRMED | Key custody cho relayer backend trên Fuji: ví testnet riêng `0x95a9564899849CF566DE5713205C4B747F361f55`, private key chỉ nằm trong file ngoài repo trên máy Dũng và được nạp vào env `BLOCKCHAIN_RELAYER_PRIVATE_KEY` khi chạy worker; không vào DB, log, report, PR hay on-chain. Org demo dev `public_ref = 0x2395…0a46` gắn ví này bằng seed SQL thủ công (phương án A, không phải migration) | Bàn giao C03/C04 của Khoa + Prompt 2 (C05 trên Fuji), 12/11/2026 | Cần Khoa gọi `updateOrganizationRelayer` một lần. Chỉ dùng cho testnet/demo, không phải mô hình custody production (production cần KMS/HSM, ngoài phạm vi MVP). Mất key thì Khoa rotate sang ví mới, không có khôi phục. Signed tx trong DB vẫn mã hóa AES-256-GCM bằng `BLOCKCHAIN_SECRET_KEY` riêng |
 | D55 | USER_CONFIRMED, chờ Khoa review | C06 phần 2: (1) `resolution` là `uint8` với UPHOLD=1, VOID_DELIVERY=2, giá trị khác revert `InvalidResolution` (kiểm tra ở guard bước 2); (2) `resolveDispute` luôn nhận `deliveryRef` và phải bằng `deliveryRef` lưu khi flag, kể cả UPHOLD (`bytes32(0)` với dispute mức case) — spec cũ ghi `deliveryRef?`; (3) VOID dùng một `eventId` và một `chainSequence`, emit `DeliveryVoided` rồi `DisputeResolved`, `_events` lưu operation `resolveDispute`; (4) `flagDispute` cho phép `deliveryRef = 0` (dispute mức case), ngoại lệ có chủ đích của quy tắc ref khác 0; (5) không thêm view getter cho delivery/dispute; (6) BR-06 và quyền VOID của PA chỉ kiểm tra ở backend | Dũng duyệt khuyến nghị thiết kế C06 phần 2 ngày 12/11/2026 | C10: receipt verifier phải chấp nhận danh sách log kỳ vọng theo operation (VOID = 2 log cùng `eventId`, đúng thứ tự). ABI mới nên phải redeploy registry khi đưa C06 lên Fuji |
+| D56 | USER_CONFIRMED, mục 2 chờ Khoa review | B09/D01: các điểm tạm của delivery và `deliveredQty` trên P04 | Hợp đồng Task 2 không có trong repo; Dũng xác nhận cả 6 điểm ngày 14/11/2026 | Xem mục D56 bên dưới. `deliveryRef` chờ Khoa xác nhận cho C10 |
+
+### D56 — Các quyết định của B09 / D01 (USER_CONFIRMED, mục 2 chờ Khoa review, 14/11/2026)
+
+1. **`auditUrl`** của DELIVERED: `/api/public/cases/0x{caseRef}/audit` theo F02-A04. Route chưa có; frontend không gọi URL này cho tới khi T01/T02 hoàn tất.
+2. **`deliveryRef`** (bytes32 ngẫu nhiên) chỉ lưu trong `audit_events.payload_private`, giống `receiptRef` của B08. Nếu C10 cần cột riêng thì thêm V16; vì `deliveries` có trigger bất biến (V15), V16 phải tạm tắt trigger khi backfill. Chờ Khoa xác nhận.
+3. **Thứ tự `items`** trong `DeliveryResponse` giữ theo request; replay trả đúng thứ tự đó.
+4. **"Nonvoid"**: chưa có cơ chế void, nên tồn kho tính mọi delivery `DELIVERED`. B10 phải loại delivery đã void ở `DeliveryRepository.deliveredTotals` và `CampaignItemRepository.progressTotals`.
+5. **`handedOverAt`** không trước lúc publish campaign và không quá hiện tại + 5 phút, cùng luật với `receivedAt` của R01.
+6. **P04 `deliveredQty`** tính cả delivery chưa xác nhận, không tính FAILED; `confirmedQty` giữ 0 cho tới B10.
 
 ### D52, D53 và các mặc định B07 (12/11/2026)
 
@@ -225,6 +235,7 @@ Không sao chép khẳng định pháp luật trong PDF thành legal advice; tec
 | 12/11/2026 | B07: D52 (donor grant) và D53 (chain_sequence theo case, chờ Khoa review); ghi nhận G01–G03 + V11/V12 pass trên `aidbridge_test` theo xác nhận của Dũng; số tạm D51/D52 trong prompt và comment migration tương ứng D52/D53 | B07 In Review; đồng bộ `TASK_BACKLOG.md`, `API_SPECIFICATION.md`, `DATABASE_DESIGN.md`, `TEST_STRATEGY.md` |
 | 12/11/2026 | D54: key custody relayer backend Fuji + seed org demo (phương án A) | Chờ Khoa `updateOrganizationRelayer`; Prompt 2 vẫn BLOCKED đến khi có job thật CONFIRMED trên Fuji |
 | 12/11/2026 | D55: thiết kế C06 phần 2 (confirm/flag/resolve dispute) | Local Hardhat: `npm test` 194 passing, 1 pending; chờ Khoa review; chưa redeploy Fuji |
+| 14/11/2026 | B09: D01 DELIVERED + FAILED, evidence snapshot, DELIVERY_RECORDED + job theo D53, P04 `deliveredQty`; D56 (USER_CONFIRMED, mục 2 chờ Khoa) ghi các quyết định B09 | B09 In Review; đồng bộ `TASK_BACKLOG.md`, `API_SPECIFICATION.md`, `TEST_STRATEGY.md` |
 
 
 ## C03 — Bổ sung policy lifecycle RELAYER_ROLE (11/11/2026)
