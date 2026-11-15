@@ -230,12 +230,11 @@ export function createMockBackend() {
           if ([...campaigns.values()].some(entry => entry.caseId === item.id)) fail(409, "INVALID_STATE", "A campaign already exists for this case.");
           const id = randomUUID();
           const organization = MOCK_ORGANIZATIONS.find(org => org.id === item.organizationId)!;
-          const publicCaseRef = `0x${createHash("sha256").update(`aidbridge-mock-case:${item.id}`).digest("hex")}`;
           const dto: CampaignResponse = {
             id, status: "DRAFT", title, publicSummary,
             approximateArea: publicCopy(item.approximateArea, 160, "approximateArea"),
             organization: { name: organization.name, publicRef: `0x${createHash("sha256").update(organization.id).digest("hex")}` },
-            auditUrl: `/api/public/cases/${publicCaseRef}/audit`,
+            auditUrl: `/api/campaigns/${id}/audit-trail`,
             items: item.needs.map(need => ({
               id: randomUUID(), name: need.name, unit: need.unit, targetQty: need.quantity,
               pledgedQty: 0, receivedQty: 0, deliveredQty: 0, confirmedQty: 0, remainingPledgeQty: need.quantity,

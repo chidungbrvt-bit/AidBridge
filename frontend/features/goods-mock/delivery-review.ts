@@ -84,7 +84,8 @@ export function fixtureDeliveryResponse(actor: ReviewActor, body: DeliveryReques
   };
   return {
     ...record, outcome: 'DELIVERED', items: body.items, evidenceVersionIds: body.evidenceVersionIds,
-    reviewStatus: 'PENDING', blockchainStatus: 'PENDING_ON_CHAIN', auditUrl: fixture.states.S1.campaign.auditUrl,
+    reviewStatus: 'PENDING', blockchainStatus: 'PENDING_ON_CHAIN',
+    auditUrl: `/api/campaigns/${fixture.states.S1.campaign.id}/audit-trail`,
   };
 }
 

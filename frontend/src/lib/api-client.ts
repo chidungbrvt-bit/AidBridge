@@ -1,5 +1,5 @@
 import type { CreateCampaignRequest } from "./campaign";
-import type { DeliveryRequest, DeliveryResponse, ReceiptRequest, ReceiptResponse, StaffCaseDetail } from "./goods";
+import { isCampaignAuditUrl, type DeliveryRequest, type DeliveryResponse, type DeliveryWireResponse, type ReceiptRequest, type ReceiptResponse, type StaffCaseDetail } from "./goods";
 import type { CampaignResponse, CommitmentRequest, CommitmentResponse, CancellationRequest, Page } from "../../features/donor/model";
 import type { BlockchainStatus, CaseDetailResponse, CaseListQuery, CaseSummary, CreateCaseRequest, CsrfResponse, DecisionRequest, DecisionResponse, EvidenceFixture, FieldError, LoginRequest, LoginResponse, MeResponse, Membership, MockControlAction, OrganizationRole, PageResponse, PatchCaseRequest, ProblemDetail, ResubmitCaseRequest, ReviewAction } from "./types";
 
@@ -145,7 +145,9 @@ export class ApiClient {
     return this.mutate(`/api/commitments/${encodeURIComponent(id)}/receipts`, body, key);
   }
   async recordDelivery(id: string, body: DeliveryRequest, key: string): Promise<DeliveryResponse> {
-    return this.mutate(`/api/cases/${encodeURIComponent(id)}/deliveries`, body, key);
+    const saved = await this.mutate<DeliveryWireResponse>(`/api/cases/${encodeURIComponent(id)}/deliveries`, body, key);
+    if (saved.outcome === "FAILED") return { ...saved, auditUrl: null };
+    return { ...saved, auditUrl: isCampaignAuditUrl(saved.auditUrl) ? saved.auditUrl : null };
   }
   async evidenceFixtures(organizationId: string): Promise<EvidenceFixture[]> {
     const rows = await this.request<(EvidenceFixture & { title?: string })[]>(`/api/evidence-fixtures?${new URLSearchParams({ organizationId })}`);

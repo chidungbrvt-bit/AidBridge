@@ -5,7 +5,6 @@
   "fixtureClockUtc": "2026-11-09T02:00:00.000Z",
   "organizationId": "11111111-1111-4111-8111-111111111111",
   "caseId": "22222222-2222-4222-8222-222222222222",
-  "publicCaseRef": "0xab7102e5104c4f30b1cdee53cadbc8ddba1105e677324d2e93e1934b0fa56837",
   "campaignId": "10000000-0000-4000-8000-000000000001",
   "assumptionRefs": [
     "F02-A01",
@@ -144,7 +143,7 @@
             "remainingPledgeQty": 3
           }
         ],
-        "auditUrl": "/api/public/cases/0xab7102e5104c4f30b1cdee53cadbc8ddba1105e677324d2e93e1934b0fa56837/audit"
+        "auditUrl": "/api/campaigns/10000000-0000-4000-8000-000000000001/audit-trail"
       },
       "focalContribution": null,
       "receipts": [],
@@ -185,7 +184,7 @@
             "remainingPledgeQty": 1
           }
         ],
-        "auditUrl": "/api/public/cases/0xab7102e5104c4f30b1cdee53cadbc8ddba1105e677324d2e93e1934b0fa56837/audit"
+        "auditUrl": "/api/campaigns/10000000-0000-4000-8000-000000000001/audit-trail"
       },
       "focalContribution": {
         "id": "30000000-0000-4000-8000-000000000001",
@@ -251,7 +250,7 @@
             "remainingPledgeQty": 1
           }
         ],
-        "auditUrl": "/api/public/cases/0xab7102e5104c4f30b1cdee53cadbc8ddba1105e677324d2e93e1934b0fa56837/audit"
+        "auditUrl": "/api/campaigns/10000000-0000-4000-8000-000000000001/audit-trail"
       },
       "focalContribution": {
         "id": "30000000-0000-4000-8000-000000000001",
@@ -337,7 +336,7 @@
             "remainingPledgeQty": 1
           }
         ],
-        "auditUrl": "/api/public/cases/0xab7102e5104c4f30b1cdee53cadbc8ddba1105e677324d2e93e1934b0fa56837/audit"
+        "auditUrl": "/api/campaigns/10000000-0000-4000-8000-000000000001/audit-trail"
       },
       "focalContribution": {
         "id": "30000000-0000-4000-8000-000000000001",
@@ -448,7 +447,7 @@
             "remainingPledgeQty": 1
           }
         ],
-        "auditUrl": "/api/public/cases/0xab7102e5104c4f30b1cdee53cadbc8ddba1105e677324d2e93e1934b0fa56837/audit"
+        "auditUrl": "/api/campaigns/10000000-0000-4000-8000-000000000001/audit-trail"
       },
       "focalContribution": {
         "id": "30000000-0000-4000-8000-000000000001",

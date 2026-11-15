@@ -45,7 +45,7 @@ test('F06 admin drafts, retries lost publish, and opens the same campaign in F07
     expect(Object.keys(created.request().postDataJSON()).sort()).toEqual(['caseId', 'publicSummary', 'title']);
     const draft = await created.json();
     expect(draft.status).toBe('DRAFT');
-    expect(draft.auditUrl).toMatch(/^\/api\/public\/cases\/0x[0-9a-f]{64}\/audit$/);
+    expect(draft.auditUrl).toBe(`/api/campaigns/${draft.id}/audit-trail`);
     expect(draft.items).toHaveLength(2);
     expect(draft.items.map(({ name, targetQty, unit }: { name: string; targetQty: number; unit: string }) => [name, targetQty, unit]))
       .toEqual(expect.arrayContaining([['Hygiene kit', 2, 'kit'], ['Rice', 2, 'bag']]));

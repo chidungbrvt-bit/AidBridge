@@ -1,4 +1,4 @@
-import type { ReceiptRequest } from "../../../docs/fixtures/f02/goods-flow.types";
+import type { CampaignAuditUrl, ReceiptRequest } from "../../../docs/fixtures/f02/goods-flow.types";
 import type { CaseDetailResponse } from "./types";
 
 export type { ReceiptRequest };
@@ -37,14 +37,21 @@ export type DeliveryRequest =
   | { outcome: "DELIVERED"; items: DeliveryItem[]; evidenceVersionIds: string[]; handedOverAt?: string }
   | { outcome: "FAILED"; items: []; evidenceVersionIds: []; reason: string; handedOverAt?: never };
 
-// D01 response. The audit URL is carried in the DTO while the public route is pending.
-export type DeliveryResponse = {
+type DeliveryResult<AuditUrl> = {
   id: string;
   caseId: string;
   recorderId: string;
   recordedAt: string;
   auditEventId: string;
 } & (
-  | { outcome: "DELIVERED"; items: DeliveryItem[]; evidenceVersionIds: string[]; reviewStatus: "PENDING"; blockchainStatus: "PENDING_ON_CHAIN"; auditUrl: string }
+  | { outcome: "DELIVERED"; items: DeliveryItem[]; evidenceVersionIds: string[]; reviewStatus: "PENDING"; blockchainStatus: "PENDING_ON_CHAIN"; auditUrl: AuditUrl }
   | { outcome: "FAILED"; items: []; evidenceVersionIds: []; reviewStatus: "NOT_APPLICABLE"; blockchainStatus: "NOT_APPLICABLE"; auditUrl: null }
 );
+
+export type DeliveryWireResponse = DeliveryResult<string | null>;
+// The API client maps legacy D01 audit URLs to null.
+export type DeliveryResponse = DeliveryResult<CampaignAuditUrl | null>;
+
+export function isCampaignAuditUrl(url: unknown): url is CampaignAuditUrl {
+  return typeof url === "string" && /^\/api\/campaigns\/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\/audit-trail$/i.test(url);
+}
