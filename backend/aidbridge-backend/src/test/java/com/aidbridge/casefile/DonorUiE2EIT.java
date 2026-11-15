@@ -46,7 +46,9 @@ class DonorUiE2EIT extends AbstractCampaignHttpIT {
                 Map.entry("F07_E2E_CAMPAIGN_ID", campaign.toString()),
                 Map.entry("F07_E2E_CASE_ID", jdbc.queryForObject("SELECT aid_case_id FROM campaigns WHERE id = ?", java.util.UUID.class, campaign).toString()),
                 Map.entry("F07_E2E_RECORDER_EMAIL", jdbc.queryForObject("SELECT email FROM users WHERE id = ?", String.class, orgAdmin.id())),
-                Map.entry("F07_E2E_RECORDER_ID", orgAdmin.id().toString()));
+                Map.entry("F07_E2E_RECORDER_ID", orgAdmin.id().toString()),
+                Map.entry("F07_E2E_VOLUNTEER_ID", volunteer.id().toString()),
+                Map.entry("F07_E2E_VOLUNTEER_EMAIL", jdbc.queryForObject("SELECT email FROM users WHERE id = ?", String.class, volunteer.id())));
         run(frontend, env, "node", "node_modules/next/dist/bin/next", "build", "--webpack");
         ProcessBuilder launch = new ProcessBuilder("node", "node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", "3000")
                 .directory(frontend.toFile()).redirectErrorStream(true)

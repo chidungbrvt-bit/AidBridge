@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useSession } from '@/components/session-provider';
+import { AuditDisclosure } from '@/components/audit/audit-feed';
+import { isPublicCaseAuditUrl } from '@/lib/audit';
 import { ApiError } from '@/lib/api-client';
 import { DonorApp } from '../../../features/donor/DonorApp';
 import { createDonorAdapter } from '../../../features/donor/adapter';
@@ -20,6 +22,8 @@ export function DonorRoutes() {
   if (pathname === '/campaigns') return <CampaignList/>;
   const campaignId = matched ?? lastCampaign;
   return <DonorApp api={adapter} campaignId={campaignId} mode={mode}
+    renderAudit={mode === 'real' ? campaign => campaign.status !== 'DRAFT' && isPublicCaseAuditUrl(campaign.auditUrl)
+      ? <AuditDisclosure label="Public audit trail" scope={{ publicUrl: campaign.auditUrl, showShareLink: true }} /> : null : undefined}
     donorEnabled={user?.status === 'ACTIVE' && user.donorEnabled === true}
     view={pathname === '/me/commitments' ? 'history' : 'pledge'} onLock={setNavigationLocked}
     navigate={view => router.push(view === 'history' ? '/me/commitments' : campaignId ? `/campaigns/${encodeURIComponent(campaignId)}` : '/campaigns')}/>;

@@ -544,6 +544,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### F05 - Audit vertical slice UI
 
+- **Minh 15/11, In Review:** UI real mode đọc T01/T02 theo DTO của PR #28 và D49/D56. Có phân trang, txHash, blockNumber và link Fuji khi đủ proof. Playwright HTTP fixtures pass. T01/T02 trên backend cùng V16 và đối chiếu Fuji còn Not Run. [Bàn giao](../handoffs/MINH_F05_F09_F10_2026-11-15.md).
+
 - **Feature / priority:** P0-06 / P0.
 - **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Minh (F) / Dũng / Khoa / Dũng kiểm tra auth/API; Khoa kiểm tra chain status.
 - **Complexity / estimate:** L / 4h.
@@ -609,6 +611,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### F09 - Confirmation/dispute/full timeline
 
+- **Minh 15/11, In Review:** Ghép nhận R01 → ghi giao D01 qua projection hồ sơ và tồn P04 của B09. Playwright HTTP fixtures pass và đã bổ sung ca Spring/PostgreSQL với DONOR, ORG_ADMIN, VOLUNTEER. Ca Spring/PostgreSQL còn Not Run, chờ V16. D02/S01/S03 vẫn dùng fixture chờ B10. [Bàn giao](../handoffs/MINH_F05_F09_F10_2026-11-15.md).
+
 - **Minh 14/11, In Review:** D01 fixture theo contract mới, truyền response vào D02 và timeline; S01 chặn hoàn tất dù đã đủ hàng, S03 cập nhật totals. Chờ B09/B10, P05 và T01/T02 cho luồng thật. [Bàn giao và kiểm chứng](../handoffs/MINH_F08_F09_2026-11-14.md).
 
 - **Feature / priority:** P0-05/P0-06 / P0.
@@ -636,6 +640,9 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Required tests:** Deployment smoke, cookie/CSRF/CORS/file guards, cost/recovery checklist.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+
+
+- **Minh 15/11:** Hoàn thành chuẩn bị cùng checklist của Khoa. Deploy, HTTPS smoke và restore drill còn Not Run, cần nghiệm thu F09/C10 và phê duyệt triển khai. [Bàn giao](../handoffs/MINH_F05_F09_F10_2026-11-15.md).
 
 ### F11 - E2E/accessibility/privacy regression
 

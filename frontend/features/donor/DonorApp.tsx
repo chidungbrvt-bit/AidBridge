@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { sortCampaignItems } from '../../src/lib/campaign';
 import type { CampaignResponse, CommitmentRequest, CommitmentResponse, DonorApi, Draft, Page } from './model';
 import { ApiError, cancellationOutcomeUnknown, validateDraft } from './model';
@@ -17,11 +17,12 @@ export interface DonorAppProps {
   // Host invalidation signal for changes made outside this component. No remount.
   dataRevision?: number;
   onLock?: (locked: boolean) => void;
+  renderAudit?: (campaign: CampaignResponse) => ReactNode;
 }
 export function DonorApp(props: DonorAppProps) {
   return <DonorWorkspace key={props.campaignId} {...props}/>;
 }
-function DonorWorkspace({ api, campaignId, view, navigate, donorEnabled, mode, dataRevision = 0, onLock }: DonorAppProps) {
+function DonorWorkspace({ api, campaignId, view, navigate, donorEnabled, mode, dataRevision = 0, onLock, renderAudit }: DonorAppProps) {
   const [campaign, setCampaign] = useState<CampaignResponse>();
   const [loadError, setLoadError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -141,6 +142,7 @@ function DonorWorkspace({ api, campaignId, view, navigate, donorEnabled, mode, d
             <span className="ab-sr" role="status">{busy ? 'Pledge request in progress.' : ''}</span>
           </form>
         </section></div>}
+        {campaign && !loading && renderAudit?.(campaign)}
       </> : <section aria-label="Pledge history"><div className="ab-section-title"><h2>My pledges {history && <small>({totalPledges})</small>}</h2><button onClick={() => setRefresh(x => x + 1)} disabled={historyLoading || !donorEnabled || cancelLocked}>Refresh history</button></div>
         {historyLoading && <div className="ab-panel" role="status">Loading your pledges...</div>}
         {historyError && <div className="ab-notice" role="alert"><p>{historyError}</p><button onClick={() => setRefresh(x => x + 1)}>Retry history loading</button></div>}

@@ -1,5 +1,5 @@
 import fixture from './f02-snapshot.json';
-import type { DeliveryRequest, DeliveryResponse } from '../../src/lib/goods';
+import type { ConfirmationRequest, DeliveryRequest, DeliveryResponse } from '../../src/lib/goods';
 import { GoodsError, type Actor, type Command, type Snapshot } from './model';
 
 export const reviewActors = {
@@ -35,11 +35,6 @@ export type ReviewState = {
   events: { id: string; label: string; blockchainStatus: 'PENDING_ON_CHAIN' | 'NOT_APPLICABLE' }[];
 };
 
-export type ConfirmationRequest = {
-  decision: 'CONFIRMED' | 'REQUIRES_REVIEW';
-  reviewedEvidenceVersionIds: string[];
-  reason?: string;
-};
 export type DisputeRequest = { deliveryId?: string; reason: string };
 export type ResolveDisputeRequest = {
   outcome: 'UPHOLD' | 'VOID_DELIVERY';
@@ -85,7 +80,7 @@ export function fixtureDeliveryResponse(actor: ReviewActor, body: DeliveryReques
   return {
     ...record, outcome: 'DELIVERED', items: body.items, evidenceVersionIds: body.evidenceVersionIds,
     reviewStatus: 'PENDING', blockchainStatus: 'PENDING_ON_CHAIN',
-    auditUrl: `/api/campaigns/${fixture.states.S1.campaign.id}/audit-trail`,
+    auditUrl: `/api/public/cases/0x${fixture.publicCaseRef.slice(2)}/audit`,
   };
 }
 
