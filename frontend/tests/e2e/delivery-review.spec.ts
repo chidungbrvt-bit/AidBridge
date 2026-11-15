@@ -36,6 +36,7 @@ test('F08 delivery flows into F09 review and void using the same item totals', a
   await panel.getByLabel('Review reason (required)').fill('Review the fictional delivery claim.');
   await panel.getByRole('button', { name: 'Open mock dispute' }).click();
   await expect(page.getByRole('button', { name: 'Record mock delivery' })).toBeDisabled();
+  await expect(panel.getByText('Blocked by open dispute')).toBeVisible();
   await expect(page.getByTestId('totals-kg').locator('td')).toHaveText(['14', '7', '5', '4']);
 
   await panel.getByRole('button', { name: 'S03 Resolve dispute' }).click();

@@ -1,5 +1,7 @@
 package com.aidbridge.casefile.service;
 
+import com.aidbridge.campaign.entity.Campaign;
+import com.aidbridge.campaign.repository.CampaignRepository;
 import com.aidbridge.casefile.dto.response.StaffCaseDetailResponse;
 import com.aidbridge.casefile.dto.response.StaffCaseDetailResponse.Item;
 import com.aidbridge.casefile.dto.response.StaffCaseDetailResponse.OutstandingCommitment;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class StaffCaseService {
     private final CaseService cases;
     private final ContributionItemRepository contributionItems;
+    private final CampaignRepository campaigns;
 
     @Transactional(readOnly = true)
     public StaffCaseDetailResponse get(Authentication actor, UUID caseId) {
@@ -33,6 +36,8 @@ public class StaffCaseService {
                     row.getItemName(), row.getUnit(), row.getPledgedQty(), row.getReceivedQty(),
                     row.getOutstandingQty()));
         }
-        return new StaffCaseDetailResponse(detail, new ArrayList<>(outstanding.values()));
+        UUID campaignId = campaigns.findScopedCampaignId(caseId, detail.organizationId(), Campaign.Status.PUBLISHED)
+                .orElse(null);
+        return new StaffCaseDetailResponse(detail, campaignId, new ArrayList<>(outstanding.values()));
     }
 }

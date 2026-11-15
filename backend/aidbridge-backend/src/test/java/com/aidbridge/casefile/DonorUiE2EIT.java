@@ -35,16 +35,18 @@ class DonorUiE2EIT extends AbstractCampaignHttpIT {
                 Map.of("name", "Hygiene", "unit", "KIT", "quantity", 30)));
         Path frontend = Path.of("../../frontend").toAbsolutePath().normalize();
         Files.createDirectories(frontend.resolve(".cache"));
-        Map<String, String> env = Map.of(
-                "NEXT_PUBLIC_API_MODE", "real",
-                "API_INTERNAL_BASE_URL", "http://127.0.0.1:" + port,
-                "NEXT_TELEMETRY_DISABLED", "1",
-                "F07_E2E_SCHEMA", SCHEMA,
-                "F07_E2E_DONOR_ID", donor.id().toString(),
-                "F07_E2E_DONOR_EMAIL", jdbc.queryForObject("SELECT email FROM users WHERE id = ?", String.class, donor.id()),
-                "F07_E2E_DONOR_PASSWORD", PASSWORD,
-                "F07_E2E_CAMPAIGN_ID", campaign.toString(),
-                "F07_E2E_RECORDER_ID", volunteer.id().toString());
+        Map<String, String> env = Map.ofEntries(
+                Map.entry("NEXT_PUBLIC_API_MODE", "real"),
+                Map.entry("API_INTERNAL_BASE_URL", "http://127.0.0.1:" + port),
+                Map.entry("NEXT_TELEMETRY_DISABLED", "1"),
+                Map.entry("F07_E2E_SCHEMA", SCHEMA),
+                Map.entry("F07_E2E_DONOR_ID", donor.id().toString()),
+                Map.entry("F07_E2E_DONOR_EMAIL", jdbc.queryForObject("SELECT email FROM users WHERE id = ?", String.class, donor.id())),
+                Map.entry("F07_E2E_DONOR_PASSWORD", PASSWORD),
+                Map.entry("F07_E2E_CAMPAIGN_ID", campaign.toString()),
+                Map.entry("F07_E2E_CASE_ID", jdbc.queryForObject("SELECT aid_case_id FROM campaigns WHERE id = ?", java.util.UUID.class, campaign).toString()),
+                Map.entry("F07_E2E_RECORDER_EMAIL", jdbc.queryForObject("SELECT email FROM users WHERE id = ?", String.class, orgAdmin.id())),
+                Map.entry("F07_E2E_RECORDER_ID", orgAdmin.id().toString()));
         run(frontend, env, "node", "node_modules/next/dist/bin/next", "build", "--webpack");
         ProcessBuilder launch = new ProcessBuilder("node", "node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", "3000")
                 .directory(frontend.toFile()).redirectErrorStream(true)

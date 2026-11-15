@@ -18,6 +18,13 @@ import java.util.UUID;
 public interface CampaignRepository extends JpaRepository<Campaign, UUID> {
     boolean existsByAidCase_Id(UUID caseId);
 
+    @Query("""
+            SELECT c.id FROM Campaign c
+            WHERE c.aidCase.id = :caseId AND c.organization.id = :orgId AND c.status = :status
+            """)
+    Optional<UUID> findScopedCampaignId(
+            @Param("caseId") UUID caseId, @Param("orgId") UUID orgId, @Param("status") Campaign.Status status);
+
     @EntityGraph(attributePaths = {"organization", "aidCase"})
     Optional<Campaign> findWithDetailsById(UUID id);
 

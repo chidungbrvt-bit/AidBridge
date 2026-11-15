@@ -93,6 +93,7 @@ class ReceiptApiIT extends AbstractCampaignHttpIT {
                 String.class, setup.contributionId())).isEqualTo("RECEIVED");
         var staffComplete = volunteer.browser().send("GET", staffPath(setup), null, null, false);
         status(staffComplete, 200);
+        assertThat(node(staffComplete).path("campaignId").asText()).isEqualTo(setup.campaignId().toString());
         assertThat(node(staffComplete).path("outstandingCommitments").size()).isZero();
     }
 

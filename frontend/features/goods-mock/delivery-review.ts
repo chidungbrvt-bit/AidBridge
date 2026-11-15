@@ -1,4 +1,5 @@
 import fixture from './f02-snapshot.json';
+import type { DeliveryRequest, DeliveryResponse } from '../../src/lib/goods';
 import { GoodsError, type Actor, type Command, type Snapshot } from './model';
 
 export const reviewActors = {
@@ -31,7 +32,7 @@ type Dispute = {
 export type ReviewState = {
   deliveries: DeliveryReview[];
   disputes: Dispute[];
-  events: { id: string; label: string; blockchainStatus: 'PENDING_ON_CHAIN' }[];
+  events: { id: string; label: string; blockchainStatus: 'PENDING_ON_CHAIN' | 'NOT_APPLICABLE' }[];
 };
 
 export type ConfirmationRequest = {
@@ -58,15 +59,50 @@ export function hasOpenDispute(state: ReviewState): boolean {
   return state.disputes.some(dispute => dispute.status === 'OPEN');
 }
 
-export function recordDelivery(state: ReviewState, command: Command, id: string): ReviewState {
-  if (command.action !== 'delivery') return state;
+export function canCompleteCampaign(snapshot: Snapshot, state: ReviewState): boolean {
+  return snapshot.campaign.status === 'FULFILLED' && !hasOpenDispute(state)
+    && state.deliveries.every(delivery => delivery.status !== 'PENDING' && delivery.status !== 'REQUIRES_REVIEW');
+}
+
+export function deliveryRequest(command: Command): DeliveryRequest {
+  if (command.outcome === 'FAILED') {
+    return { outcome: 'FAILED', reason: command.reason.trim(), items: [], evidenceVersionIds: [] };
+  }
+  return {
+    outcome: 'DELIVERED',
+    items: command.lines.map(({ id: campaignItemId, quantity }) => ({ campaignItemId, quantity })),
+    evidenceVersionIds: [...command.evidence],
+    ...(command.at ? { handedOverAt: command.at } : {}),
+  };
+}
+
+export function fixtureDeliveryResponse(actor: ReviewActor, body: DeliveryRequest, id: string, auditEventId: string, recordedAt: string): DeliveryResponse {
+  const record = { id, caseId: fixture.caseId, recorderId: reviewActors[actor], auditEventId, recordedAt };
+  if (body.outcome === 'FAILED') return {
+    ...record, outcome: 'FAILED', items: [], evidenceVersionIds: [],
+    reviewStatus: 'NOT_APPLICABLE', blockchainStatus: 'NOT_APPLICABLE', auditUrl: null,
+  };
+  return {
+    ...record, outcome: 'DELIVERED', items: body.items, evidenceVersionIds: body.evidenceVersionIds,
+    reviewStatus: 'PENDING', blockchainStatus: 'PENDING_ON_CHAIN',
+    auditUrl: `/api/campaigns/${fixture.states.S1.campaign.id}/audit-trail`,
+  };
+}
+
+export function recordDelivery(state: ReviewState, delivery: DeliveryResponse): ReviewState {
+  if (state.deliveries.some(record => record.id === delivery.id)) return state;
   return {
     ...state,
     deliveries: [...state.deliveries, {
-      id, recorderId: reviewActors[command.actor], outcome: command.outcome,
-      status: command.outcome === 'FAILED' ? 'NOT_APPLICABLE' : 'PENDING',
-      items: command.lines.map(({ id: campaignItemId, quantity }) => ({ campaignItemId, quantity })),
-      evidenceVersionIds: [...new Set(command.evidence)],
+      id: delivery.id, recorderId: delivery.recorderId, outcome: delivery.outcome,
+      status: delivery.reviewStatus,
+      items: delivery.items.map(item => ({ ...item })),
+      evidenceVersionIds: [...delivery.evidenceVersionIds],
+    }],
+    events: [...state.events, {
+      id: delivery.auditEventId,
+      label: delivery.outcome === 'DELIVERED' ? 'Delivery recorded' : 'Delivery attempt failed',
+      blockchainStatus: delivery.blockchainStatus,
     }],
   };
 }

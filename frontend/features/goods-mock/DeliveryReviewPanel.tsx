@@ -1,7 +1,7 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { GoodsError, type Snapshot } from './model';
 import {
-  hasOpenDispute, reviewPermission, type ReviewActor, type ReviewCommand, type ReviewState,
+  canCompleteCampaign, hasOpenDispute, reviewPermission, type ReviewActor, type ReviewCommand, type ReviewState,
 } from './delivery-review';
 
 const actorLabels: Record<ReviewActor, string> = {
@@ -98,6 +98,8 @@ export function DeliveryReviewPanel({ state, snapshot, disabled, onReview }: Pro
       <button type="button" className="button secondary" disabled={disabled} aria-pressed={operation === 'S03'} onClick={() => switchOperation('S03')}>S03 Resolve dispute</button>
     </div>
     <p>Campaign: <strong>{snapshot.campaign.status}</strong> · Open disputes: <strong>{open.length}</strong></p>
+    <p>Completion eligibility: <strong>{openDispute ? 'Blocked by open dispute' : canCompleteCampaign(snapshot, state)
+      ? 'Eligible for admin close' : 'Waiting for confirmed quantities and delivery review'}</strong></p>
     <form onSubmit={submit} className="stack">
       <fieldset className="form-fieldset stack" disabled={disabled}>
         <label className="field">Simulated review actor

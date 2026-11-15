@@ -37,7 +37,7 @@ export interface CaseDetailResponse extends CaseSummary {
   creator: CaseCreator; beneficiaryAlias: string; approximateArea: string;
   publicTitle?: string; publicSummary?: string;
   needs: (NeedInput & { id: string })[]; consent: ConsentInput; evidenceVersions: EvidenceVersion[];
-  reviewHistory: DecisionResponse[]; reviewHistoryAvailable?: boolean; campaignId?: string;
+  reviewHistory: DecisionResponse[]; reviewHistoryAvailable?: boolean;
   disputeSummary?: { openCount: number };
   goodsTotals?: { pledged: number; received: number; delivered: number; confirmed: number };
   blockchainStatus: BlockchainStatus;
