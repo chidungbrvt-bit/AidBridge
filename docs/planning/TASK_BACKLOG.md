@@ -408,6 +408,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### C08 - Receipt/retry/log reconciliation
 
+- **Task2 ngày15/11 (Decision, không implementation): DONE WITH PENDING APPROVAL.** Đã bổ sung D56 hiện có: Dũng primary worker đa operation/verifier, Khoa review semantics/C10 và deploy/verify C06 khi đủ gate/phê duyệt riêng; deploy tách cutover DB/worker. Fresh case sequence1, giữ C03 evidence, inventory cả jobs chưa ký và signed attempts trước switch. URI D49 giữ là chuẩn hiện hành theo yêu cầu, nhưng minh-d010595149 đã dùng T02/viện dẫn D57 chưa có trong Decision Log; chờ nhóm chốt lệch consumer này, endpoint thật chưa có. Các ghi chú “chưa thấy D56” ngày14 dưới đây là lịch sử; deliveryRef/V16 vẫn chờ Task3. Không đổi trạng thái/owner/estimate task khác hoặc đánh scanner/C10 Done. Xem mục bổ sung Task2 trong [Decision Log](DECISION_LOG.md).
+
 - **Task9 Khoa,14/11/2026:** chốt receipt recovery PASS sau PR21/R1/R2, tái sử dụng CI26 unit+32 IT; không chạy lại. Full C08 chưa Done vì durable log scanner/cursor/replay chưa triển khai. C07 technical gate giữ PASS; C10 goods chưa có worker/registry C06 Fuji/receipt evidence. Phương án owner/cutover mới còn PROPOSED, chưa thấy D56; phải inventory cả jobs chưa ký trước đổi registry. Xem [chốt C08/C10](../reviews/C08_RECEIPT_LOG_REVIEW.md), không thay owner/estimate task khác.
 
 - **Feature / priority:** P0-06 / P0.
