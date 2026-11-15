@@ -629,6 +629,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### F10 - Public hosting/recovery
 
+- **Khoa Task12 ngày15/11: DONE WITH DEPENDENCIES cho phối hợp/chuẩn bị**, không F10 implementation Done. Đã đối chiếu routes/UI/env/runtime/cookie/proxy/health và lập bảng READY/READY FOR MOCK/BLOCKED, owner và gates tại mục E [F10 checklist](../reviews/F10_HOSTING_AUDIT_CHECKLIST_2026_11_15.md). Chờ V16/C09 actual API, F09/C10 evidence và approval hosting; không deploy hoặc chạy tests mới, không thay owner/estimate/status baseline bên dưới.
+
 - **Feature / priority:** Deployment / P0.
 - **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Minh (F) / Dũng / Khoa / Dũng kiểm tra auth/API; Khoa kiểm tra chain status.
 - **Complexity / estimate:** L / 4h.
