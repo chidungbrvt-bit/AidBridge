@@ -29,7 +29,7 @@ export type OutstandingCommitment = {
   }[];
 };
 
-export type StaffCaseDetail = CaseDetailResponse & { outstandingCommitments: OutstandingCommitment[] };
+export type StaffCaseDetail = CaseDetailResponse & { campaignId?: string | null; outstandingCommitments: OutstandingCommitment[] };
 
 type DeliveryItem = { campaignItemId: string; quantity: number };
 
@@ -37,7 +37,7 @@ export type DeliveryRequest =
   | { outcome: "DELIVERED"; items: DeliveryItem[]; evidenceVersionIds: string[]; handedOverAt?: string }
   | { outcome: "FAILED"; items: []; evidenceVersionIds: []; reason: string; handedOverAt?: never };
 
-// Fields needed by F09. The response is currently supplied by the D01 fixture.
+// D01 response. The audit URL is carried in the DTO while the public route is pending.
 export type DeliveryResponse = {
   id: string;
   caseId: string;
@@ -45,6 +45,6 @@ export type DeliveryResponse = {
   recordedAt: string;
   auditEventId: string;
 } & (
-  | { outcome: "DELIVERED"; items: DeliveryItem[]; evidenceVersionIds: string[]; reviewStatus: "PENDING"; blockchainStatus: "PENDING_ON_CHAIN" }
+  | { outcome: "DELIVERED"; items: DeliveryItem[]; evidenceVersionIds: string[]; reviewStatus: "PENDING"; blockchainStatus: "PENDING_ON_CHAIN"; auditUrl: string }
   | { outcome: "FAILED"; items: []; evidenceVersionIds: []; reviewStatus: "NOT_APPLICABLE"; blockchainStatus: "NOT_APPLICABLE"; auditUrl: null }
 );
