@@ -432,6 +432,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### C09 - Full sanitized audit API
 
+- **Task8 review Khoa,15/11: BLOCKED BY IMPLEMENTATION.** Remote main9c24630/dung0fc3e3d chưa có audit read controller/DTO/query/tests T01/T02, dù PR25 description nói đã có; GitHub files list31 files không có phần này. LocalAuditService chỉ ghi audit. Chờ Dũng bàn giao code/tests/actual response để review privacy/chain mapping; không đánh API PASS từ fixture hoặc receipt report. [Readiness evidence](../reviews/C09_AUDIT_API_READINESS_2026_11_15.md). Không triển khai thay, giữ trạng thái implementation baseline bên dưới, không Done.
+
 - **Feature / priority:** P0-06 / P0.
 - **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
 - **Complexity / estimate:** M / 3h.
