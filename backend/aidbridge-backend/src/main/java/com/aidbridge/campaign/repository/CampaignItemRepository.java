@@ -29,6 +29,7 @@ public interface CampaignItemRepository extends JpaRepository<CampaignItem, UUID
         UUID getItemId();
         long getPledgedQty();
         long getReceivedQty();
+        long getDeliveredQty();
     }
 
     /**
@@ -37,8 +38,13 @@ public interface CampaignItemRepository extends JpaRepository<CampaignItem, UUID
      */
     @Query(value = """
             SELECT ci.campaign_item_id AS "itemId",
-                   SUM(ci.pledged_quantity - ci.cancelled_quantity) AS "pledgedQty",
-                   SUM(COALESCE(r.total, 0))::bigint AS "receivedQty"
+                    SUM(ci.pledged_quantity - ci.cancelled_quantity) AS "pledgedQty",
+                    SUM(COALESCE(r.total, 0))::bigint AS "receivedQty",
+                    -- Per campaign item, not per pledge line, so it is not multiplied by the GROUP BY.
+                    -- Includes unconfirmed DELIVERED rows (they already left the warehouse); B10 must exclude voids.
+                    (SELECT COALESCE(SUM(di.delivered_quantity), 0)
+                    FROM delivery_items di JOIN deliveries d ON d.id = di.delivery_id
+                    WHERE di.campaign_item_id = ci.campaign_item_id AND d.outcome = 'DELIVERED')::bigint AS "deliveredQty"
             FROM contribution_items ci
             LEFT JOIN LATERAL (
                 SELECT SUM(gri.received_quantity) AS total

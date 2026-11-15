@@ -34,7 +34,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | B06 | P0-04 | Dũng (B) | Khoa / Minh | M | 6 | B05 | 2026-11-10 | 2026-11-10 | In Review |
 | B07 | P0-04 | Dũng (B) | Khoa / Minh | L | 7 | B06 | 2026-11-13 | 2026-11-13 | In Review |
 | B08 | P0-05 | Dũng (B) | Khoa / Minh | M | 5 | B07 | 2026-11-14 | 2026-11-14 | Testing |
-| B09 | P0-05 | Dũng (B) | Khoa / Minh | L | 5 | B08 | 2026-11-15 | 2026-11-15 | Not Started |
+| B09 | P0-05 | Dũng (B) | Khoa / Minh | L | 5 | B08 | 2026-11-15 | 2026-11-15 | In Review |
 | B10 | P0-05 | Dũng (B) | Khoa / Minh | L | 6 | B09 | 2026-11-18 | 2026-11-17 | Not Started |
 | B11 | Quality | Dũng (B) | Khoa / Minh | L | 6 | B03, B04, B05, B06, B07, B08, B09, B10 | 2026-11-20 | 2026-11-20 | Not Started |
 | B12 | Submission | Dũng (B) | Khoa / Minh | M | 3 | B11 | 2026-11-22 | 2026-11-21 | Not Started |
@@ -247,7 +247,9 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
 - **Phối hợp cụ thể:** Dũng giữ stock reservation/failed-attempt/evidence snapshot; Khoa map delivery milestone và causal refs ở C10; Minh dùng đúng outcome/review status.
 - **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence:** In Review (14/11/2026). Xem các dòng bằng chứng bên dưới.
+- **Status / evidence (14/11/2026, smoke D01 trên aidbridge_demo):** D01 FAILED outcome PASS. Dữ liệu chuẩn bị qua API: case `D01 smoke case 1` (consent publicSummaryAllowed=true) → verify → campaign `2257d7c3-75d5-429d-94d7-121e63cee754` PUBLISHED, case IN_PROGRESS. `POST /api/cases/{id}/deliveries` (VOLUNTEER, outcome FAILED, reason) trả 201; gửi lại cùng Idempotency-Key và body trả 201 + `Idempotent-Replayed: true`, cùng delivery `8319bf09-65f9-4046-9fae-f09c288e7df9`, audit event `45c36831-275c-43f8-a7c5-521788f8e81c` và Location; reviewStatus/blockchainStatus NOT_APPLICABLE. DB: 1 delivery FAILED cho case, 1 audit DELIVERY_ATTEMPT_FAILED, 0 blockchain job. Ghi chú chuẩn bị dữ liệu: case C05 cũ có publicSummaryAllowed=false nên P01 trả 409 INVALID_STATE (đúng thiết kế). Not Run: outcome DELIVERED có items/evidence (backend trả 501 NOT_IMPLEMENTED), confirm/dispute.
+- **Status / evidence (14/11/2026, D01 DELIVERED):** In Review. `DeliveryService` ghi DELIVERED trong một transaction: khóa case → campaign → campaign items theo ID, tồn = received − mọi delivery DELIVERED (kể cả chưa xác nhận), một dòng vượt thì rollback cả request (409 `QUANTITY_EXCEEDED`); lưu `delivery_items` và snapshot bất biến `delivery_evidence_links` (chỉ evidence đang gắn với cùng case, sai thì 400); ghi `DELIVERY_RECORDED` + một job `PENDING` với `chain_sequence` theo D53. Trả `reviewStatus = PENDING`, `blockchainStatus = PENDING_ON_CHAIN`. FAILED giữ nguyên: lý do bắt buộc, không dòng hàng, audit local, không job. P04 trả `deliveredQty` thật. Dũng xác nhận pass trên `aidbridge_test`: `DeliveryApiIT` 7/7, `DeliveryConcurrencyIT` 1/1 chạy 3 lần liên tiếp, hồi quy 66 pass. Các điểm tạm ghi tại D56. Còn chờ: Khoa xác nhận `deliveryRef` (D56) cho C10, Minh nối F09 với D01 thật, integration evidence. Actual human effort chưa được cung cấp. Ngoài B09: D02, S01, S03, void và gửi Fuji.
 
 ### B10 - Confirm/dispute/resolve/close
 
@@ -405,6 +407,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Status / evidence (13/11/2026, Dũng chạy trên Fuji):** Kịch bản restart 1 PASS: `BLOCKCHAIN_POLL_INTERVAL_MS=60000`, verify hồ sơ `e31ce4d6-9163-4e4f-aee1-a06698ee7ce2`, giết cứng backend khi job/attempt SUBMITTED (nonce 1, tx `0x97104a33730c05210da67a21c96b271876d744fcb61fbab46a5d87cff925f98e`), khởi động lại → CONFIRMED cùng tx hash, cùng nonce, 1 attempt; `c05-proof.mjs` PASS. Kịch bản 2 (dừng giữa PREPARED và broadcast): Not Run trên Fuji, chỉ có bằng chứng CI C07. Not Run: stress dài hạn. In Review, chờ Khoa nghiệm thu.
 
 ### C08 - Receipt/retry/log reconciliation
+
+- **Task9 Khoa,14/11/2026:** chốt receipt recovery PASS sau PR21/R1/R2, tái sử dụng CI26 unit+32 IT; không chạy lại. Full C08 chưa Done vì durable log scanner/cursor/replay chưa triển khai. C07 technical gate giữ PASS; C10 goods chưa có worker/registry C06 Fuji/receipt evidence. Phương án owner/cutover mới còn PROPOSED, chưa thấy D56; phải inventory cả jobs chưa ký trước đổi registry. Xem [chốt C08/C10](../reviews/C08_RECEIPT_LOG_REVIEW.md), không thay owner/estimate task khác.
 
 - **Feature / priority:** P0-06 / P0.
 - **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
@@ -585,7 +589,9 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### F08 - Receipt/delivery UI
 
-- **Minh 14/11, In Review:** R01 ở case detail dùng staff projection B08 và tải lại sau 201. `donor-real.spec.ts` chuyển từ seed receipt SQL sang ORG_ADMIN nhận hàng qua UI. E2E Spring/PostgreSQL chưa chạy. [Bàn giao và kiểm chứng](../handoffs/MINH_F08_F09_2026-11-14.md).
+- **Minh 14/11, In Review:** R01 ở case detail dùng staff projection B08 và tải lại sau 201. `donor-real.spec.ts` chuyển từ seed receipt SQL sang ORG_ADMIN nhận hàng qua UI. Spring/PostgreSQL pass tại `c64bb4e` với 1 Java host test và 5 ca browser, 0 fail, 0 skip. [GitHub Actions](https://github.com/chidungbrvt-bit/AidBridge/actions/runs/43637368648), [Bàn giao](../handoffs/MINH_F08_F09_2026-11-14.md).
+
+- **Khoa Task4 ngày14/11 — điều chỉnh bàn giao:** giữ In Review; nhóm chọn R01 UI của Minh tại PR23 làm bản chính, đã rút frontend R01 của Khoa khỏi PR24 để PR24 chỉ còn docs/review. Bản thử Khoa/tests giữ trong lịch sử2713675/d6e255b, không phải UI sẽ merge và không chứng minh PASS cho PR23. Minh tiếp nhận sticky-uncertain Idempotency-Key cùng regression504→403/409→success; chưa xác minh đã port. E2E backend/PostgreSQL của Khoa chưa chứng minh. Xem [F08 evidence](../reviews/F08_MOCK_GOODS_WORKSPACE.md); không đổi owner/estimate hoặc đánh Done.
 
 - **Bổ sung Khoa ngày13/11 (Task5):** giữ In Review; hoàn thiện mock R01/D01 từ PR14, không viết lại phép tính đúng. Feedback 400/409 theo dòng hàng và kết quả mock có outcome/reason; tests tập trung partial receipt, delivery success/over-limit/FAILED và bất biến stock. Bằng chứng cập nhật tại [F08 mock workspace](../reviews/F08_MOCK_GOODS_WORKSPACE.md). Chưa B08/B09/DB thật, không thay owner/estimate/lịch baseline. [Kết luận Task4](../reviews/C06_PART2_D55_REVIEW.md) chỉ lưu review PASS đã thực hiện, không chạy lại C06.
 
@@ -715,6 +721,7 @@ Status / evidence: tất cả Not Started; chưa có code, giờ thực tế hay
 | ML-1..ML-5 (D51 planning) | 11/11/2026 | Not Started | Chưa ghi nhận | User chọn bản demo ML offline trên dữ liệu giả lập quy mô rộng; chỉ cập nhật tài liệu (D51, AGENTS, MVP_SCOPE, DAILY_ROADMAP, TASK_BACKLOG); chưa có code hoặc test | Dũng bắt đầu ML-1 (kiểm tra Python/thư viện trên máy; chuyển từ Minh 12/11); Minh duyệt schema; theo dõi quy tắc cắt tại 17/11 |
 | B06 (P01–P04 implementation & tests) | 11/11/2026 | In Review | Estimate gốc 6h (deadline gốc 10/11/2026); actual human effort chưa được cung cấp | V10 reconcile + `Campaign`/`CampaignItem` + `CampaignService`/`CampaignController`; sửa 2 lỗi do test phát hiện (off-by-one reviewed version, so sánh item phụ thuộc thứ tự); Dũng xác nhận `CampaignApiIT` 15/15 và `CampaignRequestValidationTest` 4/4 pass trên `aidbridge_test` | Khoa/Minh cross-owner review; bàn giao P01–P04 cho F06; chốt D50; B07 sẵn sàng khi được phê duyệt |
 | B07 (G01–G03 implementation & tests, T1–T5) | 12/11/2026 | In Review | Estimate gốc 7h (deadline 13/11/2026); actual human effort chưa được cung cấp | V11/V12 + package `contribution` + outbox AID_PLEDGED/COMMITMENT_REDUCED + số liệu pledge công khai; 37 IT + 9 unit B07 và hồi quy toàn bộ được Dũng xác nhận pass trên `aidbridge_test`; sửa lỗi làm tròn `pledgedAt` | Khoa review D53 + worker lọc `event_type`; Minh nối F07 với G01–G03; B08 sẵn sàng khi được phê duyệt |
+| B09 (D01 DELIVERED + FAILED, tests) | 14/11/2026 | In Review | Estimate gốc 5h (deadline 15/11/2026); actual human effort chưa được cung cấp | DeliveryService DELIVERED (khóa, tồn, evidence snapshot, DELIVERY_RECORDED + job D53), P04 deliveredQty; DeliveryApiIT 7/7, DeliveryConcurrencyIT ×3, hồi quy 66 pass theo xác nhận của Dũng | Khoa xác nhận deliveryRef (D56) cho C10; Minh nối F09; B10 loại delivery đã void khỏi tồn kho |
 
 ### C01 review handoff - 09/11/2026
 

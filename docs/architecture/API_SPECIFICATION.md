@@ -169,6 +169,16 @@ Implemented and covered by `ContributionPledgeIT`, `ContributionCancelIT`, `Cont
 
 Ví dụ HTTP và kết quả kiểm tra tại [B08 R01 handoff](../reviews/B08_R01_HANDOFF.md).
 
+### B09 delivery implementation (14/11/2026)
+
+- **D01 `POST /api/cases/{id}/deliveries`**: active `VOLUNTEER` of the organization that owns the case, CSRF + `Idempotency-Key`. `201` + `Location: /api/deliveries/{id}` (identifier only) + `Cache-Control: no-store`.
+  - `DELIVERED`: at least one item and one evidence version. Lock order case → campaign → campaign items (ORDER BY id). Per item, `quantity <= received − all DELIVERED deliveries` (unconfirmed ones included); any line over → `409 QUANTITY_EXCEEDED` and the whole request rolls back. Evidence must be currently linked to the same case, else `400 VALIDATION_ERROR`. Persists delivery, lines and an immutable evidence snapshot, then `DELIVERY_RECORDED` + one `PENDING` job (D53). Response `reviewStatus = PENDING`, `blockchainStatus = PENDING_ON_CHAIN`, `auditUrl` provisional (D56).
+  - `FAILED`: `reason` required (1..2000, plain text), `items` and `evidenceVersionIds` empty, no `handedOverAt`. Zero stock effect, local audit `DELIVERY_ATTEMPT_FAILED`, no job. `reviewStatus`/`blockchainStatus = NOT_APPLICABLE`, `auditUrl = null`.
+  - Errors: `403 FORBIDDEN` same-org member without `VOLUNTEER`; `404 RESOURCE_NOT_FOUND` case outside the caller's organizations; `409 INVALID_STATE` case not `IN_PROGRESS`, campaign not `PUBLISHED`, or item not in the campaign; `409 DISPUTE_OPEN`; `409 IDEMPOTENCY_CONFLICT`; `400` for `handedOverAt` before publish or more than 5 minutes ahead.
+  - Authorization is re-checked before every replay; state and dispute guards apply only to a fresh write, so a valid replay returns the original response.
+- **P03/P04**: `deliveredQty` = sum of `DELIVERED` lines including unconfirmed ones; FAILED adds nothing; `confirmedQty` stays 0 until B10.
+- Confirmation (D02), disputes (S01/S03), voids and Fuji submission are outside B09.
+
 ## End-to-end request example
 
 Donor authenticated with CSRF sends `POST /api/campaigns/{id}/commitments`, `Idempotency-Key: <new UUID>`:
