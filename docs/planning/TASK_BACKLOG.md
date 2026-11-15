@@ -436,6 +436,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### C09 - Full sanitized audit API
 
+- **Final high audit15/11:** source integrated PR27 +fixes206d2f4 trên khoa; source/docs review không thấy thêm Critical/High có bằng chứng, không phải runtime PASS. Trước merge cần compile/focused JUnit/Flyway fresh+upgrade/HTTP/proof/privacy/order và frontend integration **NOT RUN — DELEGATED** theo [handoff đủ5 task](../reviews/KHOA_2026_11_15_FINAL_HANDOFF.md). Giữ task In Review cho candidate, không Done/không coi PR27 riêng đã merge.
+
 - **Local fix Khoa sau PR27 review,15/11:** canonical URI/security, causal sequence/opaque public ID và confirmed proof/context guards đã sửa trên khoa; focused tests thêm/cập nhật nhưng Java/DB NOT RUN. Legacy proof thiếu context hiện fail-closed pending; không sửa worker để enrich hoặc giả verified. Chưa merge/push PR27, chưa PASS runtime/Done; [review hiện hành](../reviews/C09_AUDIT_API_READINESS_2026_11_15.md).
 
 - **Re-review PR27 Khoa,15/11:** NEEDS FIX, không còn thiếu implementation. T01/T02/controller/DTO/query/tests có ở head7946be1; còn canonical URI, fail-closed confirmed proof/context, causal sequence và public internal audit UUID. [Findings và gate merge](../reviews/C09_AUDIT_API_READINESS_2026_11_15.md). Tests18/301 là Dũng báo, Khoa không chạy runtime mới. Không merge PR hoặc đánh C09 Done; readiness “chưa có code” phía dưới là lịch sử.

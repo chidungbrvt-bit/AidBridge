@@ -85,6 +85,8 @@ Nếu PDF có một đề xuất và Master Prompt đã yêu cầu dùng nó là
 
 #### D56 — Bổ sung phối hợp worker/C06/auditUrl, Task2 ngày15/11/2026
 
+**Trạng thái candidate cuối15/11:** PR27 đã được tích hợp local vào khoa bằng aee0a78, fixes206d2f4 có V16 guard và C09 canonical URI/proof/order/privacy; các đoạn “chưa có API/V16” trong evidence snapshot dưới đây là lịch sử remote lúc kiểm tra, không phải hiện trạng candidate. Chưa chạy runtime validation, không nghiệm thu migration/API PASS. Xem [final handoff năm task](../reviews/KHOA_2026_11_15_FINAL_HANDOFF.md); không thay phê duyệt deploy/cutover hoặc dựng D57.
+
 **Phạm vi chốt:** phân công và safeguards dưới đây được ghi theo yêu cầu Task2/bảng phân công và phương án Dũng đã đồng ý do người dùng chuyển tiếp. Đây là decision thiết kế/phối hợp, **không phải lệnh deploy, cutover hoặc bật worker**. Không mở lại D49/D53/D55. Sáu điểm B09 ở trên giữ nguyên; mục2 deliveryRef/V16 vẫn chờ Task3, không nghiệm thu B09/B10 trong Task2.
 
 1. **Worker GOODS_* và verifier — Dũng primary; Khoa review blockchain semantics/C10.** GOODS_* là tên nhóm công việc, không phải filter wildcard bỏ qua loại event. Phải hỗ trợ đầy đủ chuỗi CASE_VERIFIED → AID_PLEDGED (`recordAidCommitment`/`AidCommitted`) → các COMMITMENT_REDUCED (`CommitmentReduced`), GOODS_RECEIVED (`GoodsReceived`), DELIVERY_RECORDED (`DeliveryRecorded`) theo thứ tự thực tế đã commit của từng case. Không bắt receipt luôn sequence3, không bỏ qua một reduction hoặc milestone chưa CONFIRMED để gửi event sau. B10 confirmation/dispute là dependency riêng khi mở rộng operations tương ứng; FAILED delivery không sinh job chain.

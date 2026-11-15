@@ -1,5 +1,7 @@
 # Checklist chuẩn bị F10 — 15/11/2026
 
+**Cập nhật final audit:** bảng readiness bên dưới giữ evidence snapshot main9c24630 trước PR27. Trên candidate khoa/aee0a78+206d2f4 nay đã có C09/V16 và source fixes; gate không còn “chưa có code” mà là **runtime validation NOT RUN — DELEGATED**, proof cũ thiếu context fail-closed pending và frontend D49 integration chờ Minh. Không suy API live/hosting ready từ việc code có trong local. [Bảng năm task và validation handoff hiện hành](KHOA_2026_11_15_FINAL_HANDOFF.md) supersede các readiness blocker lịch sử, không triển khai F10/scanner trong lượt này.
+
 Owner F10 Minh; Dũng hỗ trợ API/security/DB, Khoa chain/proof/recovery. **Checklist design only, NOT RUN; không triển khai hosting hoặc UI.** Nguồn: TASK_BACKLOG F10 Public hosting/recovery (dependencies F09/C10, HTTPS/CSRF/private files/private DB, backup/rollback, forecast dưới$20, deploy chỉ khi được phép), F09/C09/C10, D49/D56, [scanner boundary](C08_RECEIPT_LOG_REVIEW.md#task10-ngày15112026--hợp-đồng-thiết-kế-scannercursor).
 
 ## A. Dữ liệu audit hiện có và chưa có
