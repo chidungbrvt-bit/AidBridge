@@ -14,6 +14,7 @@ public record InternalAuditEventResponse(
         Instant occurredAt,
         Actor actor,
         String logicalEventId,
+        Long chainSequence,
         BlockchainStatusResponse blockchain) {
 
     public record Actor(UUID id, String fullName) {

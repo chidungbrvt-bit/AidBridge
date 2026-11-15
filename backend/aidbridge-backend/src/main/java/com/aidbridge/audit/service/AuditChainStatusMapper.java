@@ -32,7 +32,9 @@ public class AuditChainStatusMapper {
 
     /** Columns read by AuditEventRepository; kept separate so the rules can be unit tested without a database. */
     public record ChainInput(String jobStatus, String jobLastError, Long jobChainId, String txHash, String txStatus,
-            Long txBlockNumber, Long txChainId, String txContractAddress) {
+            Long txBlockNumber, Long txChainId, String txContractAddress, boolean receiptVerified) {
+        public ChainInput(String j,String e,Long c,String h,String t,Long b,Long tc,String a) { this(j,e,c,h,t,b,tc,a,false); }
+
     }
 
     private final String explorerTxBaseUrl;
@@ -51,7 +53,10 @@ public class AuditChainStatusMapper {
         }
         boolean broadcast = in.txStatus() != null && in.txHash() != null && TX_HASH.matcher(in.txHash()).matches();
         return switch (in.jobStatus()) {
-            case "CONFIRMED" -> "CONFIRMED".equals(in.txStatus()) && broadcast
+            case "CONFIRMED" -> "CONFIRMED".equals(in.txStatus()) && broadcast && in.receiptVerified()
+                    && java.util.Objects.equals(in.jobChainId(),in.txChainId()) && in.txChainId()!=null
+                    && in.txBlockNumber()!=null && in.txBlockNumber()>=0 && in.txContractAddress()!=null
+                    && in.txContractAddress().matches("0x[0-9a-fA-F]{40}")
                     ? withTx(CONFIRMED_ON_CHAIN, in, true, null)
                     // Job says CONFIRMED but no confirmed attempt: never claim more than we can prove.
                     : pending(in, broadcast);

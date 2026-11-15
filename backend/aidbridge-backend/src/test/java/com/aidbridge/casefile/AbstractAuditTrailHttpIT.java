@@ -61,7 +61,7 @@ abstract class AbstractAuditTrailHttpIT extends AbstractCampaignHttpIT {
 
     static JsonNode item(JsonNode page, UUID eventId) {
         for (JsonNode item : page.path("items")) {
-            if (item.path("eventId").asText().equals(eventId.toString())) return item;
+            if ((item.path("eventId").asText().equals(eventId.toString()) || item.path("eventId").asText().equals("audit_"+com.aidbridge.shared.util.Hashing.sha256("public-audit:"+eventId)))) return item;
         }
         throw new AssertionError("Event not in trail: " + eventId);
     }
@@ -84,5 +84,10 @@ abstract class AbstractAuditTrailHttpIT extends AbstractCampaignHttpIT {
             assertThat(node.path(field).isNull() || node.path(field).isMissingNode())
                     .as("%s must be absent", field).isTrue();
         }
+    }
+
+    String publicPath(UUID campaign) {
+        var refs=jdbc.queryForList("SELECT '0x'||encode(c.public_ref,'hex') FROM aid_cases c JOIN campaigns p ON p.aid_case_id=c.id WHERE p.id=?",String.class,campaign);
+        return "/api/public/cases/"+(refs.isEmpty()?"0x"+"ff".repeat(32):refs.get(0))+"/audit";
     }
 }

@@ -24,6 +24,8 @@ public interface AuditEventRepository extends JpaRepository<AuditEvent, UUID> {
         String getJobStatus();
         String getJobLastError();
         Long getJobChainId();
+        Boolean getReceiptVerified();
+        Long getChainSequence();
         String getLogicalEventId();
         String getTxHash();
         String getTxStatus();
@@ -38,6 +40,20 @@ public interface AuditEventRepository extends JpaRepository<AuditEvent, UUID> {
      * then id. V13 allows at most one open attempt per job, so in practice this picks the only attempt.
      */
     String CHAIN_COLUMNS = """
+            COALESCE(t.receipt_status = 1 AND t.chain_id = j.chain_id
+                AND t.receipt_private->>'transactionHash' = t.tx_hash
+                AND t.receipt_private->>'contractAddress' = lower(t.contract_address)
+                AND t.receipt_private->>'eventId' = '0x' || encode(j.logical_event_id,'hex')
+                AND t.receipt_private->>'chainSequence' = j.chain_sequence::text
+                AND t.receipt_private->>'eventType' = a.event_type
+                AND t.receipt_private->>'schemaVersion' = j.schema_version::text
+                AND t.receipt_private->>'orgRef' = (SELECT '0x'||encode(o.public_ref,'hex') FROM organizations o WHERE o.id=a.organization_id)
+                AND t.receipt_private->>'caseRef' = (SELECT '0x'||encode(c.public_ref,'hex') FROM aid_cases c WHERE c.id=a.aid_case_id)
+                AND t.receipt_private->>'status' = '1'
+                AND t.receipt_private->>'blockNumber' = t.block_number::text
+                AND (t.receipt_private->>'blockHash') ~ '^0x[0-9a-f]{64}$'
+                AND (t.receipt_private->>'logIndex') ~ '^(0|[1-9][0-9]*)$', false) AS "receiptVerified",
+            j.chain_sequence AS "chainSequence",
             j.status AS "jobStatus",
             j.last_error AS "jobLastError",
             j.chain_id AS "jobChainId",
@@ -52,7 +68,7 @@ public interface AuditEventRepository extends JpaRepository<AuditEvent, UUID> {
     String CHAIN_JOINS = """
             LEFT JOIN blockchain_jobs j ON j.audit_event_id = a.id
             LEFT JOIN LATERAL (
-                SELECT x.tx_hash, x.status, x.block_number, x.chain_id, x.contract_address
+                SELECT x.tx_hash, x.status, x.block_number, x.chain_id, x.contract_address, x.receipt_status, x.receipt_private
                 FROM blockchain_transactions x
                 WHERE x.blockchain_job_id = j.id AND x.status <> 'PREPARED'
                 ORDER BY CASE x.status WHEN 'CONFIRMED' THEN 0 WHEN 'REVERTED' THEN 1 ELSE 2 END,
@@ -75,7 +91,7 @@ public interface AuditEventRepository extends JpaRepository<AuditEvent, UUID> {
             LEFT JOIN users u ON u.id = a.actor_user_id
             """ + CHAIN_JOINS + """
             WHERE a.aid_case_id = :caseId AND a.organization_id = :orgId
-            ORDER BY a.occurred_at ASC, a.id ASC
+            ORDER BY (j.chain_sequence IS NOT NULL) ASC, j.chain_sequence ASC NULLS FIRST, a.occurred_at ASC, a.id ASC
             LIMIT :limit OFFSET :offset
             """, nativeQuery = true)
     List<TrailRow> findInternalTrail(@Param("caseId") UUID caseId, @Param("orgId") UUID orgId,
@@ -99,7 +115,7 @@ public interface AuditEventRepository extends JpaRepository<AuditEvent, UUID> {
             FROM audit_events a
             """ + CHAIN_JOINS + """
             WHERE a.aid_case_id = :caseId AND a.organization_id = :orgId AND a.event_type IN (:types)
-            ORDER BY a.occurred_at ASC, a.id ASC
+            ORDER BY (j.chain_sequence IS NOT NULL) ASC, j.chain_sequence ASC NULLS FIRST, a.occurred_at ASC, a.id ASC
             LIMIT :limit OFFSET :offset
             """, nativeQuery = true)
     List<TrailRow> findPublicTrail(@Param("caseId") UUID caseId, @Param("orgId") UUID orgId,

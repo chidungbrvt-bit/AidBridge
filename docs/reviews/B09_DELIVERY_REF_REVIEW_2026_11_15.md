@@ -1,5 +1,11 @@
 # Task3 — B09 DELIVERY_RECORDED / deliveryRef / V16
 
+## Local fix trên khoa sau re-review15/11 — chờ runtime tests
+
+Đã merge origin/dung7946be1 vào khoa bằng merge commit aee0a78, bảo toàn lịch sử/docs; không merge PR27 vào main. V16 nay guard trước backfill: exactly-one DELIVERY_RECORDED, event_key/delivery/case/org khớp, JSON string canonical0x+64 lowercase hex khác0, ref unique toàn bộ DELIVERED. Lock deliveries+audit để snapshot migration không đổi giữa validate/copy; FAILED null, không random hoặc overwrite historical ref; giữ transaction/trigger/checks và không sửa V1–V15.
+
+**B09-R2 đã sửa ở source; nghiệm thu runtime vẫn PENDING**, không gọi tests PASS. Thêm DeliveryRefMigrationIT: empty V15, valid DELIVERED/FAILED copy+immutability, malformed prefix/length, missing/ambiguous audit, wrong org, duplicate refs. Tests dùng temporary V15-shaped tables trong test transaction, không sửa dữ liệu ứng dụng; đầy đủ rollback/fresh Flyway/Hibernate vẫn cần chạy trên môi trường Java/PostgreSQL được phép. Các tests migration và DeliveryApiIT/DeliveryConcurrencyIT **NOT RUN** trên máy này do Java/Maven/PostgreSQL không có trong PATH; không cài thêm/Actions. Diff/static references được kiểm riêng, không thay compile/DB tests. Phần NEEDS FIX dưới đây là findings lịch sử trước local fix, không phải kết luận source chưa được sửa.
+
 ## Re-review PR27 ngày15/11 — kết luận hiện hành
 
 **Task3 NEEDS FIX.** [PR27](https://github.com/chidungbrvt-bit/AidBridge/pull/27) OPEN, base9c246304a5b11e8eb0fc567bde4cc407f19a8519, head7946be19fde64d5dcc13fcc066b53c8284225615. Code chỉ đọc từ origin/dung, không đưa vào khoa. **B09-R1 thiếu file migration đã RESOLVED về bàn giao**: V16 thực sự có trong diff, tên/thư mục Flyway đúng sau V15, không sửa V1–V15. Không giữ kết luận cũ “chưa có V16” như hiện trạng.

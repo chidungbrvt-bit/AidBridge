@@ -31,12 +31,12 @@ public class AuditTrailController {
     }
 
     /** T02: public audit trail of a published campaign. No login; role labels only, no private data. */
-    @GetMapping("/api/campaigns/{id}/audit-trail")
+    @GetMapping("/api/public/cases/{publicCaseRef}/audit")
     public ResponseEntity<AuditTrailPage<PublicAuditEventResponse>> campaignTrail(
-            @PathVariable("id") UUID campaignId,
+            @PathVariable String publicCaseRef,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(service.campaignTrail(campaignId, page, size));
+                .body(service.campaignTrail(publicCaseRef, page, size));
     }
 }

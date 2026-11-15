@@ -8,10 +8,11 @@ import java.util.UUID;
  * consent, manifest, salt or private payload is part of this DTO.
  */
 public record PublicAuditEventResponse(
-        UUID eventId,
+        String eventId,
         String type,
         Instant occurredAt,
         String publicActorRole,
         String logicalEventId,
+        Long chainSequence,
         PublicBlockchainStatusResponse blockchain) {
 }

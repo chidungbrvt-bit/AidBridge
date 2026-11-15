@@ -1,5 +1,18 @@
 # Task8 — C09/T01/T02 readiness và blockchain evidence
 
+## Local fix trên khoa sau re-review15/11 — chưa nghiệm thu runtime
+
+Giữ toàn bộ local commits, merge code PR27/7946be1 bằng aee0a78, không merge main/push/PR. Bốn nhóm findings đã có source fixes và focused regression tests, **verification PENDING (Java/DB NOT RUN)**:
+
+- URI: public controller/security dùng duy nhất `/api/public/cases/{publicCaseRef}/audit`, ref canonical32bytes, resolve owning campaign và giữ publication/approved-org/privacy guards. CampaignMapper đổi metadata cùng D49; không giữ public endpoint cũ hoặc thêm alias.
+- Causal/privacy: chain milestones theo chain_sequence, local-only audit đặt trước milestones và sort occurred_at/id trong nhóm để deterministic pagination (không khẳng định toàn timeline là time order). DTO thêm chainSequence; public eventId là opaque `audit_`+SHA256 namespace/audit UUID, không raw audit UUID và không phải chain eventId. logicalEventId vẫn là bytes32 on-chain. Include COMMITMENT_REDUCED/DONOR; query một row per audit, không nhân jobs theo log count.
+- Confirmed: mapper cần receiptVerified computed server-side và cùng job/attempt chain, valid contract/block/hash. Query đối chiếu persisted receipt status1, transaction/block hash/number/logIndex và proof contractAddress/eventId/sequence/schema/eventType/orgRef/caseRef với attempt/job/audit. Không đọc raw receipt/private payload ra DTO, không RPC mỗi GET. Missing/invalid/context mismatch giữ pending không success link.
+- **Giới hạn quan trọng:** receipt_private mà worker C08 hiện lưu chỉ có block/hash/index/status/time, chưa có các context fields mới required ở projection guard. Vì không sửa worker/C10 trong lượt này, historical CONFIRMED thiếu context sẽ hiển thị pending/unverified, không tự bịa context hoặc đánh đã canonical mới. Test fixture đầy đủ proof fields là synthetic DB evidence, không Fuji validation. C10/operator có thể enrich proof sau khi verify đúng context trong task được giao riêng; không giải quyết bằng cách bỏ guard hoặc patch journal mù. Đây là fail-closed behavior có chủ đích cần reviewer biết trước integration.
+
+Regression cập nhật AuditChainStatusMapperTest (chain mismatch/missing proof/registry/block), PublicAuditTrailIT (canonical URI, scoped ref lookup, opaque IDs, causal sequence khi timestamps đảo), AuditTrailApiIT (DB-only confirmed không đủ proof), DeliveryRefMigrationIT cho V16. **NOT RUN** Java compile/JUnit/Flyway/PostgreSQL/HTTP/Fuji: không có tools trong PATH, không dựng môi trường hoặc chạy Actions. Chỉ diff/reference/source checks thực hiện. PR27 vẫn OPEN với source gốc cho đến khi người dùng quyết định đưa fix vào nhánh PR; không tuyên bố PR head đã sửa.
+
+Đường tích hợp an toàn sau review: giữ origin/dung7946be1 là ancestor của khoa, không cherry-pick lại commit PR27 đã merge local; cập nhật nhánh PR theo phương án được người dùng cho phép sau, chạy focused tests exact head, rồi merge theo dependencies. Không force-push/reset hoặc tự sửa nhánh Dũng. Các findings phía dưới là lịch sử re-review trước local fixes; gate merge vẫn chờ runtime tests và review diff.
+
 ## Re-review PR27 — kết luận hiện hành ngày15/11
 
 **Task8 NEEDS FIX, không còn BLOCKED BY IMPLEMENTATION.** PR27 OPEN base9c246304a5b11e8eb0fc567bde4cc407f19a8519, head7946be19fde64d5dcc13fcc066b53c8284225615 trên dung, chưa merge. Đã có AuditTrailController/Service, DTO internal/public, repository/query, AuditChainStatusMapper, tests và handoff. Blocker “chưa push audit read code” **RESOLVED**, các ghi chú thiếu implementation phía dưới chỉ còn lịch sử.
