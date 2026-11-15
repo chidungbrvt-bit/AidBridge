@@ -453,7 +453,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
 - **Phối hợp cụ thể:** Dũng cung cấp approved immutable goods/delivery/confirmation/dispute snapshots từ B08–B10; Khoa map contract functions/events/refs/sequence; cả hai kiểm tra retry không tăng số lượng.
 - **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence (15/11/2026):** In Progress. Dũng đã chuẩn bị thiết kế Task 9, fixture 2 mặt hàng với sequence 1–4 và ma trận test để Khoa review. Đối chiếu build input/output và ABI C06 bằng Node, encode/decode offline 4/4 mốc bằng ethers. **Not Run:** Java parity/verifier C10, PostgreSQL ordering/retry, Hardhat C06 end-to-end và Fuji. Dũng triển khai worker/verifier và chạy local ngày 16/11 theo D57. Khoa xác nhận ABI/redeploy và chuẩn bị proof độc lập. Cổng 17/11 chờ local pass và Dũng duyệt. Giờ làm thực tế chưa ghi nhận. [Thiết kế và bàn giao Task 9](../reviews/C10_DUNG_WORKER_DESIGN_2026_11_15.md)
 
 ### C11 - Contract/failure regression
 
