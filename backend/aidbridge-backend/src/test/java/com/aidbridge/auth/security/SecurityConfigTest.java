@@ -91,9 +91,16 @@ class SecurityConfigTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"/api/campaigns", "/api/campaigns/example", "/api/campaigns/example/audit-trail", "/actuator/health"})
+    @ValueSource(strings = {"/api/campaigns", "/api/campaigns/example", "/api/public/cases/0xabababababababababababababababababababababababababababababababab/audit", "/actuator/health"})
     void allowsOnlyDocumentedPublicGetRoutes(String path) throws Exception {
         mvc.perform(get(path)).andExpect(status().isOk());
+    }
+
+    @Test
+    void legacyCampaignAuditRouteIsNotPublic() throws Exception {
+        mvc.perform(get("/api/campaigns/example/audit-trail"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
     }
 
     @Test
@@ -265,7 +272,7 @@ class SecurityConfigTest {
         }
 
         @GetMapping({"/api/protected", "/api/auth/internal", "/api/campaigns", "/api/campaigns/{id}",
-                "/api/campaigns/{id}/audit-trail", "/actuator/health"})
+                "/api/public/cases/{publicCaseRef}/audit", "/actuator/health"})
         String read() {
             return "ok";
         }
