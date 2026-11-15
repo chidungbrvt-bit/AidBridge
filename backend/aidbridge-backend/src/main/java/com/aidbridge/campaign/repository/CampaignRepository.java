@@ -79,4 +79,32 @@ public interface CampaignRepository extends JpaRepository<Campaign, UUID> {
             @Param("caseId") UUID caseId,
             @Param("orgId") UUID orgId
     );
+
+    @Query("""
+        select campaign.id
+        from Campaign campaign
+        where campaign.aidCase.id = :caseId
+          and campaign.organization.id = :organizationId
+        """)
+    Optional<UUID> findIdByCaseAndOrganization(
+            @Param("caseId") UUID caseId,
+            @Param("organizationId") UUID organizationId
+    );
+
+    interface CloseTarget {
+        UUID getCaseId();
+        UUID getOrganizationId();
+    }
+
+    @Query("""
+        select campaign.aidCase.id as caseId,
+               campaign.organization.id as organizationId
+        from Campaign campaign
+        where campaign.id = :campaignId
+          and campaign.organization.id in :organizationIds
+        """)
+    Optional<CloseTarget> findCloseTarget(
+            @Param("campaignId") UUID campaignId,
+            @Param("organizationIds") Collection<UUID> organizationIds
+    );
 }

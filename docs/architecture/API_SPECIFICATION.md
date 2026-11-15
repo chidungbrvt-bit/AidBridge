@@ -179,6 +179,15 @@ Ví dụ HTTP và kết quả kiểm tra tại [B08 R01 handoff](../reviews/B08_
 - **P03/P04**: `deliveredQty` = sum of `DELIVERED` lines including unconfirmed ones; FAILED adds nothing; `confirmedQty` stays 0 until B10.
 - Confirmation (D02), disputes (S01/S03), voids and Fuji submission are outside B09.
 
+### B10 confirmation, dispute and close implementation (15/11/2026)
+
+- **D02**: `DELIVERY_CONFIRMER` dùng session của tổ chức sở hữu delivery. `reviewedEvidenceVersionIds` phải trùng tập snapshot D01. Tự xác nhận trả `403 SELF_CONFIRMATION`, kể cả khi có cả hai role. `CONFIRMED` ghi `DELIVERY_CONFIRMED` và một outbox job `PENDING` theo thứ tự D53, trả `PENDING_ON_CHAIN`. `REQUIRES_REVIEW` cần `reason`, mở dispute, giữ lượng đã dành cho delivery và trả `disputeId` với `NOT_APPLICABLE`.
+- **S01/S02**: cả hai trả `201` và `Location: /api/disputes/{id}` để nhận diện dispute. S01 dùng case ID và role `ORG_ADMIN`, `VERIFIER` hoặc `DELIVERY_CONFIRMER` trong tổ chức sở hữu case. S02 dùng campaign ID, yêu cầu tài khoản có donor grant và contribution của chính mình trong campaign đó. S02 mở dispute cấp case từ `reason` và trả `{id, status, createdAt}`. Mở dispute sau khi đóng đưa case về `IN_PROGRESS` và campaign về `FULFILLED`.
+- **S03**: `PLATFORM_ADMIN` xử lý dispute `OPEN`. `reviewEvidenceVersionIds` là mảng ID riêng biệt thuộc snapshot delivery, có thể rỗng. Dispute cấp case gửi `[]`. `UPHOLD` giữ totals. `VOID_DELIVERY` yêu cầu dispute gắn delivery hợp lệ và loại lần giao đó khỏi delivered/confirmed totals. Lần giao và confirmation cũ vẫn được lưu. Campaign quay về `PUBLISHED` nếu confirmed totals sau void thiếu target. Sau khi resolve, người dùng đủ quyền tiếp tục review hoặc gọi P05 theo trạng thái hiện hành.
+- **P05**: `ORG_ADMIN` của tổ chức sở hữu campaign gửi `{}`. Server kiểm tra mọi target đã được xác nhận và case đã hết dispute/review trước khi ghi campaign `CLOSED`, case `COMPLETED` và `CASE_COMPLETED`. Khóa case chung với S01 bảo vệ hai thao tác khi chạy đồng thời.
+- **Refresh F09**: gọi C03 `GET /api/org/cases/{id}` sau mutation để lấy `goodsTotals`, `deliveries` và `disputes` hiện tại. Các trường case và `outstandingCommitments` tiếp tục có trong response. P03/P04 trả delivered/confirmed totals loại trừ void. Replay giữ response gốc, kể cả khi C03/P04 đã đổi. Các mutation dùng session, CSRF và `Idempotency-Key` theo quy tắc chung.
+- **Audit và chain**: S01/S02/S03/P05 ghi audit local theo phạm vi D57. D02 `CONFIRMED` đã ghi outbox, còn worker xử lý `DELIVERY_CONFIRMED` và xác minh trên Fuji thuộc phần tích hợp. F09 hiển thị pending theo response và chỉ hiển thị `CONFIRMED_ON_CHAIN` khi có trạng thái đã được xác minh.
+
 ## End-to-end request example
 
 Donor authenticated with CSRF sends `POST /api/campaigns/{id}/commitments`, `Idempotency-Key: <new UUID>`:

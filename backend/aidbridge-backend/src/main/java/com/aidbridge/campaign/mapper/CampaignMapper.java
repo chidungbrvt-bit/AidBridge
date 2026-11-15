@@ -32,6 +32,7 @@ public class CampaignMapper {
                     int pledged = progress == null ? 0 : Math.toIntExact(progress.getPledgedQty());
                     int received = progress == null ? 0 : Math.toIntExact(progress.getReceivedQty());
                     int delivered = progress == null ? 0 : Math.toIntExact(progress.getDeliveredQty());
+                    int confirmed = progress == null ? 0 : Math.toIntExact(progress.getConfirmedQty());
                     return new CampaignResponse.ItemSummary(
                             item.getId(),
                             item.getItemName(),

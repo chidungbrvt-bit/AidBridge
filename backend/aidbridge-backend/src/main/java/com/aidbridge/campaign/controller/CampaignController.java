@@ -81,4 +81,18 @@ public class CampaignController {
         }
         return builder.body(result.body());
     }
+
+    @PostMapping("/{id}/close")
+    public ResponseEntity<CampaignResponse> close(
+            Authentication authentication,
+            @PathVariable("id") UUID campaignId,
+            @RequestHeader(value = "Idempotency-Key", required = false) String key,
+            @RequestBody(required = false) Map<String, Object> body
+    ) {
+        if (body != null && !body.isEmpty()) {
+            throw BusinessException.invalid();
+        }
+
+        return toResponse(service.close(authentication, campaignId, key));
+    }
 }
