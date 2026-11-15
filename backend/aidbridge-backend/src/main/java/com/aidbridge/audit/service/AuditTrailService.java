@@ -40,6 +40,7 @@ public class AuditTrailService {
             "CASE_VERIFIED", "VERIFIER",
             "CAMPAIGN_PUBLISHED", "ORGANIZATION",
             "AID_PLEDGED", "DONOR",
+            "COMMITMENT_REDUCED", "DONOR",
             "GOODS_RECEIVED", "ORGANIZATION",
             "DELIVERY_RECORDED", "FIELD_VOLUNTEER");
 
@@ -79,9 +80,10 @@ public class AuditTrailService {
      * T02. No login. Only campaigns visible on the public campaign page (published, fulfilled, closed, by an
      * approved organization); a draft or unknown campaign is 404, also for its own staff.
      */
-    public AuditTrailPage<PublicAuditEventResponse> campaignTrail(UUID campaignId, int page, int size) {
+    public AuditTrailPage<PublicAuditEventResponse> campaignTrail(String publicCaseRef, int page, int size) {
         validatePage(page, size);
-        Campaign campaign = campaigns.findWithDetailsById(campaignId).orElseThrow(BusinessException::missing);
+        if (publicCaseRef == null || !publicCaseRef.matches("0x[0-9a-f]{64}")) throw BusinessException.missing();
+        Campaign campaign = campaigns.findByPublicCaseRef(java.util.HexFormat.of().parseHex(publicCaseRef.substring(2))).orElseThrow(BusinessException::missing);
         if (campaign.getOrganization().getStatus() != Organization.Status.APPROVED
                 || !PUBLIC_CAMPAIGN_STATUSES.contains(campaign.getStatus())) {
             throw BusinessException.missing();
@@ -97,9 +99,9 @@ public class AuditTrailService {
     }
 
     private PublicAuditEventResponse publicItem(TrailRow row) {
-        return new PublicAuditEventResponse(row.getEventId(), row.getEventType(),
+        return new PublicAuditEventResponse("audit_" + com.aidbridge.shared.util.Hashing.sha256("public-audit:" + row.getEventId()), row.getEventType(),
                 Instant.parse(row.getOccurredAtUtc()), PUBLIC_EVENT_ROLES.get(row.getEventType()),
-                row.getLogicalEventId(),
+                row.getLogicalEventId(), row.getChainSequence(),
                 PublicBlockchainStatusResponse.from(chainStatus.resolve(chainInput(row), true)));
     }
 
@@ -107,13 +109,13 @@ public class AuditTrailService {
         var actor = row.getActorId() == null ? null
                 : new InternalAuditEventResponse.Actor(row.getActorId(), row.getActorName());
         return new InternalAuditEventResponse(row.getEventId(), row.getEventType(), row.getEntityType(),
-                Instant.parse(row.getOccurredAtUtc()), actor, row.getLogicalEventId(),
+                Instant.parse(row.getOccurredAtUtc()), actor, row.getLogicalEventId(), row.getChainSequence(),
                 chainStatus.resolve(chainInput(row), false));
     }
 
     static ChainInput chainInput(TrailRow row) {
         return new ChainInput(row.getJobStatus(), row.getJobLastError(), row.getJobChainId(), row.getTxHash(),
-                row.getTxStatus(), row.getTxBlockNumber(), row.getTxChainId(), row.getTxContractAddress());
+                row.getTxStatus(), row.getTxBlockNumber(), row.getTxChainId(), row.getTxContractAddress(), Boolean.TRUE.equals(row.getReceiptVerified()));
     }
 
     static void validatePage(int page, int size) {

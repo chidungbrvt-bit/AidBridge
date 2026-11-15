@@ -18,7 +18,7 @@ class AuditChainStatusMapperTest {
 
     static ChainInput job(String jobStatus, String lastError, String txStatus, Long block, long txChain) {
         return new ChainInput(jobStatus, lastError, 43113L, txStatus == null ? null : HASH, txStatus, block,
-                txStatus == null ? null : txChain, txStatus == null ? null : CONTRACT);
+                txStatus == null ? null : txChain, txStatus == null ? null : CONTRACT, true);
     }
 
     @Test
@@ -106,10 +106,9 @@ class AuditChainStatusMapperTest {
     @Test
     void linkOnlyForFuji() {
         var out = mapper.resolve(job("CONFIRMED", null, "CONFIRMED", 7L, 31337L), false);
-        assertThat(out.status()).isEqualTo("CONFIRMED_ON_CHAIN");
-        assertThat(out.txHash()).isEqualTo(HASH);
+        assertThat(out.status()).isEqualTo("PENDING_ON_CHAIN");
+        assertThat(out.txHash()).isNull();
         assertThat(out.explorerUrl()).isNull();
-        assertThat(out.network()).isEqualTo("Local Hardhat");
     }
 
     @Test
@@ -128,5 +127,14 @@ class AuditChainStatusMapperTest {
                 .isEqualTo("https://explorer.example.test/tx/" + HASH);
         assertThatThrownBy(() -> new AuditChainStatusMapper("http://testnet.snowtrace.io/tx/"))
                 .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test void missingOrWrongProofNeverConfirms() {
+        for (ChainInput input : new ChainInput[] {
+            new ChainInput("CONFIRMED",null,43113L,HASH,"CONFIRMED",1L,43113L,CONTRACT),
+            new ChainInput("CONFIRMED",null,43113L,HASH,"CONFIRMED",null,43113L,CONTRACT,true),
+            new ChainInput("CONFIRMED",null,43113L,HASH,"CONFIRMED",1L,31337L,CONTRACT,true),
+            new ChainInput("CONFIRMED",null,43113L,HASH,"CONFIRMED",1L,43113L,null,true)
+        }) assertThat(mapper.resolve(input,true).status()).isEqualTo("PENDING_ON_CHAIN");
     }
 }

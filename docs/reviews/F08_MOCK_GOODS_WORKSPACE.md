@@ -1,5 +1,28 @@
 # F08 — Khung nhận/giao hàng ngày 12/11
 
+## Quyết định bàn giao hiện hành — R01 theo PR23 của Minh
+
+Nhóm thống nhất giữ R01 UI của Minh tại PR23 làm bản chính. **PR24 chỉ bàn giao tài liệu/review**, đã bỏ toàn bộ frontend R01 của Khoa, route `/cases/{id}/receipts`, shared-client/session/playwright hunks và receipt tests riêng. Không có UI R01 thứ hai được merge từ PR24. D01/F09 và frontend có trước giữ nguyên; không sửa nhánh Minh.
+
+Minh cần port cải tiến giữ request body/Idempotency-Key khi outcome chưa xác định, kể cả khi retry sau đó bị403/409. Tham khảo commit `d6e255b`: `frontend/features/receipts/model.ts` (sticky uncertain và pending key), `frontend/tests/receipts-api.test.ts` (hai regression tests504→403/409→success: cùng key/body, một logical receipt). `2713675` giữ integration baseline và bốn browser HTTP-fixture tests tại `frontend/tests/e2e/receipts-api.spec.ts`. Source/tests chỉ còn trong lịch sử Git, không còn trong working tree hoặc net diff PR24; đây là yêu cầu chuyển giao, **chưa xác minh đã port sang PR23**.
+
+Phần Task4 và tests phía dưới là lịch sử thử nghiệm bản Khoa, không phải hướng dẫn UI hiện hành sẽ merge. Minh cập nhật run guide/evidence của bản chính qua PR23; không suy tests của Khoa là PASS cho implementation Minh. E2E thật backend/PostgreSQL vẫn chưa được chứng minh trong lượt Khoa.
+
+## Lịch sử Task4 ngày14/11 — R01 API integration của Khoa (đã rút khỏi PR24)
+
+**PASS WITH LIMITATIONS, In Review.** R01 production path đã nối B08 qua shared ApiClient/session/CSRF, nhưng chưa xác minh Spring Boot/PostgreSQL E2E trên máy này (read-only TCP probe127.0.0.1:8080/8081 không có listener). Các phần mock/historical bên dưới giữ làm bằng chứng trước đây; không còn mô tả toàn bộ R01 chỉ là fixture.
+
+FINAL QA14/11: sửa edge case **Medium** 504→retry403/409 từng làm mất pending key dù receipt ban đầu có thể đã commit. Journal nay giữ sticky uncertain cho đến response thành công; không mở draft/key mới chỉ vì retry bị từ chối. Regression mô phỏng server lưu một receipt rồi504→403/409→success xác nhận cùng body/key và một record. Nếu quyền/state chưa được khôi phục, UI tiếp tục khóa mutation mới và cần đối soát backend; không tự bỏ key. Unit tổng **38 PASS** sau sửa (14 R01 +24 regression), lint/typecheck PASS; số36 phía dưới là kết quả trước final fix. Giới hạn journal trong memory/hard reload vẫn giữ nguyên.
+
+- Bật `NEXT_PUBLIC_API_MODE=real`, chạy frontend theo README và cấu hình `API_INTERNAL_BASE_URL` theo proxy hiện có. Staff ORG_ADMIN mở case → **Receive goods · R01 API**, route `/cases/{id}/receipts`. Chỉ lấy IDs từ `GET /api/org/cases/{id}` cùng owning organization; POST `/api/commitments/{contributionId}/receipts`. Không dùng donor history hoặc fixture IDs làm staff input.
+- Chọn commitment/multiple goods, quantity nguyên dương ≤ outstanding và Java int, UTC receivedAt, note trim≤500 không markup/URL/NUL. Backend kiểm quyền/scope/timestamps/state lần cuối; UI không cấp thêm role. Response hiển thị receipt ID/items/recordedAt/blockchainStatus; PENDING_ON_CHAIN không phải confirmed.
+- Sau POST luôn đọc lại staff projection; không cộng received bằng mock. POST thành công mà GET lỗi vẫn giữ receipt xác nhận, khóa form cho tới GET thành công; Refresh chỉ GET, không gửi lại POST. 409 hoặc rejection có thông báo status/code, refetch trước lần gửi tiếp.
+- Timeout/network/408/5xx: journal giữ nguyên body/key, khóa draft và navigation, explicit **Retry same receipt**; không tự tạo key mới. Chặn double-submit bằng journal busy đồng bộ. Journal scoped user/org/case trong SessionWork, sống qua remount nhưng chỉ trong memory; session clear xóa private state. Không khôi phục qua hard reload, không lưu dữ liệu private trong localStorage; cảnh báo beforeunload khi outcome chưa rõ. Sau hard reload phải đối soát backend trước nhập lại, không hứa exactly-once qua browser crash.
+- D01/F09 giữ nguyên tại `/goods-demo` trong explicit mock mode, không lấy receipt API vào pooled fixture. Real receipt page không gọi delivery API. Không tích hợp B09, không thay source model/guards F08/F09 mock.
+- Kiểm tra mới: **36 unit tests PASS** (12 R01 mapping/validation/retry/error tests +24 regression F08/F09 boundary/F07 adapter), **4 Edge browser HTTP-fixture tests PASS**: partial/multiple receipts và authoritative refetch, response504 sau commit retry cùng key/body, POST201+GET503 recovery không POST lại,409 không tăng quantities. Lint các file integration/tests và typecheck PASS. Lần đầu browser không launch trong môi trường hạn chế, rồi server/browser khác môi trường không kết nối; đã chạy cùng môi trường và PASS, không thay source để lách test.
+- **NOT RUN:** B08 real HTTP/DB E2E, backend permissions/concurrency trên DB thật, build mới/Actions/Fuji. Browser routing là HTTP simulation, không phải PostgreSQL evidence. Không cài JDK/DB/dependencies.
+- Minh tiếp nhận route/client/session và dùng staff ORG_ADMIN thực ở test env để chạy partial→refetch→receipt lần2, kiểm receipt IDs/G02/P04. Dũng cung cấp backend/dev DB, staff/campaign/pledge hợp lệ, kiểm audit/job đúng một lần và quyền/quantity guards; không phải thiếu frontend implementation. Chỉ commit local, chưa push/PR.
+
 Status: **In Review — PASS trong phạm vi mock R01/D01**. Khoa thực hiện theo phân công ngày 12/11; giữ owner/estimate baseline của F08. Chưa nghiệm thu nhóm, chưa tích hợp B08/B09.
 
 ## Bổ sung Task 5 ngày 13/11

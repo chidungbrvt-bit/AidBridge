@@ -19,6 +19,8 @@ export function describeError(error: unknown): ErrorInfo {
     SELF_APPROVAL: "The creator cannot review their own case, even with a verifier role.",
     VERSION_CONFLICT: "This case changed. Refresh the case and review the new revision before submitting again.",
     INVALID_STATE: "This case is no longer available for this action. Refresh the case.",
+    QUANTITY_EXCEEDED: "The quantity exceeds the current availability. Check the refreshed totals.",
+    DISPUTE_OPEN: "Resolve the open dispute before recording goods.",
     IDEMPOTENCY_CONFLICT: "This request key was already used for a different submission. Refresh before starting another action.",
     CSRF_INVALID: "The security token expired. Try the same action again after the token refresh.",
     UNAUTHENTICATED: "Your session expired. Sign in again.",

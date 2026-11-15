@@ -23,7 +23,17 @@ class PublicAuditTrailIT extends AbstractAuditTrailHttpIT {
 
         UUID confirmed = event(caseId, "AID_PLEDGED", base.plusSeconds(1), donor.id());
         String confirmedHash = hash();
-        tx(job(confirmed, caseId, "CONFIRMED", null, 201), confirmedHash, "CONFIRMED", 4321L, 43113);
+        UUID confirmedJob=job(confirmed,caseId,"CONFIRMED",null,201);
+        tx(confirmedJob,confirmedHash,"CONFIRMED",4321L,43113);
+        jdbc.update("""
+            UPDATE blockchain_transactions t SET receipt_private=jsonb_build_object(
+                'transactionHash',t.tx_hash,'contractAddress',lower(t.contract_address),'status',1,
+                'blockNumber',t.block_number,'blockHash',?,'logIndex',0,
+                'eventId','0x'||encode(j.logical_event_id,'hex'),'chainSequence',j.chain_sequence,
+                'eventType',a.event_type,'schemaVersion',j.schema_version,
+                'orgRef','0x'||encode(o.public_ref,'hex'),'caseRef','0x'||encode(c.public_ref,'hex'))
+            FROM blockchain_jobs j JOIN audit_events a ON a.id=j.audit_event_id JOIN organizations o ON o.id=a.organization_id JOIN aid_cases c ON c.id=a.aid_case_id WHERE t.blockchain_job_id=j.id AND j.id=?
+            ""","0x"+"ab".repeat(32),confirmedJob);
 
         UUID submitted = event(caseId, "AID_PLEDGED", base.plusSeconds(2), donor.id());
         String submittedHash = hash();
@@ -45,7 +55,7 @@ class PublicAuditTrailIT extends AbstractAuditTrailHttpIT {
         UUID evidenceRead = event(caseId, "EVIDENCE_CONTENT_READ", base.plusSeconds(7));
         UUID failedAttempt = event(caseId, "DELIVERY_ATTEMPT_FAILED", base.plusSeconds(8), volunteer.id());
 
-        var response = new Browser().send("GET", "/api/campaigns/" + campaignId + "/audit-trail?size=100",
+        var response = new Browser().send("GET", publicPath(campaignId) + "?size=100",
                 null, null, false);
         status(response, 200);
         JsonNode body = node(response);
@@ -93,7 +103,7 @@ class PublicAuditTrailIT extends AbstractAuditTrailHttpIT {
 
         // Privacy regression on the whole JSON string.
         List<String> forbidden = new ArrayList<>(List.of(
-                PAYLOAD_MARKER, MANIFEST_MARKER, preparedHash, mismatchHash,
+                PAYLOAD_MARKER, MANIFEST_MARKER, preparedHash, mismatchHash, confirmed.toString(),
                 volunteer.id().toString(), verifier.id().toString(), orgAdmin.id().toString(), donor.id().toString(),
                 ORG_A.toString(), caseId.toString(), "B04 Test Staff", "@example.com",
                 "Demo Household", "Private case title", "Simulated district",
@@ -116,18 +126,18 @@ class PublicAuditTrailIT extends AbstractAuditTrailHttpIT {
         UUID publishedId = publishedCampaign(orgAdmin);
         Browser anonymous = new Browser();
 
-        problem(anonymous.send("GET", "/api/campaigns/" + draftId + "/audit-trail", null, null, false),
+        problem(anonymous.send("GET", publicPath(draftId) + "", null, null, false),
                 404, "RESOURCE_NOT_FOUND");
         // A draft stays hidden from its own staff too: T02 is the public view.
-        problem(orgAdmin.browser().send("GET", "/api/campaigns/" + draftId + "/audit-trail", null, null, false),
+        problem(orgAdmin.browser().send("GET", publicPath(draftId) + "", null, null, false),
                 404, "RESOURCE_NOT_FOUND");
-        problem(anonymous.send("GET", "/api/campaigns/" + UUID.randomUUID() + "/audit-trail", null, null, false),
+        problem(anonymous.send("GET", publicPath(UUID.randomUUID()) + "", null, null, false),
                 404, "RESOURCE_NOT_FOUND");
-        status(anonymous.send("GET", "/api/campaigns/" + publishedId + "/audit-trail", null, null, false), 200);
+        status(anonymous.send("GET", publicPath(publishedId) + "", null, null, false), 200);
 
         jdbc.update("UPDATE organizations SET status = 'SUSPENDED' WHERE id = ?", ORG_A);
         try {
-            problem(anonymous.send("GET", "/api/campaigns/" + publishedId + "/audit-trail", null, null, false),
+            problem(anonymous.send("GET", publicPath(publishedId) + "", null, null, false),
                     404, "RESOURCE_NOT_FOUND");
         } finally {
             jdbc.update("UPDATE organizations SET status = 'APPROVED' WHERE id = ?", ORG_A);
@@ -147,14 +157,15 @@ class PublicAuditTrailIT extends AbstractAuditTrailHttpIT {
                 SELECT id::text FROM audit_events
                 WHERE aid_case_id = ? AND event_type IN
                       ('CASE_VERIFIED','CAMPAIGN_PUBLISHED','AID_PLEDGED','GOODS_RECEIVED','DELIVERY_RECORDED')
-                ORDER BY occurred_at, id
+                ORDER BY (SELECT chain_sequence FROM blockchain_jobs WHERE audit_event_id=audit_events.id) ASC NULLS FIRST, occurred_at, id
                 """, String.class, caseId);
 
         Browser anonymous = new Browser();
+        expected = expected.stream().map(id -> "audit_"+com.aidbridge.shared.util.Hashing.sha256("public-audit:"+id)).toList();
         List<String> seen = new ArrayList<>();
         for (int page = 0; ; page++) {
             var response = anonymous.send("GET",
-                    "/api/campaigns/" + campaignId + "/audit-trail?page=" + page + "&size=2", null, null, false);
+                    publicPath(campaignId) + "?page=" + page + "&size=2", null, null, false);
             status(response, 200);
             JsonNode body = node(response);
             assertThat(body.path("totalElements").asLong()).isEqualTo(expected.size());
@@ -163,8 +174,25 @@ class PublicAuditTrailIT extends AbstractAuditTrailHttpIT {
         }
         assertThat(seen).containsExactlyElementsOf(expected);
 
-        String path = "/api/campaigns/" + campaignId + "/audit-trail";
+        String path = publicPath(campaignId) + "";
         problem(anonymous.send("GET", path + "?size=101", null, null, false), 400, "VALIDATION_ERROR");
         problem(anonymous.send("GET", path + "?page=-1", null, null, false), 400, "VALIDATION_ERROR");
+    }
+
+    @Test void chainSequenceOverridesTimestampAndPublicIdsAreOpaque() throws Exception {
+        UUID campaign=publishedCampaign(actor(ORG_A,"ORG_ADMIN",false));
+        UUID caseId=jdbc.queryForObject("SELECT aid_case_id FROM campaigns WHERE id=?",UUID.class,campaign);
+        Instant now=Instant.now().plusSeconds(7200);
+        UUID pledge=event(caseId,"AID_PLEDGED",now.plusSeconds(5));
+        UUID receipt=event(caseId,"GOODS_RECEIVED",now);
+        job(pledge,caseId,"PENDING",null,301);job(receipt,caseId,"PENDING",null,302);
+        var response=new Browser().send("GET",publicPath(campaign)+"?size=100",null,null,false);
+        status(response,200);
+        String body=response.body();
+        String p="audit_"+com.aidbridge.shared.util.Hashing.sha256("public-audit:"+pledge);
+        String q="audit_"+com.aidbridge.shared.util.Hashing.sha256("public-audit:"+receipt);
+        assertThat(body.indexOf(p)).isLessThan(body.indexOf(q));
+        assertThat(body).doesNotContain(pledge.toString(),receipt.toString());
+        problem(new Browser().send("GET","/api/public/cases/not-a-ref/audit",null,null,false),404,"RESOURCE_NOT_FOUND");
     }
 }

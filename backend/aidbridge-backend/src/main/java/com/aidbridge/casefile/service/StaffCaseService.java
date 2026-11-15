@@ -1,5 +1,6 @@
 package com.aidbridge.casefile.service;
 
+import com.aidbridge.campaign.entity.Campaign;
 import com.aidbridge.campaign.repository.CampaignRepository;
 import com.aidbridge.casefile.dto.response.StaffCaseDetailResponse;
 import com.aidbridge.casefile.dto.response.StaffCaseDetailResponse.Item;
@@ -76,16 +77,20 @@ public class StaffCaseService {
             ));
         }
 
-        var campaignId = campaigns.findIdByCaseAndOrganization(
+        UUID publishedCampaignId = campaigns.findScopedCampaignId(
+                        caseId, detail.organizationId(), Campaign.Status.PUBLISHED)
+                .orElse(null);
+
+        var goodsCampaignId = campaigns.findIdByCaseAndOrganization(
                 caseId,
                 organizationId
         );
 
         List<ConfirmationResponse.GoodsTotal> totals =
-                campaignId.isPresent()
+                goodsCampaignId.isPresent()
                         ? goodsTotals.readForAuthorizedCampaign(
                         organizationId,
-                        campaignId.get()
+                        goodsCampaignId.get()
                 )
                         : List.of();
 
@@ -96,6 +101,7 @@ public class StaffCaseService {
 
         return new StaffCaseDetailResponse(
                 detail,
+                publishedCampaignId,
                 new ArrayList<>(outstanding.values()),
                 totals,
                 reviewSnapshot.deliveries(),

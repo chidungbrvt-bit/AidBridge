@@ -10,6 +10,7 @@ const schema=process.env.F07_E2E_SCHEMA ?? '';
 const campaign=process.env.F07_E2E_CAMPAIGN_ID ?? '';
 const donor=process.env.F07_E2E_DONOR_ID ?? '';
 const recorder=process.env.F07_E2E_RECORDER_ID ?? '';
+const caseId=process.env.F07_E2E_CASE_ID ?? '';
 const evidence: {scenario:string;contributionId?:string;databaseVerified:boolean}[]=[];
 function id(value:string){expect(value).toMatch(/^[0-9a-f-]{36}$/i);return value;}
 function sql(query:string):string {
@@ -62,7 +63,7 @@ test.beforeEach(async({page})=>{expect(sql('SELECT current_database()')).toBe('a
 test.afterAll(()=>{
   mkdirSync('test-results',{recursive:true});
   writeFileSync('test-results/f07-real-evidence.json',JSON.stringify({mode:'REAL_NEXT_SPRING_POSTGRES',blockchainEnabled:false,
-    backendFixture:'AbstractCampaignHttpIT',receivedFixture:'SQL-only (B08/R01 not implemented)',expectedScenarios:5,
+    backendFixture:'AbstractCampaignHttpIT',receiptWrite:'B08 R01 via the staff UI',expectedScenarios:5,
     passedScenarios:evidence.length,scenarios:evidence},null,2));
 });
 
@@ -80,18 +81,50 @@ test('real G01/G02/G03: multi-item pledge, own history, partial cancellation and
   evidence.push({scenario:'multi-item-history-partial-cancel-outbox',contributionId:saved.id,databaseVerified:true});
 });
 
-test('real stale receipt409: SQL receipt fixture arrives after form opens; no cancellation is committed',async({page})=>{
+test('real R01 staff receipt updates outstanding and blocks stale donor cancellation',async({page,browser})=>{
   const saved=await pledge(page),line=await foodLine(page,saved);const {card,panel}=await openCancel(page,saved);
-  const receipt=randomUUID();
-  // Exactly the receipt fixture used by ContributionCancelIT; no fake R01 endpoint or production seed.
-  sql(`BEGIN; INSERT INTO goods_receipts(id,contribution_id,received_by,idempotency_key) VALUES('${receipt}','${id(saved.id)}','${id(recorder)}','${randomUUID()}');
-    INSERT INTO goods_receipt_items(id,goods_receipt_id,contribution_id,contribution_item_id,received_quantity) VALUES('${randomUUID()}','${receipt}','${id(saved.id)}','${id(line.id)}',2); COMMIT;`);
+  const staffContext=await browser.newContext({ baseURL: new URL(page.url()).origin });
+  try {
+    const staff=await staffContext.newPage();
+    await staff.goto('/login');
+    await staff.getByLabel('Email address').fill(process.env.F07_E2E_RECORDER_EMAIL!);
+    await staff.getByLabel('Password',{exact:true}).fill(process.env.F07_E2E_DONOR_PASSWORD!);
+    await staff.getByRole('button',{name:'Sign in →',exact:true}).click();
+    await expect(staff).toHaveURL(/\/cases$/);
+    const me=await staff.request.get('/api/auth/me');
+    expect(me.status()).toBe(200);
+    expect((await me.json()).userId).toBe(recorder);
+    expect(recorder).not.toBe(donor);
+    await staff.goto(`/cases/${id(caseId)}`);
+    const receiptPanel=staff.getByRole('region',{name:'Goods receipt'});
+    await receiptPanel.getByLabel('Outstanding commitment').selectOption(saved.id);
+    const outstanding=receiptPanel.getByTestId(`outstanding-${line.id}`);
+    await expect(outstanding).toHaveText('Outstanding: 2');
+    const path=`/api/commitments/${saved.id}/receipts`;
+    const received=staff.waitForResponse(r=>new URL(r.url()).pathname===path && r.request().method()==='POST');
+    await receiptPanel.getByLabel('Food receipt quantity (PACKAGE)',{exact:true}).fill('2');
+    await receiptPanel.getByRole('button',{name:'Record receipt',exact:true}).click();
+    const response=await received;
+    expect(response.status()).toBe(201);
+    expect(response.headers()['x-aidbridge-mock']).toBeUndefined();
+    const receipt=await response.json();
+    expect(receipt).toMatchObject({contributionId:saved.id,recorderId:recorder,items:[{contributionItemId:line.id,quantity:2}],blockchainStatus:'PENDING_ON_CHAIN'});
+    await expect(receiptPanel.getByText(`Receipt ID: ${receipt.id}`)).toBeVisible();
+    await expect(receiptPanel.getByLabel('Outstanding commitment')).toHaveValue(saved.id);
+    await expect(outstanding).toHaveCount(0);
+    expect(Number(sql(`SELECT count(*) FROM goods_receipts r JOIN goods_receipt_items i ON i.goods_receipt_id=r.id
+      JOIN audit_events a ON a.entity_id=r.id JOIN blockchain_jobs j ON j.audit_event_id=a.id
+      WHERE r.id='${id(receipt.id)}' AND r.received_by='${id(recorder)}' AND i.contribution_item_id='${id(line.id)}'
+      AND i.received_quantity=2 AND a.event_type='GOODS_RECEIVED' AND j.status='PENDING'`))).toBe(1);
+  } finally {
+    await staffContext.close();
+  }
   const rejected=page.waitForResponse(r=>r.url().includes(`/api/commitments/${saved.id}/cancellations`) && r.request().method()==='POST');
   await panel.getByRole('button',{name:'Cancel selected goods',exact:true}).click();expect((await rejected).status()).toBe(409);
   await expect(panel.getByRole('alert')).toContainText('409 Conflict');
   await expect(card.getByRole('row').filter({hasText:'Food'}).getByRole('cell')).toHaveText(['2','0','2','0']);
   expect(cancelled(line.id)).toBe(0);expect(outbox(saved.id,'COMMITMENT_REDUCED')).toBe(0);
-  evidence.push({scenario:'real-received-fixture-stale409-no-write',contributionId:saved.id,databaseVerified:true});
+  evidence.push({scenario:'real-r01-staff-receipt-stale-donor409-no-write',contributionId:saved.id,databaseVerified:true});
 });
 
 test('real G01 commit then lost504: exact request/key replay creates one DB contribution',async({page})=>{

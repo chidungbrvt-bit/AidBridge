@@ -1,4 +1,5 @@
 import type { CreateCampaignRequest } from "./campaign";
+import { isCampaignAuditUrl, type DeliveryRequest, type DeliveryResponse, type DeliveryWireResponse, type ReceiptRequest, type ReceiptResponse, type StaffCaseDetail } from "./goods";
 import type { CampaignResponse, CommitmentRequest, CommitmentResponse, CancellationRequest, Page } from "../../features/donor/model";
 import type { BlockchainStatus, CaseDetailResponse, CaseListQuery, CaseSummary, CreateCaseRequest, CsrfResponse, DecisionRequest, DecisionResponse, EvidenceFixture, FieldError, LoginRequest, LoginResponse, MeResponse, Membership, MockControlAction, OrganizationRole, PageResponse, PatchCaseRequest, ProblemDetail, ResubmitCaseRequest, ReviewAction } from "./types";
 
@@ -49,7 +50,8 @@ export function normalizeMe(input: unknown): MeResponse {
 export const activeMemberships = (user: MeResponse | null): Membership[] => user?.status === "ACTIVE" ? user.memberships.filter((membership) => membership.status === "ACTIVE") : [];
 const rolesFor = (user: MeResponse | null, organizationId: string) => activeMemberships(user).find((membership) => membership.organizationId === organizationId)?.roles ?? [];
 export const canReadCases = (user: MeResponse | null, organizationId: string): boolean => rolesFor(user, organizationId).length > 0;
-export const canCreateCases = (user: MeResponse | null, organizationId: string): boolean => rolesFor(user, organizationId).includes("VOLUNTEER");
+export const isVolunteer = (user: MeResponse | null, organizationId: string): boolean => rolesFor(user, organizationId).includes("VOLUNTEER");
+export const canCreateCases = isVolunteer;
 export const canManageCampaigns = (user: MeResponse | null, organizationId: string): boolean => rolesFor(user, organizationId).includes("ORG_ADMIN");
 export const canReviewCases = (user: MeResponse | null, organizationId: string): boolean => rolesFor(user, organizationId).includes("VERIFIER");
 
@@ -132,6 +134,21 @@ export class ApiClient {
     return { ...result, items: result.items.map(normalizeCaseSummary) };
   }
   async getCase(id: string): Promise<CaseDetailResponse> { return normalizeCaseDetail(await this.request(`/api/cases/${encodeURIComponent(id)}`)); }
+  async getStaffCase(id: string): Promise<StaffCaseDetail> {
+    const value = await this.request<StaffCaseDetail>(`/api/org/cases/${encodeURIComponent(id)}`);
+    if (!Array.isArray(value?.outstandingCommitments)) {
+      throw new ApiError({ type: "urn:aidbridge:error:invalid-response", status: 502, code: "INVALID_RESPONSE", title: "Invalid staff case response" });
+    }
+    return { ...normalizeCaseDetail(value), campaignId: value.campaignId, outstandingCommitments: value.outstandingCommitments };
+  }
+  async recordReceipt(id: string, body: ReceiptRequest, key: string): Promise<ReceiptResponse> {
+    return this.mutate(`/api/commitments/${encodeURIComponent(id)}/receipts`, body, key);
+  }
+  async recordDelivery(id: string, body: DeliveryRequest, key: string): Promise<DeliveryResponse> {
+    const saved = await this.mutate<DeliveryWireResponse>(`/api/cases/${encodeURIComponent(id)}/deliveries`, body, key);
+    if (saved.outcome === "FAILED") return { ...saved, auditUrl: null };
+    return { ...saved, auditUrl: isCampaignAuditUrl(saved.auditUrl) ? saved.auditUrl : null };
+  }
   async evidenceFixtures(organizationId: string): Promise<EvidenceFixture[]> {
     const rows = await this.request<(EvidenceFixture & { title?: string })[]>(`/api/evidence-fixtures?${new URLSearchParams({ organizationId })}`);
     return rows.map(row => ({ ...row, label: row.title ?? row.label ?? "Evidence fixture" }));

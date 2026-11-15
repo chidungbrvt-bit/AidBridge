@@ -16,7 +16,17 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface CampaignRepository extends JpaRepository<Campaign, UUID> {
+    @org.springframework.data.jpa.repository.Query("select c from Campaign c join fetch c.aidCase a join fetch c.organization o where a.publicRef = :ref")
+    Optional<Campaign> findByPublicCaseRef(@org.springframework.data.repository.query.Param("ref") byte[] ref);
+
     boolean existsByAidCase_Id(UUID caseId);
+
+    @Query("""
+            SELECT c.id FROM Campaign c
+            WHERE c.aidCase.id = :caseId AND c.organization.id = :orgId AND c.status = :status
+            """)
+    Optional<UUID> findScopedCampaignId(
+            @Param("caseId") UUID caseId, @Param("orgId") UUID orgId, @Param("status") Campaign.Status status);
 
     @EntityGraph(attributePaths = {"organization", "aidCase"})
     Optional<Campaign> findWithDetailsById(UUID id);

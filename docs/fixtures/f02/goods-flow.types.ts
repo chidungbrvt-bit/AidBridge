@@ -1,6 +1,7 @@
 // F02 documentation declarations only. Not generated from backend OpenAPI.
 // No API client or frontend implementation is provided here.
 export type UUID = string;
+export type CampaignAuditUrl = `/api/campaigns/${UUID}/audit-trail`;
 export type UtcTimestamp = string;
 export type IntegerQuantity = number; // Runtime validation: integer, 1..1_000_000 for mutations.
 export type EndpointId = 'G01' | 'R01' | 'D01';
@@ -11,7 +12,7 @@ export interface CampaignResponse {
   organization: { name: string; publicRef: string };
   items: { id: UUID; name: string; unit: string; targetQty: number; pledgedQty: number;
     receivedQty: number; deliveredQty: number; confirmedQty: number; remainingPledgeQty: number }[];
-  auditUrl: string;
+  auditUrl: CampaignAuditUrl;
 }
 export interface CommitmentRequest { items: { campaignItemId: UUID; quantity: IntegerQuantity }[] }
 export interface CommitmentResponse {

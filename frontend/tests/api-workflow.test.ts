@@ -28,6 +28,19 @@ const key = () => crypto.randomUUID();
 const rejectsCode = (code: string, status: number) => (error: unknown) => error instanceof ApiError && error.code === code && error.status === status;
 const review = (item: CaseDetailResponse, reason?: string): DecisionRequest => ({ expectedVersion: item.version, reviewedEvidenceVersionIds: item.evidenceVersions.map(e => e.id), ...(reason ? { reason } : {}) });
 
+test("D01 retains T02 audit URLs and ignores legacy case audit URLs", async () => {
+  const t02 = "/api/campaigns/10000000-0000-4000-8000-000000000001/audit-trail";
+  let auditUrl = t02;
+  const api = new ApiClient(async path => path === "/api/auth/csrf"
+    ? Response.json({ token: "test-csrf", headerName: "X-CSRF-TOKEN" })
+    : Response.json({ id: "delivery", caseId: MOCK_CASE_ID, outcome: "DELIVERED", auditUrl }, { status: 201 }));
+  const body = { outcome: "DELIVERED" as const, items: [{ campaignItemId: "item", quantity: 1 }], evidenceVersionIds: ["evidence"] };
+
+  assert.equal((await api.recordDelivery(MOCK_CASE_ID, body, key())).auditUrl, t02);
+  auditUrl = "/api/public/cases/0x" + "37".repeat(32) + "/audit";
+  assert.equal((await api.recordDelivery(MOCK_CASE_ID, body, key())).auditUrl, null);
+});
+
 test("F04 C04/C05: independent changes request -> creator revision -> resubmit -> verifier approval", async () => {
   const backend = createMockBackend(), creator = browser(backend), verifier = browser(backend);
   await login(creator); await login(verifier, 1);

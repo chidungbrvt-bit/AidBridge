@@ -54,7 +54,7 @@ public class CampaignMapper {
                 campaign.getAidCase().getApproximateArea(),
                 orgSummary,
                 itemSummaries,
-                "/api/campaigns/" + campaign.getId() + "/audit-trail"
+                "/api/public/cases/0x" + HexFormat.of().formatHex(campaign.getAidCase().getPublicRef()) + "/audit"
         );
     }
 }

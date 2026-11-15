@@ -11,6 +11,7 @@ import java.util.UUID;
 
 public record StaffCaseDetailResponse(
         @JsonUnwrapped CaseDetailResponse caseDetail,
+        UUID campaignId,
         List<OutstandingCommitment> outstandingCommitments,
         List<ConfirmationResponse.GoodsTotal> goodsTotals,
         List<DeliveryReviewResponse> deliveries,

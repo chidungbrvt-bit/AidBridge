@@ -95,7 +95,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         // Draft visibility and organization ownership remain service-level checks.
                         .requestMatchers(HttpMethod.GET, "/api/campaigns", "/api/campaigns/*",
-                                "/api/campaigns/*/audit-trail").permitAll()
+                                "/api/public/cases/*/audit").permitAll()
                         .anyRequest().authenticated())
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
