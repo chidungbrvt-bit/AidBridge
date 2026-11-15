@@ -87,6 +87,11 @@ B07 (12/11/2026) bổ sung kiểm thử commitment/cancel/idempotency (G01–G03
 - `contribution/CommitmentRequestValidationTest` (5), `contribution/CancellationRequestValidationTest` (4).
 - Giới hạn: chưa đếm số câu SQL để chứng minh G02 không N+1; chưa có test hủy × nhận hàng (cần B08) và pledge × mở dispute (cần B10); `pom.xml` chưa cấu hình surefire nên muốn chạy `*IT` phải dùng `-Dtest=*Test,*Tests,*IT`.
 
+B09 (14/11/2026) bổ sung kiểm thử delivery (D01):
+- `casefile/DeliveryApiIT` (7): DELIVERED ghi dòng hàng, evidence snapshot, một audit + một job seq 4, replay giống hệt và cùng key khác payload 409; delivery chưa xác nhận vẫn trừ tồn; FAILED cần lý do, không dòng hàng, không job, không trừ tồn (IT16); evidence của case khác hoặc không tồn tại 400, item ngoài campaign 409, `handedOverAt` tương lai 400; 403/404 và kiểm tra quyền lại khi replay; replay trả kết quả gốc còn request mới gặp `DISPUTE_OPEN`; P04 `deliveredQty`.
+- `casefile/DeliveryConcurrencyIT` (1, 3 vòng): hai request mỗi cái vừa tồn nhưng cộng lại vượt, chỉ một được ghi; mọi delivery, dòng hàng, evidence, audit và job chỉ thuộc request thắng (IT11, BR05-N).
+- Giới hạn: chưa có cơ chế void (B10); chưa test giao hàng song song với nhận hàng hoặc hủy.
+
 B04 tests07/11 (D41/A): `casefile/CaseApiIT`, `EvidenceAccessIT`, `B04MigrationIT` chạy production HTTP + installed PostgreSQL trong schemas riêng của aidbridge_test; guards từ chối dev URL hoặc account khác aidbridge_app. Không clean/drop/provision DB. Coverage BR01/08/09/11, IT09/15: two-line create/read, tenant/role/creator/revocation, consent/public consent/validation, session/CSRF, version/concurrent edit, idempotency same-key/payload/org conflicts, audit-failure rollback, evidence byte/hash/history/access audit/traversal, immutable overwrite rejection và private log markers. B04MigrationIT có clean V6, upgrade-preserve và legacy guard tests. Đây là tests đã viết và compile, chưa ghi Pass cho PostgreSQL khi thiếu env. `CaseRequestValidationTest`/`EvidenceFixtureCatalogTest` kiểm tra DTO constraints, actual resource hashes/bytes và property binding không dùng DB. Latest commands/results tại Task Backlog; [B04 runbook](../architecture/B04_CASE_WORKFLOW.md) chỉ cách chạy IntelliJ. B05 review states trong fixtures là SQL simulation, không B05 API implementation.
 
 Fictional household `Demo Household A`, org `AidBridge Demo Organization`, need food package2 and hygiene kit2; alternate second org; users each own identity plus dual-role negative account. Private evidence markers are synthetic strings used to assert no leak, not real people data. Each test creates isolated IDs; test transaction/snapshots must not obscure separate-thread locking tests.
@@ -138,3 +143,13 @@ Môi trường: PostgreSQL local `aidbridge_test`, account `aidbridge_app`, Flyw
 | B07-IT (BR04-P/N, BR11-P/N, IT10 phần pledge/cancel) | 12/11/2026 | `aidbridge_test` | `.\mvnw.cmd -o test -Dtest=ContributionSchemaIT,ContributionPledgeIT,ContributionOutboxIT,ContributionCancelIT,ContributionConcurrencyIT` | 37 tests pass | Dũng xác nhận pass | Pass | Dũng / Khoa, Minh review | `src/test/java/com/aidbridge/casefile/Contribution*IT.java` | B07; đã sửa lỗi làm tròn `pledgedAt` |
 | B07-UT | 12/11/2026 | JDK 21, Maven offline | `.\mvnw.cmd -o test -Dtest=CommitmentRequestValidationTest,CancellationRequestValidationTest` | 9 tests pass | Dũng xác nhận pass | Pass | Dũng | `src/test/java/com/aidbridge/contribution/` | B07 |
 | Hồi quy B03–B07 | 12/11/2026 | `aidbridge_test` + DB dev | `.\mvnw.cmd -o test "-Dtest=*Test,*Tests,*IT"` | Failures 0, Skipped 0 | Dũng xác nhận pass; tổng số test chưa ghi lại | Pass | Dũng | `target/surefire-reports` | B07 |
+
+### Kết quả backend B09 (14/11/2026)
+
+Môi trường: PostgreSQL local `aidbridge_test`, Flyway V1–V15; chạy trên Windows. Kết quả do Dũng chạy và xác nhận.
+
+| Test ID | date | environment/build | command | expected | actual | pass/fail | owner | evidence link | defect/task |
+|---|---|---|---|---|---|---|---|---|---|
+| B09-IT (BR05-P/N, BR09-P/N, BR11-P/N, IT16) | 14/11/2026 | `aidbridge_test` | `.\mvnw.cmd -o test -Dtest=DeliveryApiIT` | 7 tests pass | Dũng xác nhận pass | Pass | Dũng / Khoa, Minh review | `src/test/java/com/aidbridge/casefile/DeliveryApiIT.java` | B09 |
+| B09-IT11 concurrency | 14/11/2026 | `aidbridge_test` | `.\mvnw.cmd -o test -Dtest=DeliveryConcurrencyIT` ×3 | 1 test pass mỗi lần | 3/3 lần pass | Pass | Dũng | `DeliveryConcurrencyIT.java` | B09 |
+| Hồi quy B06–B09, C08 worker | 14/11/2026 | `aidbridge_test` | `.\mvnw.cmd -o test -Dtest=ReceiptApiIT,ContributionCancelIT,ContributionConcurrencyIT,CampaignApiIT,VerificationOutboxIT,CaseVerifiedWorkerIT` | Failures 0, Skipped 0 | 66 pass | Pass | Dũng | `target/surefire-reports` | B09 |

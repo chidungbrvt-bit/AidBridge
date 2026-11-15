@@ -31,6 +31,7 @@ public class CampaignMapper {
                     var progress = progressByItem.get(item.getId());
                     int pledged = progress == null ? 0 : Math.toIntExact(progress.getPledgedQty());
                     int received = progress == null ? 0 : Math.toIntExact(progress.getReceivedQty());
+                    int delivered = progress == null ? 0 : Math.toIntExact(progress.getDeliveredQty());
                     return new CampaignResponse.ItemSummary(
                             item.getId(),
                             item.getItemName(),
@@ -38,7 +39,7 @@ public class CampaignMapper {
                             item.getTargetQuantity(),
                             pledged,
                             received,
-                            0,
+                            delivered,
                             0,
                             item.getTargetQuantity() - pledged);
                 })

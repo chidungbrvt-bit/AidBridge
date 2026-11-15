@@ -1,0 +1,63 @@
+{
+  "dataset": "AidBridge ML demo synthetic cases (D51)",
+  "demo_notice": "DEMO - prototype on synthetic data. Advisory only; a human reviewer decides. An official version needs real consented data and model training.",
+  "feature_columns": [
+    "household_size",
+    "children_under5",
+    "elderly_count",
+    "has_disability_member",
+    "income_band",
+    "income_band_missing",
+    "recent_disaster_flag",
+    "need_item_count",
+    "requested_qty_total",
+    "evidence_completeness",
+    "evidence_completeness_missing",
+    "waiting_days"
+  ],
+  "generator_version": "generator-v2",
+  "label_column": "high_need",
+  "library_versions": {
+    "numpy": "2.5.4",
+    "pandas": "3.1.1",
+    "python": "3.13.9"
+  },
+  "missing_rate_by_column": {
+    "evidence_completeness": 0.029,
+    "income_band": 0.0331
+  },
+  "missing_rate_by_org": {
+    "evidence_completeness": {
+      "A": 0.0265,
+      "B": 0.0294,
+      "C": 0.0324
+    },
+    "income_band": {
+      "A": 0.0302,
+      "B": 0.038,
+      "C": 0.0308
+    }
+  },
+  "n": 10000,
+  "positive_rate": 0.1467,
+  "positive_rate_by_org": {
+    "A": 0.128,
+    "B": 0.1523,
+    "C": 0.1688
+  },
+  "rows_by_org": {
+    "A": 4000,
+    "B": 3500,
+    "C": 2500
+  },
+  "schema_version": "1",
+  "seed": 42,
+  "sha256": {
+    "cases.csv": "6b23e5690f9f2681cc47bb7bcaaac6fa76a3540e5f57caeb749565c23d4b49fa",
+    "sample_200.csv": "73af712e5ccb85fc0086914b64d64808902d5a01ddc7f20215fccbb59d6844e6"
+  },
+  "slice_columns": [
+    "org_profile",
+    "zone"
+  ]
+}

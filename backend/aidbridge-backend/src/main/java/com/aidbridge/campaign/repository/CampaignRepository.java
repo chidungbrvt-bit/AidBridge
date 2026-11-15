@@ -67,4 +67,16 @@ public interface CampaignRepository extends JpaRepository<Campaign, UUID> {
             @Param("hidden") Campaign.Status hidden,
             @Param("orgStatus") Organization.Status orgStatus
     );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+        SELECT c FROM Campaign c
+        JOIN FETCH c.organization
+        WHERE c.aidCase.id = :caseId
+          AND c.organization.id = :orgId
+        """)
+    Optional<Campaign> lockByCaseAndOrganization(
+            @Param("caseId") UUID caseId,
+            @Param("orgId") UUID orgId
+    );
 }
