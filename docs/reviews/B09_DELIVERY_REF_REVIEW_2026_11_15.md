@@ -1,6 +1,24 @@
 # Task3 — B09 DELIVERY_RECORDED / deliveryRef / V16
 
-15/11/2026, Khoa/Codex. **NEEDS FIX — High: migration delivery_ref chưa được bàn giao.** Review hoàn thành trong phạm vi REST/SQL/ref/sequence, không triển khai thay Dũng.
+## Re-review PR27 ngày15/11 — kết luận hiện hành
+
+**Task3 NEEDS FIX.** [PR27](https://github.com/chidungbrvt-bit/AidBridge/pull/27) OPEN, base9c246304a5b11e8eb0fc567bde4cc407f19a8519, head7946be19fde64d5dcc13fcc066b53c8284225615. Code chỉ đọc từ origin/dung, không đưa vào khoa. **B09-R1 thiếu file migration đã RESOLVED về bàn giao**: V16 thực sự có trong diff, tên/thư mục Flyway đúng sau V15, không sửa V1–V15. Không giữ kết luận cũ “chưa có V16” như hiện trạng.
+
+### V16 đã có và điểm cần sửa
+
+`V16__add_delivery_ref.sql:4–40`: ACCESS EXCLUSIVE lock, thêm bytea, tạm disable đúng deliveries_immutable rồi copy ref payload cho DELIVERED; null cho FAILED, reject DELIVERED thiếu ref; enable trigger và thêm unique, check32bytes/nonzero và outcome/ref consistency. Khớp entity hiện tại, không random ref mới. Với Flyway PostgreSQL transactional mặc định, lỗi DDL/backfill/constraints rollback cả transaction; không thấy override transaction config trong PR. Fresh/empty DB đường đi phù hợp source, nhưng chưa có focused runtime evidence trên head cuối. FAILED nhiều rows null phù hợp unique nullable.
+
+**B09-R2 — Medium, backfill chấp nhận ref/payload sai hoặc mơ hồ.** V16:13–20 dùng `decode(substr(a.payload_private->>'deliveryRef',3),'hex')` mà không kiểm `^0x[0-9a-f]{64}$`, case/org/event_key hay exactly-one candidate trước UPDATE FROM. Repro code-path: legacy audit có ref=`zz`+64 ký tự hex hợp lệ, UPDATE bỏ2 ký tự đầu rồi decode thành32bytes/nonzero; constraints đều pass, dù payload ref không hợp lệ và không bằng canonical hex column. Audit có nhiều candidate DELIVERY_RECORDED cùng entity_id (khác event_key) có thể bị chọn không xác định; audit khác case/org cũng không bị guard loại. Bảng audit không có FK buộc entity_id thuộc đúng delivery context. Đây là input legacy cần migration reject, không phải lý do random ref mới.
+
+Dũng sửa trước UPDATE: guard exactly-one audit đúng DELIVERY/entity_id/event_key/case/org, regex canonical ref (hoặc normalization policy rõ ràng được duyệt), reject malformed/ambiguous/context mismatch rồi copy. Giữ unique/checks/transaction/trigger. V16 đang ADD column mới nên không ghi đè column cũ trong schema chuẩn V15; DB đã tự thêm column ngoài Flyway sẽ fail duplicate column, cần reconcile có chủ đích, không dùng IF NOT EXISTS để che schema drift. Tests thêm fresh V1→V16, populated V15→V16 (valid DELIVERED/FAILED), bad prefix/ambiguous/context mismatch/duplicate refs, rollback và trigger sau upgrade. Không yêu cầu xử lý schema không được hỗ trợ bằng cách ghi đè ref lịch sử.
+
+### Test evidence và gate
+
+PR27 báo18 audit tests và301 tests/2 skips trong lần local có V16; chính PR ghi fresh-schema startup, populated backfill và post-migration trigger **cần xác nhận lại trên head cuối**. Đọc DeliveryApiIT hiện có kiểm column=payload, FAILED null, immutability, replay; chưa có V16 upgrade/backfill-focused test trong changed files để chứng minh các ca legacy trên. Không chạy focused Java/DB: Java/Maven/PostgreSQL tools không có trong PATH kiểm tra, không cài môi trường/Actions. Không nhận số báo cáo là test chạy mới.
+
+Không review lại REST/SQL đã đánh giá; một PENDING delivery job vẫn khác Fuji receipt, không buộc worker/scanner/redeploy để nghiệm thu B09. **Điều kiện Task3 PASS:** khắc phục R2, bàn giao focused migration evidence trên exact commit cuối. V16 được thêm đã xử lý blocker thiếu schema ban đầu, nhưng chưa đủ nghiệm thu migration đầy đủ. Phần bên dưới là review lịch sử trước PR27.
+
+15/11/2026, Khoa/Codex. **Lịch sử trước PR27: NEEDS FIX — High thiếu migration (đã được bàn giao ở PR27).** Review hoàn thành trong phạm vi REST/SQL/ref/sequence, không triển khai thay Dũng.
 
 ## Phiên bản và finding B09-R1
 

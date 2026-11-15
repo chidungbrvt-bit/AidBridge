@@ -235,6 +235,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### B09 - Delivery records/failed attempts
 
+- **Re-review PR27 Khoa,15/11:** NEEDS FIX. V16 đã được bàn giao tại7946be1, blocker thiếu file RESOLVED; còn guard backfill malformed/ambiguous/context refs và focused migration evidence trước nghiệm thu. Xem kết luận hiện hành [B09 review](../reviews/B09_DELIVERY_REF_REVIEW_2026_11_15.md); ghi chú thiếu migration phía dưới là lịch sử, không Done/không sửa code Dũng.
+
 - **Review Khoa Task3,15/11: NEEDS FIX (High schema delivery_ref).** B09 đã merge PR25; entity/service/tests dùng delivery_ref nhưng V16 chưa có trên main9c24630/dung0fc3e3d, PR25 xác nhận migration chưa commit. REST/SQL/payload/sequence đã review, không phát hiện lỗi logic đáng kể khác; chưa nghiệm thu V16/backfill. Dũng bàn giao migration + upgrade evidence và test checkout sạch; giữ In Review/owner/estimate, không coi thiếu worker/C06 là lỗi B09 REST. [Chi tiết và điều kiện PASS](../reviews/B09_DELIVERY_REF_REVIEW_2026_11_15.md).
 
 - **Feature / priority:** P0-05 / P0.
@@ -431,6 +433,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Status / evidence (14/11/2026):** In Progress. Chạy lại Task 6 trên snapshot `f225385` cùng bốn file Java C08 trong working tree. `CaseVerifiedWorkerIT`, `CaseVerifiedReceiptVerifierTest`, `Web3jBlockchainAdapterTest` và `VerificationApiIT` đạt 40/40, gồm 31 test trên PostgreSQL biệt lập với Flyway V1–V14. IT03 xác nhận attempt gốc sau timeout và rebroadcast khớp signed bytes trong journal. IT13 xác nhận các mã lỗi khi receipt sai context hoặc revert. IT04 khôi phục đúng một lần qua receipt polling sau SQL rollback. **Not Run:** log replay end-to-end do thiếu scanner/cursor/kho observation và kiểm tra API đọc projection live. Khoa review chain/context và chốt đường ingest, Dũng hỗ trợ SQL transaction và `LogReplayIT` khi có đường ingest. Chờ Khoa nghiệm thu trong Task 7. [Bằng chứng và bàn giao C08](../reviews/C08_DUNG_RECOVERY_2026_11_13.md)
 
 ### C09 - Full sanitized audit API
+
+- **Re-review PR27 Khoa,15/11:** NEEDS FIX, không còn thiếu implementation. T01/T02/controller/DTO/query/tests có ở head7946be1; còn canonical URI, fail-closed confirmed proof/context, causal sequence và public internal audit UUID. [Findings và gate merge](../reviews/C09_AUDIT_API_READINESS_2026_11_15.md). Tests18/301 là Dũng báo, Khoa không chạy runtime mới. Không merge PR hoặc đánh C09 Done; readiness “chưa có code” phía dưới là lịch sử.
 
 - **Task8 review Khoa,15/11: BLOCKED BY IMPLEMENTATION.** Remote main9c24630/dung0fc3e3d chưa có audit read controller/DTO/query/tests T01/T02, dù PR25 description nói đã có; GitHub files list31 files không có phần này. LocalAuditService chỉ ghi audit. Chờ Dũng bàn giao code/tests/actual response để review privacy/chain mapping; không đánh API PASS từ fixture hoặc receipt report. [Readiness evidence](../reviews/C09_AUDIT_API_READINESS_2026_11_15.md). Không triển khai thay, giữ trạng thái implementation baseline bên dưới, không Done.
 
