@@ -77,6 +77,7 @@ Nếu PDF có một đề xuất và Master Prompt đã yêu cầu dùng nó là
 
 1. **`auditUrl`** của DELIVERED: `/api/public/cases/0x{caseRef}/audit` theo F02-A04. Route chưa có; frontend không gọi URL này cho tới khi T01/T02 hoàn tất.
 2. **`deliveryRef`** (bytes32 ngẫu nhiên) chỉ lưu trong `audit_events.payload_private`, giống `receiptRef` của B08. Nếu C10 cần cột riêng thì thêm V16; vì `deliveries` có trigger bất biến (V15), V16 phải tạm tắt trigger khi backfill. Chờ Khoa xác nhận.
+   - **Review Task3 Khoa,15/11:** source bf39d4c đã dùng `deliveries.delivery_ref` làm source of truth, copy cùng ref vào payload; hướng này phù hợp D55/C10, mô tả “chỉ payload” ở trên là lịch sử. **NEEDS FIX High:** main9c24630/dung0fc3e3d chưa có V16 tạo cột mà entity đang map, chưa thể nghiệm thu migration/backfill. Dũng bàn giao V16/upgrade tests, bảo toàn refs/trigger/checks; không sửa V15 đã áp dụng. Xem [B09/V16 review](../reviews/B09_DELIVERY_REF_REVIEW_2026_11_15.md). Chấp nhận hướng thiết kế không đồng nghĩa V16 PASS hoặc quyền triển khai worker/deploy.
 3. **Thứ tự `items`** trong `DeliveryResponse` giữ theo request; replay trả đúng thứ tự đó.
 4. **"Nonvoid"**: chưa có cơ chế void, nên tồn kho tính mọi delivery `DELIVERED`. B10 phải loại delivery đã void ở `DeliveryRepository.deliveredTotals` và `CampaignItemRepository.progressTotals`.
 5. **`handedOverAt`** không trước lúc publish campaign và không quá hiện tại + 5 phút, cùng luật với `receivedAt` của R01.

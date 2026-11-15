@@ -235,6 +235,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### B09 - Delivery records/failed attempts
 
+- **Review Khoa Task3,15/11: NEEDS FIX (High schema delivery_ref).** B09 đã merge PR25; entity/service/tests dùng delivery_ref nhưng V16 chưa có trên main9c24630/dung0fc3e3d, PR25 xác nhận migration chưa commit. REST/SQL/payload/sequence đã review, không phát hiện lỗi logic đáng kể khác; chưa nghiệm thu V16/backfill. Dũng bàn giao migration + upgrade evidence và test checkout sạch; giữ In Review/owner/estimate, không coi thiếu worker/C06 là lỗi B09 REST. [Chi tiết và điều kiện PASS](../reviews/B09_DELIVERY_REF_REVIEW_2026_11_15.md).
+
 - **Feature / priority:** P0-05 / P0.
 - **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Dũng (B) / Khoa / Minh / Khoa kiểm tra payload/chain boundary; Minh kiểm tra API/UI.
 - **Complexity / estimate:** L / 5h.
