@@ -36,6 +36,7 @@ unique(itemIds); itemIds.forEach(uuid);
 for (const [stateName, state] of Object.entries(fixture.states)) {
   exactKeys(state.campaign, campaignKeys);
   assert.equal(state.campaign.id, fixture.campaignId);
+  assert.equal(state.campaign.auditUrl, `/api/campaigns/${fixture.campaignId}/audit-trail`);
   assert.equal(state.campaign.status, 'PUBLISHED');
   assert(!('caseId' in state.campaign));
   const focal = state.focalContribution;

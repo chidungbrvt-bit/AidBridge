@@ -57,22 +57,25 @@ jobs:
       - name: Frontend unit and adapter regressions
         working-directory: frontend
         run: npm test
-      - name: Real PostgreSQL Spring Boot Next proxy browser E2E
+      - name: Real PostgreSQL R01, D01 and donor browser E2E
         working-directory: backend/aidbridge-backend
         run: >-
           bash ./mvnw -B -ntp
           -Dtest=CommitmentRequestValidationTest,CancellationRequestValidationTest
-          -Dit.test=DonorUiE2EIT verify
+          -Dit.test=ReceiptApiIT,DeliveryApiIT,DonorUiE2EIT verify
       - name: Require Java and browser execution with no skipped tests
         shell: python
         run: |
           import json, pathlib, xml.etree.ElementTree as ET
-          java = list(pathlib.Path('backend/aidbridge-backend/target/failsafe-reports').glob('TEST-*DonorUiE2EIT.xml'))
-          assert len(java) == 1
-          root = ET.parse(java[0]).getroot()
-          assert int(root.attrib['tests']) == 1
-          for key in ('failures', 'errors', 'skipped'):
-              assert int(root.attrib.get(key, 0)) == 0
+          reports = pathlib.Path('backend/aidbridge-backend/target/failsafe-reports')
+          for name in ('ReceiptApiIT', 'DeliveryApiIT', 'DonorUiE2EIT'):
+              files = list(reports.glob(f'TEST-*.{name}.xml'))
+              assert len(files) == 1, f'{name}: expected one integration test report'
+              summary = ET.parse(files[0]).getroot().attrib
+              count = int(summary['tests'])
+              assert count > 0, f'{name}: no tests ran'
+              assert all(int(summary[key]) == 0 for key in ('failures', 'errors', 'skipped')), summary
+              print(f'{name}: {count} passed, 0 failed, 0 skipped')
           junit = ET.parse('frontend/test-results/f07-real.junit.xml').getroot()
           suites = [junit] if junit.tag == 'testsuite' else list(junit.iter('testsuite'))
           assert sum(int(s.attrib.get('tests', 0)) for s in suites) == 5
@@ -91,3 +94,4 @@ jobs:
           path: |
             frontend/test-results/f07-real-evidence.json
             frontend/test-results/f07-real.junit.xml
+            backend/aidbridge-backend/target/failsafe-reports/TEST-*.xml

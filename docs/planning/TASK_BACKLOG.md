@@ -607,6 +607,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### F08 - Receipt/delivery UI
 
+- **Minh 14/11, In Review:** R01 ở case detail dùng staff projection B08 và tải lại sau 201. `donor-real.spec.ts` chuyển từ seed receipt SQL sang ORG_ADMIN nhận hàng qua UI. Spring/PostgreSQL pass tại `c64bb4e` với 1 Java host test và 5 ca browser, 0 fail, 0 skip. [GitHub Actions](https://github.com/chidungbrvt-bit/AidBridge/actions/runs/43637368648), [Bàn giao](../handoffs/MINH_F08_F09_2026-11-14.md).
+
 - **Khoa Task4 ngày14/11 — điều chỉnh bàn giao:** giữ In Review; nhóm chọn R01 UI của Minh tại PR23 làm bản chính, đã rút frontend R01 của Khoa khỏi PR24 để PR24 chỉ còn docs/review. Bản thử Khoa/tests giữ trong lịch sử2713675/d6e255b, không phải UI sẽ merge và không chứng minh PASS cho PR23. Minh tiếp nhận sticky-uncertain Idempotency-Key cùng regression504→403/409→success; chưa xác minh đã port. E2E backend/PostgreSQL của Khoa chưa chứng minh. Xem [F08 evidence](../reviews/F08_MOCK_GOODS_WORKSPACE.md); không đổi owner/estimate hoặc đánh Done.
 
 - **Bổ sung Khoa ngày13/11 (Task5):** giữ In Review; hoàn thiện mock R01/D01 từ PR14, không viết lại phép tính đúng. Feedback 400/409 theo dòng hàng và kết quả mock có outcome/reason; tests tập trung partial receipt, delivery success/over-limit/FAILED và bất biến stock. Bằng chứng cập nhật tại [F08 mock workspace](../reviews/F08_MOCK_GOODS_WORKSPACE.md). Chưa B08/B09/DB thật, không thay owner/estimate/lịch baseline. [Kết luận Task4](../reviews/C06_PART2_D55_REVIEW.md) chỉ lưu review PASS đã thực hiện, không chạy lại C06.
@@ -624,6 +626,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Status / evidence:** In Review — Khoa thực hiện khung mock R01/D01 ngày 12/11 theo phân công, giữ owner/estimate/lịch baseline. `/goods-demo` dùng F02 trong shell chung, role mô phỏng, partial receipt/delivery/FAILED và 403/409 không sai stock; không gọi B08/B09. 8 unit + 5 browser (desktop/mobile/keyboard), lint/typecheck và Turbopack build PASS; Webpack production build lỗi nội bộ WasmHash trên máy hiện tại, đã ghi rõ. [Bằng chứng và bàn giao F08](../reviews/F08_MOCK_GOODS_WORKSPACE.md). Chưa integrated acceptance/Done, còn B08/B09 và review Minh/Dũng; actual effort con người chưa đo.
 
 ### F09 - Confirmation/dispute/full timeline
+
+- **Minh 14/11, In Review:** D01 fixture theo contract mới, truyền response vào D02 và timeline; S01 chặn hoàn tất dù đã đủ hàng, S03 cập nhật totals. Chờ B09/B10, P05 và T01/T02 cho luồng thật. [Bàn giao và kiểm chứng](../handoffs/MINH_F08_F09_2026-11-14.md).
 
 - **Feature / priority:** P0-05/P0-06 / P0.
 - **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Minh (F) / Dũng / Khoa / Dũng kiểm tra auth/API; Khoa kiểm tra chain status.
