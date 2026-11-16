@@ -125,3 +125,28 @@ for (const { auditType, expected: e } of fixture.milestones) {
 }
 '@ | node --input-type=module
 ```
+
+## Lịch sử Task #9 · Đối chiếu ABI offline bốn mốc
+
+Kết quả dưới đây lấy từ fixture Task #9 trên `origin/dung` trước khi bổ sung `COMMITMENT_REDUCED` vào Task #7. Lượt này chỉ kiểm tra encode/decode ABI offline. Bằng chứng Hardhat của luồng năm mốc nằm ở mục bàn giao kết quả local phía trên.
+
+```text
+PASS CASE_VERIFIED sequence=1 selector=0x1bd1fadf eventDataBytes=128
+PASS AID_PLEDGED sequence=2 selector=0x89f8809e eventDataBytes=160
+PASS GOODS_RECEIVED sequence=3 selector=0x73a5f8b9 eventDataBytes=192
+PASS DELIVERY_RECORDED sequence=4 selector=0x2df45447 eventDataBytes=160
+```
+
+### Gói bàn giao cho Khoa
+
+- **Phiên bản ABI xuất phát:** source C06 `6944fff`; artifact local `contracts/artifacts/contracts/AidRegistry.sol/AidRegistry.json`, build `solc-0_8_28-6d69e2cf1ddbaa7f61c90daac742b8efd4cf518a`, Solidity 0.8.28, Paris, optimizer 200. SHA-256 artifact `976825c365d0dd99c2097e90b0bbced2d36556524fcb785de4ac19367499c592`; runtime Keccak-256 `0x525314d10311e01e01a61a6f9e75ee432f59ca09ff3aa27445aed3962e09011e`. Đã đối chiếu source với build input sau chuẩn hóa line endings và ABI/bytecode với build output bằng Node, exit 0. Khoa xác nhận artifact dùng để deploy và script độc lập. [Review C06](C06_PART2_D55_REVIEW.md)
+- **Dữ liệu chạy thực tế:** sau local run, điền mỗi hàng `observed` với chain ID, registry, tx hash, block number/hash, log index, logicalEventId, sequence và raw public log (address/topics/data). Ghi thêm artifact SHA, commit/working tree, lệnh, kết quả và số test skipped trong báo cáo. Khoa dùng tx input, canonical block, raw log, `getEventRecord` tại block receipt và `getCaseSummary` tại block mốc cuối. Kết quả offline hôm nay chỉ có ABI fixture; toàn bộ runtime fields để trống.
+- **Cổng 17/11:** Dũng trình kết quả local worker/verifier; Khoa chốt ABI và redeploy C06. Nếu qua cổng, dùng DB demo mới, case mới từ sequence 1, đăng ký lại org/relayer C06, lưu manifest deployment và giữ proof C03/C04/C05 theo registry cũ. Nếu sáng 17/11 chưa đạt, C10 dùng proof Fuji C05 đã có cho `CASE_VERIFIED` và trình bày mốc hàng hóa bằng snapshot + đối chiếu offline. Public audit dùng `/api/public/cases/{publicCaseRef}/audit` theo D49/D56, khớp controller và security hiện có. Không dùng URI T02 cũ. Phương án fallback snapshot/offline ở đây là đề xuất bàn giao, không phải quyết định D57 đã được phê duyệt hoặc quyền deploy/cutover.
+
+| Điểm còn mở | Owner và tiếp theo |
+| --- | --- |
+| Worker/verifier hàng hóa và Java parity chưa có | Dũng triển khai `AID_PLEDGED` trước, review vector với Khoa, rồi nối receipt và delivery trong slot 16/11. |
+| PostgreSQL retry và Hardhat C06 chưa có bằng chứng | Dũng hoàn thiện harness, chạy ba lượt, ghi kết quả thực tế và kiểm no-skips. Khoa đối chiếu proof độc lập và event mapping. |
+| Điều kiện redeploy Fuji chưa đạt | Khoa xác nhận artifact/redeploy sau khi nhận local proof và Dũng duyệt. Tới mốc sáng 17/11 nếu vẫn thiếu, trình phương án fallback snapshot/offline để nhóm chốt; không tự coi là đã được phê duyệt. |
+
+Lệnh đã chạy trong lượt thiết kế: `git status`, `git log`, `git rev-parse`, `git diff`, `rg`, `Get-Content`, `Get-FileHash`, `node --input-type=module` (đọc build info, đối chiếu ABI, encode/decode fixture offline) và `git diff --check`. Proof Fuji trước đây được tham chiếu từ [báo cáo B05](B05_REAL_FUJI_RUN_2026_11_13.md).
