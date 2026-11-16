@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { describeError, ErrorNotice, StatusBadge, type ErrorInfo } from "@/components/cases/shared";
 import { useSession } from "@/components/session-provider";
 import { isVolunteer } from "@/lib/api-client";
@@ -11,15 +11,20 @@ import type { CaseDetailResponse, EvidenceVersion } from "@/lib/types";
 type AvailableItem = { id: string; name: string; unit: string; available: number };
 type DeliveryContext = { items: AvailableItem[]; evidence: EvidenceVersion[] };
 
-export function DeliveryPanel({ detail }: { detail: CaseDetailResponse }) {
+export function DeliveryPanel({ detail, receiptRevision, onRecorded }: {
+  detail: CaseDetailResponse; receiptRevision: number; onRecorded: () => void;
+}) {
   const { mode, user, organizationId } = useSession();
   if (mode !== "real" || !user || !isVolunteer(user, organizationId) ||
       detail.organizationId !== organizationId || detail.status !== "IN_PROGRESS") return null;
 
-  return <StaffDelivery caseId={detail.id} organizationId={organizationId} actorId={user.userId} />;
+  return <StaffDelivery caseId={detail.id} organizationId={organizationId} actorId={user.userId}
+    receiptRevision={receiptRevision} onRecorded={onRecorded} />;
 }
 
-function StaffDelivery({ caseId, organizationId, actorId }: { caseId: string; organizationId: string; actorId: string }) {
+function StaffDelivery({ caseId, organizationId, actorId, receiptRevision, onRecorded }: {
+  caseId: string; organizationId: string; actorId: string; receiptRevision: number; onRecorded: () => void;
+}) {
   const { api, work } = useSession();
   const scope = `${actorId}:${organizationId}:${caseId}`;
   const [context, setContext] = useState<DeliveryContext | null>(null);
@@ -34,8 +39,10 @@ function StaffDelivery({ caseId, organizationId, actorId }: { caseId: string; or
   const [result, setResult] = useState<DeliveryResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState(() => work.deliveries.get(scope));
+  const readVersion = useRef(0);
 
   const refresh = useCallback(async () => {
+    const version = ++readVersion.current;
     setLoading(true);
     setReadError(null);
     try {
@@ -51,17 +58,22 @@ function StaffDelivery({ caseId, organizationId, actorId }: { caseId: string; or
       const items = campaign?.items.map(item => ({
         id: item.id, name: item.name, unit: item.unit, available: Math.max(0, item.receivedQty - item.deliveredQty),
       })) ?? [];
+      if (version !== readVersion.current) return;
       setContext({ items, evidence: staff.evidenceVersions });
       setEvidence(current => current.filter(id => staff.evidenceVersions.some(version => version.id === id)));
     } catch (cause) {
+      if (version !== readVersion.current) return;
       setContext(null);
       setReadError(describeError(cause));
     } finally {
-      setLoading(false);
+      if (version === readVersion.current) setLoading(false);
     }
   }, [api, caseId, organizationId]);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    void refresh();
+    return () => { readVersion.current += 1; };
+  }, [refresh, receiptRevision]);
 
   async function send(attempt: PendingWrite<DeliveryRequest>) {
     const previous = work.deliveries.get(scope);
@@ -87,6 +99,7 @@ function StaffDelivery({ caseId, organizationId, actorId }: { caseId: string; or
       work.deliveries.delete(scope);
       setPending(undefined);
       setResult(saved);
+      onRecorded();
       setQuantities({});
       setEvidence([]);
       setHandover("");
@@ -146,6 +159,7 @@ function StaffDelivery({ caseId, organizationId, actorId }: { caseId: string; or
   const canDeliver = context?.items.some(item => item.available > 0) && context.evidence.length > 0;
   return <section className="card stack" aria-label="Goods delivery">
     <h2>Record goods delivery</h2>
+    <button className="button secondary" type="button" disabled={busy || loading || !!pending} onClick={() => void refresh()}>Refresh delivery stock</button>
     {result && <div className="notice success" role="status">
       <strong>{result.outcome === "DELIVERED" ? "Delivery recorded" : "Failed attempt recorded"}</strong>
       <p className="mono">Delivery ID: {result.id}</p>

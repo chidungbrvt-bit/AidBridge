@@ -7,7 +7,7 @@ const campaignId = '10000000-0000-4000-8000-000000000001';
 const campaignItemId = '20000000-0000-4000-8000-000000000001';
 const evidenceId = '30000000-0000-4000-8000-000000000002';
 const deliveryId = '60000000-0000-4000-8000-000000000001';
-const auditUrl = `/api/campaigns/${campaignId}/audit-trail`;
+const auditUrl = `/api/public/cases/0x${'37'.repeat(32)}/audit`;
 
 // HTTP fixtures exercise the real-mode UI and client.
 async function harness(page: Page, user = volunteer) {

@@ -27,6 +27,7 @@ const getTotals = state => state.campaign.items.map(item => ({campaignItemId:ite
 assert.equal(fixture.fixtureLabel, 'F02_SHARED_MOCK_ONLY_NOT_LIVE_API');
 assert.equal(fixture.scenarios.length, 10);
 assert.equal(Object.keys(fixture.states).length, 5);
+assert.match(fixture.publicCaseRef, /^0x[0-9a-f]{64}$/);
 unique(fixture.scenarios.map(s => s.id));
 unique(fixture.scenarios.map(s => s.request.headers['Idempotency-Key']));
 unique(Object.values(fixture.actors).map(actor => actor.userId));
@@ -36,7 +37,7 @@ unique(itemIds); itemIds.forEach(uuid);
 for (const [stateName, state] of Object.entries(fixture.states)) {
   exactKeys(state.campaign, campaignKeys);
   assert.equal(state.campaign.id, fixture.campaignId);
-  assert.equal(state.campaign.auditUrl, `/api/campaigns/${fixture.campaignId}/audit-trail`);
+  assert.equal(state.campaign.auditUrl, `/api/public/cases/${fixture.publicCaseRef}/audit`);
   assert.equal(state.campaign.status, 'PUBLISHED');
   assert(!('caseId' in state.campaign));
   const focal = state.focalContribution;

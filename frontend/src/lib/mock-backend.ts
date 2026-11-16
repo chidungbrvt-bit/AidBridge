@@ -1,5 +1,5 @@
 /** Server-only, process-memory simulation. No SQL/outbox/Fuji claim; never enabled by real transport mode. */
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import type { CampaignResponse } from "../../features/donor/model";
 import { MOCK_CASE_ID, MOCK_CREATE_CASE, MOCK_EVIDENCE, MOCK_IDENTITIES, MOCK_ORGANIZATIONS } from "./mock-fixtures";
 import type { CaseDetailResponse, CaseStatus, CaseSummary, CreateCaseRequest, DecisionRequest, DecisionResponse, EvidenceVersion, FieldError, MeResponse, MockControlAction, PatchCaseRequest, ProblemDetail, ReviewAction } from "./types";
@@ -31,6 +31,7 @@ export function createMockBackend() {
   const users = new Map(MOCK_IDENTITIES.map((identity) => [identity.user.userId, clone(identity.user)]));
   const cases = new Map<string, CaseDetailResponse>();
   const campaigns = new Map<string, { caseId: string; organizationId: string; dto: CampaignResponse }>();
+  const publicCaseRefs = new Map<string, string>();
   const replay = new Map<string, StoredResponse>();
   const evidence = new Map<string, { caseId: string; bytes: string }>();
   const changesRequestedVersion = new Map<string, number>();
@@ -230,11 +231,13 @@ export function createMockBackend() {
           if ([...campaigns.values()].some(entry => entry.caseId === item.id)) fail(409, "INVALID_STATE", "A campaign already exists for this case.");
           const id = randomUUID();
           const organization = MOCK_ORGANIZATIONS.find(org => org.id === item.organizationId)!;
+          const publicCaseRef = publicCaseRefs.get(item.id) ?? randomBytes(32).toString("hex");
+          publicCaseRefs.set(item.id, publicCaseRef);
           const dto: CampaignResponse = {
             id, status: "DRAFT", title, publicSummary,
             approximateArea: publicCopy(item.approximateArea, 160, "approximateArea"),
             organization: { name: organization.name, publicRef: `0x${createHash("sha256").update(organization.id).digest("hex")}` },
-            auditUrl: `/api/campaigns/${id}/audit-trail`,
+            auditUrl: `/api/public/cases/0x${publicCaseRef}/audit`,
             items: item.needs.map(need => ({
               id: randomUUID(), name: need.name, unit: need.unit, targetQty: need.quantity,
               pledgedQty: 0, receivedQty: 0, deliveredQty: 0, confirmedQty: 0, remainingPledgeQty: need.quantity,

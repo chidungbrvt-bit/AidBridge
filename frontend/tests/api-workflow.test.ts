@@ -28,8 +28,8 @@ const key = () => crypto.randomUUID();
 const rejectsCode = (code: string, status: number) => (error: unknown) => error instanceof ApiError && error.code === code && error.status === status;
 const review = (item: CaseDetailResponse, reason?: string): DecisionRequest => ({ expectedVersion: item.version, reviewedEvidenceVersionIds: item.evidenceVersions.map(e => e.id), ...(reason ? { reason } : {}) });
 
-test("D01 retains T02 audit URLs and ignores legacy case audit URLs", async () => {
-  const t02 = "/api/campaigns/10000000-0000-4000-8000-000000000001/audit-trail";
+test("D01 retains canonical case audit URLs and ignores legacy or malformed URLs", async () => {
+  const t02 = `/api/public/cases/0x${"37".repeat(32)}/audit`;
   let auditUrl = t02;
   const api = new ApiClient(async path => path === "/api/auth/csrf"
     ? Response.json({ token: "test-csrf", headerName: "X-CSRF-TOKEN" })
@@ -37,8 +37,10 @@ test("D01 retains T02 audit URLs and ignores legacy case audit URLs", async () =
   const body = { outcome: "DELIVERED" as const, items: [{ campaignItemId: "item", quantity: 1 }], evidenceVersionIds: ["evidence"] };
 
   assert.equal((await api.recordDelivery(MOCK_CASE_ID, body, key())).auditUrl, t02);
-  auditUrl = "/api/public/cases/0x" + "37".repeat(32) + "/audit";
-  assert.equal((await api.recordDelivery(MOCK_CASE_ID, body, key())).auditUrl, null);
+  for (const nonCanonical of ["/api/campaigns/10000000-0000-4000-8000-000000000001/audit-trail", `https://example.test${t02}`, "/api/public/cases/0x1/audit"]) {
+    auditUrl = nonCanonical;
+    assert.equal((await api.recordDelivery(MOCK_CASE_ID, body, key())).auditUrl, null);
+  }
 });
 
 test("F04 C04/C05: independent changes request -> creator revision -> resubmit -> verifier approval", async () => {

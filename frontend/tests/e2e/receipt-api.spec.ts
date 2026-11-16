@@ -2,13 +2,16 @@ import { test, expect } from '@playwright/test';
 import { MOCK_CASE_ID, MOCK_CREATE_CASE, MOCK_IDENTITIES } from '../../src/lib/mock-fixtures';
 import type { ReceiptRequest } from '../../src/lib/goods';
 
-const staff = MOCK_IDENTITIES.find(entry => entry.email === 'minh.admin@example.test')!.user;
+const admin = MOCK_IDENTITIES.find(entry => entry.email === 'minh.admin@example.test')!.user;
+const staff = { ...admin, memberships: admin.memberships.map(membership => ({ ...membership, roles: [...membership.roles, 'VOLUNTEER'] })) };
+const campaignId = '10000000-0000-4000-8000-000000000001';
+const campaignItemId = '20000000-0000-4000-8000-000000000001';
 const commitmentId = '30000000-0000-4000-8000-000000000001';
 const contributionItemId = '40000000-0000-4000-8000-000000000001';
 const receiptId = '50000000-0000-4000-8000-000000000001';
 
 // Exercises the real-mode browser client with HTTP stubs. Spring and PostgreSQL are tested in donor-real.
-test('R01 sends the staff projection line ID and retries the same receipt after a lost response', async ({ page, baseURL }) => {
+test('R01 replays the same receipt after a lost response and refreshes D01 stock', async ({ page, baseURL }) => {
   const detail = {
     ...MOCK_CREATE_CASE, id: MOCK_CASE_ID, creator: { id: MOCK_IDENTITIES[0].user.userId, fullName: 'Fictional volunteer' },
     status: 'IN_PROGRESS', version: 1, evidenceVersions: [], needs: [], createdAt: '2026-11-09T00:00:00Z',
@@ -26,11 +29,15 @@ test('R01 sends the staff projection line ID and retries the same receipt after 
     if (path === `/api/cases/${MOCK_CASE_ID}`) return route.fulfill({ json: detail });
     if (path === `/api/org/cases/${MOCK_CASE_ID}`) {
       reads += 1;
-      return route.fulfill({ json: { ...detail, outstandingCommitments: [{
+      return route.fulfill({ json: { ...detail, campaignId, outstandingCommitments: [{
         contributionId: commitmentId, status: committed ? 'PARTIALLY_RECEIVED' : 'PLEDGED', pledgedAt: detail.createdAt,
-        items: [{ contributionItemId, campaignItemId: '20000000-0000-4000-8000-000000000001',
+        items: [{ contributionItemId, campaignItemId,
           itemName: 'Rice', unit: 'PACKAGE', pledgedQty: 3, receivedQty: committed ? 2 : 0, outstandingQty: committed ? 1 : 3 }],
       }] } });
+    }
+    if (path === `/api/campaigns/${campaignId}`) {
+      return route.fulfill({ json: { id: campaignId, status: 'PUBLISHED',
+        items: [{ id: campaignItemId, name: 'Rice', unit: 'PACKAGE', receivedQty: committed ? 2 : 0, deliveredQty: 0 }] } });
     }
     if (path === receiptPath && request.method() === 'POST') {
       const headers = await request.allHeaders();
@@ -54,6 +61,8 @@ test('R01 sends the staff projection line ID and retries the same receipt after 
   await page.goto(`/cases/${MOCK_CASE_ID}`);
   const receipt = page.getByRole('region', { name: 'Goods receipt' });
   await expect(receipt.getByText('Outstanding: 3')).toBeVisible();
+  const delivery = page.getByRole('region', { name: 'Goods delivery' });
+  await expect(delivery.getByText('Available: 0')).toBeVisible();
   const quantity = receipt.getByLabel('Rice receipt quantity (PACKAGE)', { exact: true });
   await quantity.fill('2');
   await receipt.getByRole('button', { name: 'Record receipt', exact: true }).click();
@@ -63,6 +72,7 @@ test('R01 sends the staff projection line ID and retries the same receipt after 
   await retry.click();
   await expect(receipt.getByText(`Receipt ID: ${receiptId}`)).toBeVisible();
   await expect(receipt.getByText('Outstanding: 1')).toBeVisible();
+  await expect(delivery.getByText('Available: 2')).toBeVisible();
   expect(writes).toHaveLength(2);
   expect(writes[0].key).toBeTruthy();
   expect(reads).toBeGreaterThanOrEqual(2);
