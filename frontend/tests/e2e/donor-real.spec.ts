@@ -2,6 +2,9 @@ import { test, expect, type Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
+import type { CampaignResponse } from '../../features/donor/model';
+import type { CaseDetailResponse } from '../../src/lib/types';
+import type { DeliveryResponse } from '../../src/lib/goods';
 import type { CommitmentResponse } from '../../features/donor/model';
 
 // No success fixtures or mock API: all reads/writes reach Next -> Spring Boot -> PostgreSQL.
@@ -10,8 +13,9 @@ const schema=process.env.F07_E2E_SCHEMA ?? '';
 const campaign=process.env.F07_E2E_CAMPAIGN_ID ?? '';
 const donor=process.env.F07_E2E_DONOR_ID ?? '';
 const recorder=process.env.F07_E2E_RECORDER_ID ?? '';
+const volunteer=process.env.F07_E2E_VOLUNTEER_ID ?? '';
 const caseId=process.env.F07_E2E_CASE_ID ?? '';
-const evidence: {scenario:string;contributionId?:string;databaseVerified:boolean}[]=[];
+const evidence: {scenario:string;contributionId?:string;deliveryId?:string;databaseVerified:boolean}[]=[];
 function id(value:string){expect(value).toMatch(/^[0-9a-f-]{36}$/i);return value;}
 function sql(query:string):string {
   if(process.env.CI!=='true' || process.env.PGHOST!=='127.0.0.1' || process.env.PGDATABASE!=='aidbridge_test'
@@ -57,13 +61,22 @@ async function foodLine(page:Page,record:CommitmentResponse){
   const item=c.items.find((x:{name:string})=>x.name==='Food');return record.items.find(x=>x.campaignItemId===item.id)!;
 }
 
+async function campaignFood(page: Page) {
+  const response = await page.request.get(`/api/campaigns/${campaign}`);
+  expect(response.status()).toBe(200);
+  const detail: CampaignResponse = await response.json();
+  const item = detail.items.find(entry => entry.name === 'Food');
+  if (!item) throw new Error('Food is missing from the campaign seed');
+  return item;
+}
+
 test.describe.configure({mode:'serial'});
 test.setTimeout(60_000);
 test.beforeEach(async({page})=>{expect(sql('SELECT current_database()')).toBe('aidbridge_test');await login(page);});
 test.afterAll(()=>{
   mkdirSync('test-results',{recursive:true});
   writeFileSync('test-results/f07-real-evidence.json',JSON.stringify({mode:'REAL_NEXT_SPRING_POSTGRES',blockchainEnabled:false,
-    backendFixture:'AbstractCampaignHttpIT',receiptWrite:'B08 R01 via the staff UI',expectedScenarios:5,
+    backendFixture:'AbstractCampaignHttpIT',receiptWrite:'B08 R01 via the staff UI',deliveryWrite:'B09 D01 via the volunteer UI',expectedScenarios:5,
     passedScenarios:evidence.length,scenarios:evidence},null,2));
 });
 
@@ -81,7 +94,7 @@ test('real G01/G02/G03: multi-item pledge, own history, partial cancellation and
   evidence.push({scenario:'multi-item-history-partial-cancel-outbox',contributionId:saved.id,databaseVerified:true});
 });
 
-test('real R01 staff receipt updates outstanding and blocks stale donor cancellation',async({page,browser})=>{
+test('real R01 receipt feeds D01 delivery and blocks stale donor cancellation',async({page,browser})=>{
   const saved=await pledge(page),line=await foodLine(page,saved);const {card,panel}=await openCancel(page,saved);
   const staffContext=await browser.newContext({ baseURL: new URL(page.url()).origin });
   try {
@@ -124,7 +137,58 @@ test('real R01 staff receipt updates outstanding and blocks stale donor cancella
   await expect(panel.getByRole('alert')).toContainText('409 Conflict');
   await expect(card.getByRole('row').filter({hasText:'Food'}).getByRole('cell')).toHaveText(['2','0','2','0']);
   expect(cancelled(line.id)).toBe(0);expect(outbox(saved.id,'COMMITMENT_REDUCED')).toBe(0);
-  evidence.push({scenario:'real-r01-staff-receipt-stale-donor409-no-write',contributionId:saved.id,databaseVerified:true});
+  expect(volunteer).not.toBe(recorder);
+  expect(volunteer).not.toBe(donor);
+  const volunteerContext = await browser.newContext({ baseURL: new URL(page.url()).origin });
+  try {
+    const field = await volunteerContext.newPage();
+    await field.goto('/login');
+    await field.getByLabel('Email address').fill(process.env.F07_E2E_VOLUNTEER_EMAIL!);
+    await field.getByLabel('Password', { exact: true }).fill(process.env.F07_E2E_DONOR_PASSWORD!);
+    await field.getByRole('button', { name: /Sign in/ }).click();
+    await expect(field).toHaveURL(/\/cases$/);
+    const me = await field.request.get('/api/auth/me');
+    expect(me.status()).toBe(200);
+    expect((await me.json()).userId).toBe(volunteer);
+    const before = await campaignFood(field);
+    const caseResponse = await field.request.get(`/api/org/cases/${id(caseId)}`);
+    expect(caseResponse.status()).toBe(200);
+    const detail: CaseDetailResponse = await caseResponse.json();
+    const version = detail.evidenceVersions[0];
+    expect(before.receivedQty - before.deliveredQty).toBeGreaterThanOrEqual(2);
+    await field.goto(`/cases/${caseId}`);
+    const deliveryPanel = field.getByRole('region', { name: 'Goods delivery' });
+    await deliveryPanel.getByLabel('Food delivery quantity (PACKAGE)', { exact: true }).fill('1');
+    await deliveryPanel.getByRole('checkbox', { name: /Evidence 1 / }).check();
+    const delivered = field.waitForResponse(response =>
+      new URL(response.url()).pathname === `/api/cases/${caseId}/deliveries` && response.request().method() === 'POST');
+    await deliveryPanel.getByRole('button', { name: 'Record delivery', exact: true }).click();
+    const response = await delivered;
+    expect(response.status()).toBe(201);
+    expect(response.headers()['x-aidbridge-mock']).toBeUndefined();
+    const delivery: DeliveryResponse = await response.json();
+    expect(delivery).toMatchObject({
+      caseId, recorderId: volunteer, outcome: 'DELIVERED', reviewStatus: 'PENDING',
+      items: [{ campaignItemId: before.id, quantity: 1 }],
+      evidenceVersionIds: [version.id], blockchainStatus: 'PENDING_ON_CHAIN',
+    });
+    await expect(deliveryPanel.getByText(`Delivery ID: ${delivery.id}`)).toBeVisible();
+    const after = await campaignFood(field);
+    expect(after).toMatchObject({
+      receivedQty: before.receivedQty, deliveredQty: before.deliveredQty + 1, confirmedQty: before.confirmedQty,
+    });
+    expect(Number(sql(`SELECT count(*) FROM deliveries d
+      JOIN delivery_items i ON i.delivery_id=d.id
+      JOIN delivery_evidence_links e ON e.delivery_id=d.id
+      JOIN audit_events a ON a.entity_id=d.id JOIN blockchain_jobs j ON j.audit_event_id=a.id
+      WHERE d.id='${id(delivery.id)}' AND d.recorded_by='${id(volunteer)}'
+      AND i.campaign_item_id='${id(before.id)}' AND i.delivered_quantity=1
+      AND e.evidence_version_id='${id(version.id)}' AND a.id='${id(delivery.auditEventId)}'
+      AND a.event_type='DELIVERY_RECORDED' AND j.status='PENDING'`))).toBe(1);
+    evidence.push({ scenario: 'real-r01-d01-stale-donor409', contributionId: saved.id, deliveryId: delivery.id, databaseVerified: true });
+  } finally {
+    await volunteerContext.close();
+  }
 });
 
 test('real G01 commit then lost504: exact request/key replay creates one DB contribution',async({page})=>{

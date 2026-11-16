@@ -10,6 +10,7 @@ import { CampaignPanel } from "@/components/campaigns/campaign-panel";
 import { ReviewPanel } from "./review-panel";
 import { ReceiptPanel } from "@/components/goods/receipt-panel";
 import { DeliveryPanel } from "@/components/goods/delivery-panel";
+import { AuditDisclosure } from "@/components/audit/audit-feed";
 
 export function CaseDetail({ id }: { id: string }) {
   const { user, organizationId } = useSession();
@@ -26,6 +27,8 @@ function ScopedCaseDetail({ id }: { id: string }) {
   const [controlBusy, setControlBusy] = useState(false);
   const [reviewBusy, setReviewBusy] = useState(false);
   const [campaignBusy, setCampaignBusy] = useState(false);
+  const [receiptRevision, setReceiptRevision] = useState(0);
+  const [auditRevision, setAuditRevision] = useState(0);
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => {
@@ -44,10 +47,13 @@ function ScopedCaseDetail({ id }: { id: string }) {
     return () => { cancelled = true; };
   }, [api, id, organizationId, refreshCount]);
 
-  const applyDecision = (decision: DecisionResponse) => setDetail(current => current ? {
-    ...current, status: decision.caseStatus, version: decision.caseVersion, blockchainStatus: decision.blockchainStatus,
-    reviewHistory: [...(current.reviewHistory ?? []), decision],
-  } : current);
+  function applyDecision(decision: DecisionResponse) {
+    setDetail(current => current ? {
+      ...current, status: decision.caseStatus, version: decision.caseVersion, blockchainStatus: decision.blockchainStatus,
+      reviewHistory: [...(current.reviewHistory ?? []), decision],
+    } : current);
+    setAuditRevision(value => value + 1);
+  }
 
   async function mockAction(action: "stale-case" | "lose-next-response") {
     setControlBusy(true);
@@ -80,8 +86,12 @@ function ScopedCaseDetail({ id }: { id: string }) {
       <ReviewPanel detail={detail} onDecision={applyDecision} onRefresh={() => setRefreshCount(value => value + 1)} onBusyChange={setReviewBusy} />
     </div>
     <CampaignPanel detail={detail} onBusyChange={setCampaignBusy} onPublished={() => setRefreshCount(value => value + 1)} />
-    <ReceiptPanel detail={detail} />
-    <DeliveryPanel detail={detail} />
+    <ReceiptPanel detail={detail} onRecorded={() => {
+      setReceiptRevision(value => value + 1);
+      setAuditRevision(value => value + 1);
+    }} />
+    <DeliveryPanel detail={detail} receiptRevision={receiptRevision} onRecorded={() => setAuditRevision(value => value + 1)} />
+    {mode === "real" && <AuditDisclosure label="Case audit trail" scope={{ caseId: detail.id }} revision={auditRevision} />}
     {mode === "mock" && <details className="card mock-controls"><summary>Mock review test controls</summary><p className="muted">These controls affect this local simulation only.</p><div className="actions"><button type="button" className="button secondary" disabled={controlBusy || reviewBusy || detail.status !== "SUBMITTED"} onClick={() => void mockAction("stale-case")}>Simulate a stale revision</button><button type="button" className="button secondary" disabled={controlBusy || reviewBusy || detail.status !== "SUBMITTED"} onClick={() => void mockAction("lose-next-response")}>Lose next mutation response</button></div>{controlMessage && <p role="status">{controlMessage}</p>}</details>}
   </div>;
 }

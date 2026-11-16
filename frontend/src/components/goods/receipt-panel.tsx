@@ -8,13 +8,15 @@ import type { ReceiptAttempt } from "@/lib/session-work";
 import type { CaseDetailResponse } from "@/lib/types";
 import { describeError, ErrorNotice, FieldError, StatusBadge, type ErrorInfo } from "@/components/cases/shared";
 
-export function ReceiptPanel({ detail }: { detail: CaseDetailResponse }) {
+export function ReceiptPanel({ detail, onRecorded }: { detail: CaseDetailResponse; onRecorded: () => void }) {
   const { mode, user } = useSession();
   if (mode !== "real" || !user || !canManageCampaigns(user, detail.organizationId)) return null;
-  return <StaffReceipt caseId={detail.id} organizationId={detail.organizationId} actorId={user.userId} />;
+  return <StaffReceipt caseId={detail.id} organizationId={detail.organizationId} actorId={user.userId} onRecorded={onRecorded} />;
 }
 
-function StaffReceipt({ caseId, organizationId, actorId }: { caseId: string; organizationId: string; actorId: string }) {
+function StaffReceipt({ caseId, organizationId, actorId, onRecorded }: {
+  caseId: string; organizationId: string; actorId: string; onRecorded: () => void;
+}) {
   const { api, work } = useSession();
   const scope = `${actorId}:${organizationId}:${caseId}`;
   const [commitments, setCommitments] = useState<OutstandingCommitment[]>([]);
@@ -77,6 +79,7 @@ function StaffReceipt({ caseId, organizationId, actorId }: { caseId: string; org
       if (!mounted.current) return;
       setRetry(null);
       setResult(saved);
+      onRecorded();
       setQuantities({});
       setNote("");
       await refresh();

@@ -1,5 +1,6 @@
 import type { CreateCampaignRequest } from "./campaign";
-import { isCampaignAuditUrl, type DeliveryRequest, type DeliveryResponse, type DeliveryWireResponse, type ReceiptRequest, type ReceiptResponse, type StaffCaseDetail } from "./goods";
+import type { DeliveryRequest, DeliveryResponse, DeliveryWireResponse, ReceiptRequest, ReceiptResponse, StaffCaseDetail } from "./goods";
+import { isPublicCaseAuditUrl, type InternalAuditEvent, type PublicAuditEvent } from "./audit";
 import type { CampaignResponse, CommitmentRequest, CommitmentResponse, CancellationRequest, Page } from "../../features/donor/model";
 import type { BlockchainStatus, CaseDetailResponse, CaseListQuery, CaseSummary, CreateCaseRequest, CsrfResponse, DecisionRequest, DecisionResponse, EvidenceFixture, FieldError, LoginRequest, LoginResponse, MeResponse, Membership, MockControlAction, OrganizationRole, PageResponse, PatchCaseRequest, ProblemDetail, ResubmitCaseRequest, ReviewAction } from "./types";
 
@@ -147,7 +148,14 @@ export class ApiClient {
   async recordDelivery(id: string, body: DeliveryRequest, key: string): Promise<DeliveryResponse> {
     const saved = await this.mutate<DeliveryWireResponse>(`/api/cases/${encodeURIComponent(id)}/deliveries`, body, key);
     if (saved.outcome === "FAILED") return { ...saved, auditUrl: null };
-    return { ...saved, auditUrl: isCampaignAuditUrl(saved.auditUrl) ? saved.auditUrl : null };
+    return { ...saved, auditUrl: isPublicCaseAuditUrl(saved.auditUrl) ? saved.auditUrl : null };
+  }
+  getCaseAudit(id: string, page: number): Promise<PageResponse<InternalAuditEvent>> {
+    return this.request(`/api/cases/${encodeURIComponent(id)}/audit-trail?page=${page}&size=20`);
+  }
+  getPublicAudit(url: string, page: number): Promise<PageResponse<PublicAuditEvent>> {
+    if (!isPublicCaseAuditUrl(url)) throw new Error("Invalid public audit URL.");
+    return this.request(`${url}?page=${page}&size=20`);
   }
   async evidenceFixtures(organizationId: string): Promise<EvidenceFixture[]> {
     const rows = await this.request<(EvidenceFixture & { title?: string })[]>(`/api/evidence-fixtures?${new URLSearchParams({ organizationId })}`);
