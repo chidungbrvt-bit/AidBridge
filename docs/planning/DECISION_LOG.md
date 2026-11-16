@@ -30,7 +30,7 @@ Nếu PDF có một đề xuất và Master Prompt đã yêu cầu dùng nó là
 | D12 | USER_CONFIRMED | Chưa có NGO interview contacts | Validation choice | Chưa thể nói đã có partner hoặc validated impact |
 | D13 | PROPOSED | Hardhat 3 + TypeScript tests; Web3j Java | Shared TypeScript skill, direct Java integration | Một contract toolchain; ABI compatibility test bắt buộc |
 | D14 | PROPOSED | Session auth + CSRF, same-origin proxy | Giảm JWT lifecycle/refresh complexity | Một backend replica; restart có thể yêu cầu login lại |
-| D15 | PROPOSED | One case/one campaign; fixed item units; integer quantities | Giới hạn multi-goods complexity | Không warehouse/catalog/unit conversion/cross-campaign transfers |
+| D15 | PROPOSED | One case/one campaign; fixed item units; integer quantities | Giới hạn multi-goods complexity | Không warehouse/catalog/unit conversion/cross-campaign transfers; Task5 16/11: A đã enforce bởi V3 UNIQUE + case lock/guard/test; đề xuất giữ A, formal approval vẫn PENDING. Xem [cardinality review](../reviews/ONE_CAMPAIGN_PER_CASE_REVIEW_2026_11_16.md) |
 | D16 | PROPOSED | PostgreSQL outbox, persisted signed tx trước broadcast | Crash-safe retry không Kafka | Một in-flight tx/signer có thể làm chậm nhưng đơn giản |
 | D17 | PROPOSED | Non-upgradeable registry; admin + org-scoped relayer | Giảm proxy risk và learning | Sửa contract cần deployment version mới |
 | D18 | PROPOSED | Random bytes32 refs + salted evidence commitments | BR-08 và chống dictionary attack | Public org/time linkability còn tồn tại |

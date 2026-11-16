@@ -186,6 +186,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### B06 - Multi-item campaign draft/publish
 
+- **Khoa Task5 16/11:** source/schema xác nhận case có 0..1 campaign (UNIQUE V3, JPA OneToOne, case lock + duplicate guard); không cần migration bổ sung. Đề xuất giữ A; D15 vẫn PROPOSED — PENDING APPROVAL chính thức. Không đổi status B06 hoặc ghi runtime PASS. [Bằng chứng/handoff](../reviews/ONE_CAMPAIGN_PER_CASE_REVIEW_2026_11_16.md).
+
 - **Feature / priority:** P0-04 / P0.
 - **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Dũng (B) / Khoa / Minh / Khoa kiểm tra payload/chain boundary; Minh kiểm tra API/UI.
 - **Complexity / estimate:** M / 6h.
@@ -383,6 +385,10 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### C06 - Full milestone contract
 
+- **Interim16/11:** Khoa review C06/D55 đã có ở C06_PART2_D55_REVIEW.md; các ghi chú “chờ Khoa review/Not Run review” trong evidence11–12/11 bên dưới là lịch sử. Compile/artifact consistency16/11 PASS offline, không thay kết quả runtime Java/VOID hoặc trạng thái chưa redeploy/cutover.
+
+- **Khoa Task8 16/11 — preparation DONE WITH GATES:** compile/full C06 artifact consistency + unsigned constructor encoding PASS offline; khớp hash C10 sau rebuild artifact stale. Chưa deploy/cutover, chưa chạy worker/E2E. Cần Task6/7, runner C06 riêng, freeze/approval và queue reconciliation; không đổi trạng thái runtime. [Runbook](../reviews/C06_REDEPLOY_PREPARATION_2026_11_16.md).
+
 - **Feature / priority:** P0-04/P0-05/P0-06 / P0.
 - **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
 - **Complexity / estimate:** L / 6h.
@@ -460,6 +466,10 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
 
 ### C10 - Goods-to-chain integration
+
+- **Handoff Khoa16/11:** #3 review DONE/PASS WITH NOTES; #4 review DONE, F1/F2 OPEN chờ Dũng Task7; #5 review DONE, D15 PROPOSED; #8 preparation DONE WITH GATES, C06 chưa deploy/cutover. Interim PASS WITH NOTES. Review #6 CHƯA THỰC HIỆN; không đánh Task7 DONE. Xem báo cáo interim và từng task bên dưới.
+
+- **Interim Khoa16/11 — trạng thái hiện hành:** design/review đã thực hiện; Task3 PASS WITH NOTES; Task4 NEEDS FIX F1/F2 (bổ sung reduction và fixtures nhiều commitments/receipts), Dũng xử lý trong Task7. Worker/verifier đa operation, Java parity/DB retry/Hardhat full-chain và Fuji goods chưa có bằng chứng; không đánh C10 Done hoặc runtime PASS. Evidence15/11 bên dưới là lịch sử của thiết kế bốn mốc, không thay thế gate năm operations16/11; tham chiếu D57 trong evidence đó không phải quyết định đã được phê duyệt (giữ D49/D56). Artifact C06 consistency đã PASS offline sau Task8; freeze/approval/runner/cutover vẫn pending. [Interim review](../reviews/KHOA_INTERIM_REVIEW_2026_11_16.md).
 
 - **Feature / priority:** P0-05/P0-06 / P0.
 - **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
