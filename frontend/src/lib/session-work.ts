@@ -1,6 +1,6 @@
 import type { CampaignResponse } from '../../features/donor/model';
 import type { CreateCampaignRequest } from './campaign';
-import type { DeliveryRequest, ReceiptRequest } from './goods';
+import type { DeliveryRequest, GoodsReviewAction, ReceiptRequest } from './goods';
 import type { CreateCaseRequest } from './types';
 
 export type PendingWrite<T> = {
@@ -22,13 +22,15 @@ export function createSessionWork() {
   const campaigns = new Map<string, CampaignWork>();
   const receipts = new Map<string, ReceiptAttempt>();
   const deliveries = new Map<string, PendingWrite<DeliveryRequest>>();
+  const goodsReviews = new Map<string, PendingWrite<GoodsReviewAction>>();
   return {
-    caseCreates, campaigns, receipts, deliveries,
+    caseCreates, campaigns, receipts, deliveries, goodsReviews,
     clear() {
       caseCreates.clear();
       campaigns.clear();
       receipts.clear();
       deliveries.clear();
+      goodsReviews.clear();
     },
   };
 }

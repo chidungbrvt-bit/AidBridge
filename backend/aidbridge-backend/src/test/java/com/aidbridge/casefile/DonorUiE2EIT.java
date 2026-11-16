@@ -33,6 +33,11 @@ class DonorUiE2EIT extends AbstractCampaignHttpIT {
         var campaign = publishedCampaign(orgAdmin, List.of(
                 Map.of("name", "Food", "unit", "PACKAGE", "quantity", 50),
                 Map.of("name", "Hygiene", "unit", "KIT", "quantity", 30)));
+        Actor confirmer = actor(ORG_A, "DELIVERY_CONFIRMER", false);
+        jdbc.update("INSERT INTO membership_roles(membership_id,role) VALUES (?, 'DELIVERY_CONFIRMER')", volunteer.membership());
+        var reviewCampaign = publishedCampaign(orgAdmin, List.of(
+                Map.of("name", "Rice", "unit", "BAG", "quantity", 2),
+                Map.of("name", "Water", "unit", "BOX", "quantity", 1)));
         Path frontend = Path.of("../../frontend").toAbsolutePath().normalize();
         Files.createDirectories(frontend.resolve(".cache"));
         Map<String, String> env = Map.ofEntries(
@@ -48,7 +53,11 @@ class DonorUiE2EIT extends AbstractCampaignHttpIT {
                 Map.entry("F07_E2E_RECORDER_EMAIL", jdbc.queryForObject("SELECT email FROM users WHERE id = ?", String.class, orgAdmin.id())),
                 Map.entry("F07_E2E_RECORDER_ID", orgAdmin.id().toString()),
                 Map.entry("F07_E2E_VOLUNTEER_ID", volunteer.id().toString()),
-                Map.entry("F07_E2E_VOLUNTEER_EMAIL", jdbc.queryForObject("SELECT email FROM users WHERE id = ?", String.class, volunteer.id())));
+                Map.entry("F07_E2E_VOLUNTEER_EMAIL", jdbc.queryForObject("SELECT email FROM users WHERE id = ?", String.class, volunteer.id())),
+                Map.entry("F09_E2E_CONFIRMER_EMAIL", jdbc.queryForObject("SELECT email FROM users WHERE id = ?", String.class, confirmer.id())),
+                Map.entry("F09_E2E_PLATFORM_EMAIL", jdbc.queryForObject("SELECT email FROM users WHERE id = ?", String.class, admin.id())),
+                Map.entry("F09_E2E_CAMPAIGN_ID", reviewCampaign.toString()),
+                Map.entry("F09_E2E_CASE_ID", jdbc.queryForObject("SELECT aid_case_id FROM campaigns WHERE id = ?", java.util.UUID.class, reviewCampaign).toString()));
         run(frontend, env, "node", "node_modules/next/dist/bin/next", "build", "--webpack");
         ProcessBuilder launch = new ProcessBuilder("node", "node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", "3000")
                 .directory(frontend.toFile()).redirectErrorStream(true)

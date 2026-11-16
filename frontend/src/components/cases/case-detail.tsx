@@ -10,6 +10,7 @@ import { CampaignPanel } from "@/components/campaigns/campaign-panel";
 import { ReviewPanel } from "./review-panel";
 import { ReceiptPanel } from "@/components/goods/receipt-panel";
 import { DeliveryPanel } from "@/components/goods/delivery-panel";
+import { DeliveryReviewPanel } from "@/components/goods/delivery-review-panel";
 import { AuditDisclosure } from "@/components/audit/audit-feed";
 
 export function CaseDetail({ id }: { id: string }) {
@@ -91,6 +92,10 @@ function ScopedCaseDetail({ id }: { id: string }) {
       setAuditRevision(value => value + 1);
     }} />
     <DeliveryPanel detail={detail} receiptRevision={receiptRevision} onRecorded={() => setAuditRevision(value => value + 1)} />
+    {mode === "real" && ["IN_PROGRESS", "COMPLETED"].includes(detail.status) && <DeliveryReviewPanel detail={detail} revision={auditRevision} onSaved={() => {
+      setAuditRevision(value => value + 1);
+      setReceiptRevision(value => value + 1);
+    }} />}
     {mode === "real" && <AuditDisclosure label="Case audit trail" scope={{ caseId: detail.id }} revision={auditRevision} />}
     {mode === "mock" && <details className="card mock-controls"><summary>Mock review test controls</summary><p className="muted">These controls affect this local simulation only.</p><div className="actions"><button type="button" className="button secondary" disabled={controlBusy || reviewBusy || detail.status !== "SUBMITTED"} onClick={() => void mockAction("stale-case")}>Simulate a stale revision</button><button type="button" className="button secondary" disabled={controlBusy || reviewBusy || detail.status !== "SUBMITTED"} onClick={() => void mockAction("lose-next-response")}>Lose next mutation response</button></div>{controlMessage && <p role="status">{controlMessage}</p>}</details>}
   </div>;

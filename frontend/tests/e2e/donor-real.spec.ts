@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -76,7 +76,7 @@ test.beforeEach(async({page})=>{expect(sql('SELECT current_database()')).toBe('a
 test.afterAll(()=>{
   mkdirSync('test-results',{recursive:true});
   writeFileSync('test-results/f07-real-evidence.json',JSON.stringify({mode:'REAL_NEXT_SPRING_POSTGRES',blockchainEnabled:false,
-    backendFixture:'AbstractCampaignHttpIT',receiptWrite:'B08 R01 via the staff UI',deliveryWrite:'B09 D01 via the volunteer UI',expectedScenarios:5,
+    backendFixture:'AbstractCampaignHttpIT',receiptWrite:'B08 R01 via the staff UI',deliveryWrite:'B09 D01 via the volunteer UI',expectedScenarios:6,
     passedScenarios:evidence.length,scenarios:evidence},null,2));
 });
 
@@ -110,7 +110,7 @@ test('real R01 receipt feeds D01 delivery and blocks stale donor cancellation',a
     expect(recorder).not.toBe(donor);
     await staff.goto(`/cases/${id(caseId)}`);
     const receiptPanel=staff.getByRole('region',{name:'Goods receipt'});
-    await receiptPanel.getByLabel('Outstanding commitment').selectOption(saved.id);
+    await receiptPanel.getByLabel('Outstanding commitment').selectOption(saved.id, { timeout: 10_000 });
     const outstanding=receiptPanel.getByTestId(`outstanding-${line.id}`);
     await expect(outstanding).toHaveText('Outstanding: 2');
     const path=`/api/commitments/${saved.id}/receipts`;
@@ -242,4 +242,181 @@ test('real HTTP CSRF403 and validation400 leave PostgreSQL unchanged',async({pag
     expect((await page.request.get('/api/me/commitments?page=0&size=20')).status()).toBe(403);expect(count()).toBe(before);
   } finally { sql(`UPDATE users SET donor_enabled=true WHERE id='${id(donor)}'`); }
   evidence.push({scenario:'real-csrf403-validation400-revoked-grant-no-write',databaseVerified:true});
+});
+
+
+// This separate small campaign reaches FULFILLED and exercises the full B10 workflow.
+test('real F09: independent confirmation, dispute guard, void, reload and close', async ({ page, browser }) => {
+  test.setTimeout(120_000);
+  const reviewCase = id(process.env.F09_E2E_CASE_ID ?? '');
+  const reviewCampaign = id(process.env.F09_E2E_CAMPAIGN_ID ?? '');
+  const orgCase = `/cases/${reviewCase}`;
+  const p04 = `/api/campaigns/${reviewCampaign}`;
+  const baseURL = new URL(page.url()).origin;
+  const contexts: BrowserContext[] = [];
+  async function actor(email: string) {
+    const context = await browser.newContext({ baseURL });
+    contexts.push(context);
+    const view = await context.newPage();
+    await view.goto('/login');
+    await view.getByLabel('Email address').fill(email);
+    await view.getByLabel('Password', { exact: true }).fill(process.env.F07_E2E_DONOR_PASSWORD!);
+    await view.getByRole('button', { name: /Sign in/ }).click();
+    await expect(view).not.toHaveURL(/\/login$/);
+    return view;
+  }
+  async function clickWrite(view: Page, path: string, click: () => Promise<void>, status: number) {
+    const pending = view.waitForResponse(r => new URL(r.url()).pathname === path && r.request().method() === 'POST');
+    await click();
+    const response = await pending;
+    const body = await response.json();
+    expect(response.status(), `${path}: ${body.code ?? ''} ${body.detail ?? ''}`).toBe(status);
+    expect(response.headers()['x-aidbridge-mock']).toBeUndefined();
+    return body;
+  }
+  async function post(view: Page, path: string, data: unknown, status: number, code: string) {
+    const csrf = await (await view.request.get('/api/auth/csrf')).json();
+    const response = await view.request.post(path, { data, headers: { [csrf.headerName]: csrf.token, 'Idempotency-Key': randomUUID() } });
+    const body = await response.json();
+    expect(response.status(), `${path}: ${body.code} ${body.detail}`).toBe(status);
+    expect(body.code).toBe(code);
+  }
+  const reviewPanel = (view: Page) => view.getByRole('region', { name: 'Delivery review', exact: true });
+  async function assertTotals(view: Page, received: number, delivered: number, confirmed: number, status: string) {
+    const area = reviewPanel(view);
+    await expect(area.getByRole('row').filter({ hasText: 'Rice (BAG)' }).getByRole('cell'))
+      .toHaveText(['2', String(received), String(delivered), String(confirmed)]);
+    await expect(area.getByText(status, { exact: true })).toBeVisible();
+    const response = await view.request.get(p04);
+    expect(response.status()).toBe(200);
+    const detail: CampaignResponse = await response.json();
+    expect(detail.status).toBe(status);
+    expect(detail.items.find(item => item.name === 'Rice')).toMatchObject({ receivedQty: received, deliveredQty: delivered, confirmedQty: confirmed });
+    expect(detail.items.find(item => item.name === 'Water')).toMatchObject({ receivedQty: received ? 1 : 0, deliveredQty: delivered ? 1 : 0, confirmedQty: confirmed ? 1 : 0 });
+  }
+  try {
+    const staff = await actor(process.env.F07_E2E_RECORDER_EMAIL!);
+    const recorderPage = await actor(process.env.F07_E2E_VOLUNTEER_EMAIL!);
+    const confirmerPage = await actor(process.env.F09_E2E_CONFIRMER_EMAIL!);
+    const platformPage = await actor(process.env.F09_E2E_PLATFORM_EMAIL!);
+    const confirmerId = (await (await confirmerPage.request.get('/api/auth/me')).json()).userId;
+    const recorderSession = await (await recorderPage.request.get('/api/auth/me')).json();
+    expect(recorderSession.userId).toBe(volunteer);
+    expect(confirmerId).not.toBe(volunteer);
+    expect(recorderSession.memberships[0].roles).toContain('DELIVERY_CONFIRMER');
+
+    const commitmentId = await test.step('G01 and R01 receive both items through Next on real PostgreSQL', async () => {
+      const body: CampaignResponse = await (await page.request.get(p04)).json();
+      const csrf = await (await page.request.get('/api/auth/csrf')).json();
+      const pledge = await page.request.post(`${p04}/commitments`, {
+        headers: { [csrf.headerName]: csrf.token, 'Idempotency-Key': randomUUID() },
+        data: { items: body.items.map(item => ({ campaignItemId: item.id, quantity: item.targetQty })) },
+      });
+      expect(pledge.status()).toBe(201);
+      const commitment: CommitmentResponse = await pledge.json();
+      await staff.goto(orgCase);
+      const panel = staff.getByRole('region', { name: 'Goods receipt' });
+      await panel.getByLabel('Outstanding commitment').selectOption(commitment.id);
+      await panel.getByLabel('Rice receipt quantity (BAG)', { exact: true }).fill('2');
+      await panel.getByLabel('Water receipt quantity (BOX)', { exact: true }).fill('1');
+      await clickWrite(staff, `/api/commitments/${commitment.id}/receipts`,
+        () => panel.getByRole('button', { name: 'Record receipt', exact: true }).click(), 201);
+      await assertTotals(staff, 2, 0, 0, 'PUBLISHED');
+      return commitment.id;
+    });
+
+    async function deliver(): Promise<DeliveryResponse> {
+      await recorderPage.goto(orgCase);
+      const panel = recorderPage.getByRole('region', { name: 'Goods delivery' });
+      await panel.getByLabel('Rice delivery quantity (BAG)', { exact: true }).fill('2');
+      await panel.getByLabel('Water delivery quantity (BOX)', { exact: true }).fill('1');
+      await panel.getByRole('checkbox', { name: /Evidence 1 / }).check();
+      return clickWrite(recorderPage, `/api/cases/${reviewCase}/deliveries`,
+        () => panel.getByRole('button', { name: 'Record delivery', exact: true }).click(), 201);
+    }
+    async function confirm(delivery: DeliveryResponse) {
+      await confirmerPage.goto(orgCase);
+      const panel = reviewPanel(confirmerPage);
+      await panel.getByRole('combobox', { name: 'Delivery to review', exact: true }).selectOption(delivery.id, { timeout: 10_000 });
+      await panel.getByLabel('I reviewed the delivery evidence').check();
+      const response = await clickWrite(confirmerPage, `/api/deliveries/${delivery.id}/confirm`,
+        () => panel.getByRole('button', { name: 'Confirm delivery', exact: true }).click(), 200);
+      expect(response).toMatchObject({ reviewerId: confirmerId, decision: 'CONFIRMED', blockchainStatus: 'PENDING_ON_CHAIN' });
+    }
+    const delivery = await test.step('D01 records a delivery and own D02 is rejected', async () => {
+      const saved = await deliver();
+      expect(saved).toMatchObject({ recorderId: volunteer, reviewStatus: 'PENDING' });
+      const detail = await recorderPage.request.get(`/api/org/cases/${reviewCase}`);
+      const snapshot = await detail.json();
+      expect(detail.status(), JSON.stringify({ code: snapshot.code, detail: snapshot.detail })).toBe(200);
+      expect(snapshot.deliveries).toEqual(expect.arrayContaining([expect.objectContaining({ id: saved.id, reviewStatus: 'PENDING' })]));
+      await recorderPage.reload();
+      const panel = reviewPanel(recorderPage);
+      await panel.getByRole('combobox', { name: 'Delivery to review', exact: true }).selectOption(saved.id, { timeout: 10_000 });
+      await expect(panel.getByText('You recorded this delivery. Another account must confirm it.')).toBeVisible();
+      await expect(panel.getByRole('button', { name: 'Confirm delivery', exact: true })).toHaveCount(0);
+      await post(recorderPage, `/api/deliveries/${saved.id}/confirm`,
+        { decision: 'CONFIRMED', reviewedEvidenceVersionIds: saved.evidenceVersionIds }, 403, 'SELF_CONFIRMATION');
+      return saved;
+    });
+    await test.step('D02 by a second account reaches FULFILLED', async () => {
+      await confirm(delivery);
+      await staff.reload();
+      await assertTotals(staff, 2, 2, 2, 'FULFILLED');
+    });
+    const dispute = await test.step('S01 OPEN disables P05 and backend returns DISPUTE_OPEN', async () => {
+      const panel = reviewPanel(staff);
+      await panel.getByRole('combobox', { name: 'Delivery to review', exact: true }).selectOption(delivery.id, { timeout: 10_000 });
+      await panel.getByLabel('Dispute or review reason').fill('Simulated discrepancy in handover.');
+      const saved = await clickWrite(staff, `/api/cases/${reviewCase}/disputes`,
+        () => panel.getByRole('button', { name: 'Open dispute', exact: true }).click(), 201);
+      await expect(panel.getByText('Open disputes: 1')).toBeVisible();
+      await expect(panel.getByRole('button', { name: 'Close campaign' })).toBeDisabled();
+      await post(staff, `${p04}/close`, {}, 409, 'DISPUTE_OPEN');
+      return saved;
+    });
+    await test.step('S03 can read only the private snapshot and VOID restores stock after reload', async () => {
+      const path = `/api/disputes/${dispute.id}/review`;
+      const evidencePath = `${path}/evidence-versions/${delivery.evidenceVersionIds[0]}/content`;
+      expect((await staff.request.get(path)).status()).toBe(403);
+      expect((await staff.request.get(evidencePath)).status()).toBe(403);
+      await platformPage.goto(`/disputes/${dispute.id}`);
+      await expect(platformPage.getByRole('heading', { name: 'Delivery snapshot' })).toBeVisible();
+      const content = await platformPage.request.get(evidencePath);
+      expect(content.status()).toBe(200);
+      expect(content.headers()['cache-control']).toContain('no-store');
+      expect((await platformPage.request.get(`${path}/evidence-versions/${randomUUID()}/content`)).status()).toBe(404);
+      await platformPage.getByLabel('Reviewed evidence 1').check();
+      await platformPage.getByLabel('Resolution reason').fill('Simulated delivery invalidated after review.');
+      const resolved = await clickWrite(platformPage, `/api/disputes/${dispute.id}/resolve`,
+        () => platformPage.getByRole('button', { name: 'Void delivery' }).click(), 200);
+      expect(resolved.resolution).toBe('VOID_DELIVERY');
+      expect((await platformPage.request.get(evidencePath)).status()).toBe(404);
+      await staff.reload();
+      await assertTotals(staff, 2, 0, 0, 'PUBLISHED');
+      await expect(reviewPanel(staff).getByText('Open disputes: 0')).toBeVisible();
+    });
+    await test.step('New delivery confirms, P05 closes and timeline refreshes', async () => {
+      const corrected = await deliver();
+      await confirm(corrected);
+      await staff.reload();
+      const panel = reviewPanel(staff);
+      await assertTotals(staff, 2, 2, 2, 'FULFILLED');
+      const closed = await clickWrite(staff, `${p04}/close`,
+        () => panel.getByRole('button', { name: 'Close campaign' }).click(), 200);
+      expect(closed.status).toBe('CLOSED');
+      await staff.reload();
+      await assertTotals(staff, 2, 2, 2, 'CLOSED');
+      await expect(staff.getByText('COMPLETED', { exact: true })).toBeVisible();
+      await staff.getByText('Case audit trail', { exact: true }).click();
+      const timeline = staff.getByRole('region', { name: 'Case audit timeline' });
+      await expect(timeline.getByRole('heading', { name: 'CASE COMPLETED', exact: true })).toBeVisible();
+      await expect(timeline.getByRole('heading', { name: 'DELIVERY CONFIRMED', exact: true }).first()).toBeVisible();
+      expect(Number(sql(`SELECT count(*) FROM delivery_voids WHERE delivery_id='${id(delivery.id)}'`))).toBe(1);
+      expect(Number(sql(`SELECT count(*) FROM audit_events WHERE aid_case_id='${reviewCase}' AND event_type='CASE_COMPLETED'`))).toBe(1);
+    });
+    evidence.push({ scenario: 'f09-independent-confirm-void-close-timeline', contributionId: commitmentId, deliveryId: delivery.id, databaseVerified: true });
+  } finally {
+    await Promise.all(contexts.map(context => context.close()));
+  }
 });
