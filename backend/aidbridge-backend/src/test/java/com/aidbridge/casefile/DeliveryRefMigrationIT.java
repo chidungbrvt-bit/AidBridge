@@ -13,6 +13,13 @@ import org.springframework.transaction.annotation.Transactional;
 /** Runs V16 against isolated temporary V15-shaped facts; never changes application facts. */
 @Transactional
 class DeliveryRefMigrationIT extends AbstractAuditTrailHttpIT {
+    @Override
+    @org.junit.jupiter.api.BeforeEach
+    void actors() {
+        assertThat(jdbc.queryForObject("select current_database()", String.class)).isEqualTo("aidbridge_test");
+        assertThat(jdbc.queryForObject("select current_schema()", String.class)).isEqualTo(SCHEMA);
+    }
+
     private void fixture(String ref, boolean duplicate, boolean wrongContext) {
         jdbc.execute("CREATE TEMP TABLE aid_cases(id uuid,organization_id uuid) ON COMMIT DROP");
         jdbc.execute("CREATE TEMP TABLE deliveries(id uuid,aid_case_id uuid,outcome varchar) ON COMMIT DROP");
