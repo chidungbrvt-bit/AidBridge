@@ -650,7 +650,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### F10 - Public hosting/recovery
 
-- **Minh 16/11, In Progress:** Smoke HTTPS, cookie/CSRF, T01/T02 và phân quyền evidence chạy local. Restore PostgreSQL lên schema V18 khớp 12 bảng và Spring health UP. Public hosting, chi phí, rollback release và worker/Fuji chưa xác minh. [Checklist kết quả từng mục](../reviews/F10_HOSTING_AUDIT_CHECKLIST_2026_11_15.md#f-kết-quả-minh-ngày-16112026).
+- **Minh 16/11, In Progress:** Smoke HTTPS, cookie/CSRF, T01/T02 và phân quyền evidence chạy local. Restore PostgreSQL lên V18 và chạy lại B10 khớp 12 bảng. Rollback về B09 bị chặn vì P04 tính cả delivery đã void. Public hosting, chi phí và worker/Fuji chưa xác minh. [Checklist kết quả từng mục](../reviews/F10_HOSTING_AUDIT_CHECKLIST_2026_11_15.md#f-kết-quả-minh-ngày-16112026).
 
 - **Khoa Task12 ngày15/11: DONE WITH DEPENDENCIES cho phối hợp/chuẩn bị**, không F10 implementation Done. Đã đối chiếu routes/UI/env/runtime/cookie/proxy/health và lập bảng READY/READY FOR MOCK/BLOCKED, owner và gates tại mục E [F10 checklist](../reviews/F10_HOSTING_AUDIT_CHECKLIST_2026_11_15.md). Chờ V16/C09 actual API, F09/C10 evidence và approval hosting; không deploy hoặc chạy tests mới, không thay owner/estimate/status baseline bên dưới.
 

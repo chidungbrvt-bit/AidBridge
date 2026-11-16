@@ -119,7 +119,7 @@ PR #30 (`dung` ở `ef30487`) còn mở. F09 chờ merge PR #30 và nghiệm thu
 | C1. F09 và C10 | Blocked | PR #30 chưa vào `main`. C10 chờ worker/verifier, Hardhat và bằng chứng Fuji của Khoa. V18 chạy được trên DB phục hồi local. |
 | C2. HTTPS, cookie, CSRF và chi phí | Pass local HTTPS, hosting chưa chạy | Next production real mode qua proxy loopback dùng chứng chỉ test. `JSESSIONID` có Secure, HttpOnly, SameSite=Lax và đổi ID sau login. POST thiếu CSRF trả 403, login và `/me` trả 200, logout 204 rồi `/me` trả 401. Chưa có phê duyệt deploy, domain, nhà cung cấp hay forecast dưới $20/tháng đã kiểm. |
 | C3. DB riêng và tệp riêng | Pass local một phần | PostgreSQL, Spring, Next và proxy chỉ bind loopback. Quyền T01/evidence đã thử với hai tài khoản giả lập khác tổ chức. Private network, secret store và các header trên hosting chưa chạy. |
-| C4. Backup, restore và rollback | Backup/restore pass local | `pg_dump --format=custom --schema=<schema-test>` tạo 326.784 byte trong 0,65 giây. `pg_restore --no-owner --exit-on-error` vào DB mới mất 1,58 giây. So khớp số dòng và fingerprint nội dung 12 bảng, gồm 24 deliveries, 17 confirmations, 17 disputes, 251 audit events và 129 jobs. Spring khởi động từ bản restore, Flyway validate 19 migration đến V18, health UP. Rollback release và phục hồi journal/khóa của signer thật chưa chạy. |
+| C4. Backup, restore và rollback | Backup/restore pass local | `pg_dump --format=custom --schema=<schema-test>` tạo 326.784 byte trong 0,65 giây. `pg_restore --no-owner --exit-on-error` vào DB mới mất 1,58 giây. So khớp số dòng và fingerprint nội dung 12 bảng, gồm 24 deliveries, 17 confirmations, 17 disputes, 251 audit events và 129 jobs. Spring khởi động từ bản restore, Flyway validate 19 migration đến V18, health UP. Diễn tập bổ sung cho thấy rollback về B09 sau V18 bị chặn vì sai số lượng P04. Chạy lại B10 khôi phục đúng kết quả. Chi tiết ở mục G. Rollback public và phục hồi signer thật chưa chạy. |
 | C5. Worker/scanner recovery | Not Run | Bàn giao Khoa đối chiếu deployment/receipt, restart và reconciliation cùng Dũng khi có C10. Worker local tắt, chưa kiểm replay hoặc Fuji. |
 | C6. Health và smoke sau deploy | Pass local, hosting chưa chạy | `GET /actuator/health` trả UP, ẩn components/details. `/login` và HTTPS API chạy qua Next production local. Chi phí, health, smoke và rollback trên môi trường public chưa chạy. |
 
@@ -133,3 +133,21 @@ Lệnh kiểm frontend và kết quả trên `647a68f`:
 - F09 E2E real sau merge B10, public deployment smoke, rollback release, và proof/recovery Fuji: **Not Run**.
 
 Bàn giao Khoa dùng B2, B3, B5 và C5 để đối chiếu receipt/recovery Fuji. Dũng tiếp tục PR #30 và xác nhận runtime DB của bản demo. Minh ghép F09 native B10 khi PR #30 vào `main`, dùng `delivery.id` và snapshot `evidenceVersionIds` từ D01, kiểm hai tài khoản độc lập, self-confirm 403, dispute chặn close rồi resolve và refresh T01/T02. F10 ở **In Progress**.
+
+## G. Diễn tập rollback F10 và bàn giao cuối ngày 16/11/2026
+
+**#2:** `main` trên GitHub ở `ed19bdf`. Merge trên `minh` báo `Already up to date`. Bản ghi test frontend và hai tài liệu đã lên `minh` ở `b551d86`. PR #31 (`minh → dung`) đang mở và GitHub báo không có xung đột với base. [PR #31](https://github.com/chidungbrvt-bit/AidBridge/pull/31)
+
+**#9 · B10:** Báo cáo của Dũng trên `ef30487` ghi Surefire 146 run, 0 fail/error/skip và Failsafe 205 run, 0 fail/error, 2 skip opt-in. ReceiptApiIT 5 và DeliveryRefMigrationIT 9 đều không lỗi và không skip. PR #30 còn mở. PR #31 cũng đang chờ review cho API đọc ngữ cảnh tranh chấp và `reviewCampaign`. F09 tích hợp và E2E sau merge vẫn **Not Run**. [PR #30 và báo cáo kết quả](https://github.com/chidungbrvt-bit/AidBridge/pull/30)
+
+Sau khi B10 và API đọc liên quan vào `main`, chạy với hai phiên độc lập cho VOLUNTEER và DELIVERY_CONFIRMER, cùng các tài khoản seed ORG_ADMIN, PLATFORM_ADMIN và DONOR cần cho từng bước. Dùng R01 → D01, lấy delivery ID và snapshot evidence từ phản hồi D01, kiểm D02 tự xác nhận trả `403 SELF_CONFIRMATION`. Kiểm S01 chặn P05 khi mở tranh chấp, rồi thử S03 `UPHOLD` và `VOID_DELIVERY` trên các hồ sơ riêng. Đọc lại C03/P04 và T01/T02 sau từng thay đổi. P05 lấy ID từ `reviewCampaign` và chỉ hoàn tất khi đủ confirmed totals và hết tranh chấp.
+
+**#10 · Backup và rollback:** Dùng PostgreSQL 16.16 trên loopback, DB giả lập, worker tắt. Restore riêng từ `pg_dump --format=custom` và `pg_restore --no-owner --exit-on-error`. Lượt này tạo bản dump 326.784 byte trong 0,61 giây và restore trong 1,42 giây. Probe HTTPS, CSRF, T01/T02 và evidence chạy lại đều pass. Frontend build từ nhánh `minh` giữ nguyên trong ba lần đổi backend.
+
+| Bước | Kết quả đã quan sát |
+|---|---|
+| Build backend trên `main@ed19bdf` | Fail khi chạy `mvn -o -B -ntp -Dmaven.test.skip=true package`. `AuditTrailService.java:102` truyền `String` vào `Hashing.sha256(byte[])`. Dũng đã sửa ở `b976a29` trong PR #30. |
+| Khởi động bản đối chứng trước B10 | Áp riêng thay đổi mã nguồn T02 từ `b976a29` vào bản sao `ed19bdf`. Build pass. Backend cũ khởi động trên cùng bản restore V18, nhưng rollback **Blocked** vì P04 tính sai tổng với delivery đã void. Cùng một campaign giả lập, `b551d86` trả tổng delivered/confirmed là **3/3**, bản đối chứng trả **8/0**. T02 cho cùng hồ sơ khớp phản hồi giữa hai bản. |
+| Chạy lại backend B10 ở `b551d86` | Pass local. P04 và T02 trở về đúng kết quả trước diễn tập. So khớp số dòng và fingerprint nội dung ở 12 bảng trước và sau khi chuyển phiên bản. Không hạ schema hoặc sửa dữ liệu nghiệp vụ. |
+
+Khi DB đã có dữ liệu B10, bản B09 trong diễn tập không an toàn để phục vụ API nghiệp vụ. Dũng cần xác nhận phiên bản tương thích schema và kết quả P04 trước khi rollback trên môi trường demo. Khoa tiếp tục đối chiếu replay/recovery Fuji khi có bằng chứng C10. Public deploy, thao tác trên DB demo, phục hồi signer/worker và link từ proof chain thật vẫn chưa được kiểm trong lượt này. F10 **In Progress**. ML-4 tiếp tục tạm hoãn để ưu tiên F09/F10.
