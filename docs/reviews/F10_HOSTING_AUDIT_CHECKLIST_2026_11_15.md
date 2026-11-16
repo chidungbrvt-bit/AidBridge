@@ -91,3 +91,45 @@ Recovery: backup DB theo policy target, test restore trong môi trường riêng
 Khoa đã chuẩn bị F10 gates trong tài liệu này. Minh có thể làm presentation/loading/error/unknown và fixture audit ngay, nhưng `/audit-preview` chưa phải public API. R01/D01 dùng bản UI của Minh; F09 giữ id/recorderId/evidenceVersionIds từ DELIVERED response và không đồng nhất review với chain status. Chờ Dũng bàn giao T01/T02 actual DTO +V16; URI theo D49 và link disabled đến khi route chạy. C10 goods/scanner/C06 evidence và public deploy permission vẫn là gate riêng. Khi chọn hosting kiểm Node/runtime, same-origin rewrite, HTTPS cookie/CSRF, private DB/files, health, forecast dưới20 và backup/rollback; không tự bật worker hoặc đổi registry.
 
 Task12 hoàn thành phần phối hợp: chỉ đọc source và cập nhật docs; tests/build/HTTP/DB/hosting/restore/CI/Fuji mới đều **NOT RUN**. Không chuyển các hàng BLOCKED thành PASS bằng fixture. F10 giữ Not Started theo implementation baseline; checklist/handoff ready không thay nghiệm thu F09/C10 hoặc cấp phép public deploy.
+
+
+## F. Kết quả Minh ngày 16/11/2026
+
+Sau `git fetch origin`, `main` ở `ed19bdf` (PR #29 đã merge) và `minh` ở `647a68f`. `git merge --no-edit origin/main` báo `Already up to date`. Căn cứ cho D49 là API trên `main` và kết quả HTTP bên dưới. Các mục A–E ghi lại mốc chuẩn bị ngày 15/11.
+
+PR #30 (`dung` ở `ef30487`) còn mở. F09 chờ merge PR #30 và nghiệm thu E2E với B10 sau merge. Phần kiểm tra local dưới đây dùng mã `647a68f`, chứa B10 candidate, PostgreSQL dữ liệu giả lập và worker tắt. ML-4 đang hoãn theo P0, rà lại tại mốc 17/11 theo D51.
+
+### B. Trạng thái và liên kết
+
+| Mục | Kết quả ngày 16/11 | Bằng chứng và phần còn chờ |
+|---|---|---|
+| B1. Pending và proof thiếu | Pass fixture | Playwright T01 kiểm pending và thiếu blockNumber vẫn không hiện confirmed, trình duyệt hiện trạng thái proof unavailable. Timeout RPC thật chưa chạy. |
+| B2. Confirmed | Pass fixture | T01 hiện hash, block và link Fuji với projection đầy đủ. Receipt, reorg và timestamp xác minh trên Fuji chưa kiểm ở lượt này. |
+| B3. Failed và mismatch | Pass fixture | UI hiện sync failed và bỏ link với `EVENT_MISMATCH`. D01 FAILED giữ tồn trong bài test delivery. Receipt REVERTED chạy thật chưa kiểm. |
+| B4. Tách trạng thái | Pass fixture | `campaign-audit.spec.ts` kiểm riêng business, evidence và chain. Fixture D01 kiểm refresh tồn sau conflict và replay giữ key. |
+| B5. Explorer | Pass fixture | T01 mở link Fuji hợp lệ từ DTO. T02 bỏ link khi URL trỏ host khác. Link từ receipt thật chờ bằng chứng Khoa. |
+| B6. D49 | Pass local HTTP | API công khai `/api/public/cases/{publicCaseRef}/audit` trả 200 ẩn danh cho hồ sơ giả lập có campaign công bố. UI fixture chỉ hiện liên kết chia sẻ sau khi API đọc thành công. |
+| B7. Lỗi, retry và phân trang | Pass fixture một phần | T01 phân trang đến trang cuối, T02 hiện lỗi 404 rồi retry thành công. Coverage scanner và stale proof chưa kiểm runtime. |
+| B8. Public, nội bộ và evidence | Pass local HTTP | T02 có danh sách trường công khai, thiếu header CORS cấp quyền cho origin ngoài. T01 và evidence trả 401 khi ẩn danh, 200 đúng tổ chức và 404 khác tổ chức. Tệp riêng có `Cache-Control: no-store`. Guards xác nhận/tranh chấp của F09 chờ E2E B10. |
+
+### C. Hosting và recovery
+
+| Mục | Kết quả ngày 16/11 | Bằng chứng và phần còn chờ |
+|---|---|---|
+| C1. F09 và C10 | Blocked | PR #30 chưa vào `main`. C10 chờ worker/verifier, Hardhat và bằng chứng Fuji của Khoa. V18 chạy được trên DB phục hồi local. |
+| C2. HTTPS, cookie, CSRF và chi phí | Pass local HTTPS, hosting chưa chạy | Next production real mode qua proxy loopback dùng chứng chỉ test. `JSESSIONID` có Secure, HttpOnly, SameSite=Lax và đổi ID sau login. POST thiếu CSRF trả 403, login và `/me` trả 200, logout 204 rồi `/me` trả 401. Chưa có phê duyệt deploy, domain, nhà cung cấp hay forecast dưới $20/tháng đã kiểm. |
+| C3. DB riêng và tệp riêng | Pass local một phần | PostgreSQL, Spring, Next và proxy chỉ bind loopback. Quyền T01/evidence đã thử với hai tài khoản giả lập khác tổ chức. Private network, secret store và các header trên hosting chưa chạy. |
+| C4. Backup, restore và rollback | Backup/restore pass local | `pg_dump --format=custom --schema=<schema-test>` tạo 326.784 byte trong 0,65 giây. `pg_restore --no-owner --exit-on-error` vào DB mới mất 1,58 giây. So khớp số dòng và fingerprint nội dung 12 bảng, gồm 24 deliveries, 17 confirmations, 17 disputes, 251 audit events và 129 jobs. Spring khởi động từ bản restore, Flyway validate 19 migration đến V18, health UP. Rollback release và phục hồi journal/khóa của signer thật chưa chạy. |
+| C5. Worker/scanner recovery | Not Run | Bàn giao Khoa đối chiếu deployment/receipt, restart và reconciliation cùng Dũng khi có C10. Worker local tắt, chưa kiểm replay hoặc Fuji. |
+| C6. Health và smoke sau deploy | Pass local, hosting chưa chạy | `GET /actuator/health` trả UP, ẩn components/details. `/login` và HTTPS API chạy qua Next production local. Chi phí, health, smoke và rollback trên môi trường public chưa chạy. |
+
+Lệnh kiểm frontend và kết quả trên `647a68f`:
+
+- `npm test`: 77 pass, 0 fail, 0 skip. `npm run typecheck`: pass.
+- `node node_modules/next/dist/bin/next build` với `NEXT_PUBLIC_API_MODE=real`: pass bằng Turbopack trên bản sao local có cấu hình workspace root để đọc fixture F02. `npm run build` (Webpack mặc định) pass trên thư mục `.next` sạch. Lượt đầu dùng lại thư mục build cũ gặp lỗi Windows `EPERM`; đã tách thư mục cũ và chạy lại với cấu hình nguyên gốc. Smoke HTTPS dùng bản build Turbopack đã chạy trước đó.
+- Playwright `--project=audit-api --project=delivery-api`: 6 pass, 0 fail, 0 skip. Các test này dùng HTTP fixtures.
+- Playwright `--project=mock campaign-audit.spec.ts --output=test-results-f10-mock`: 2 pass, 0 fail, 0 skip. Lượt đầu hai phiên Playwright đụng thư mục trace, đã tách thư mục kết quả và chạy lại đạt.
+- Backend candidate `mvn -o -DskipTests package`: build pass. Smoke trên DB restore gồm cookie/CSRF/session, audit, evidence và phân quyền. Lượt đầu thiếu cấu hình allowlist evidence giả lập nên trả 404. Sau khi cấp quyền cho đúng tổ chức test trong cấu hình chạy local, smoke pass.
+- F09 E2E real sau merge B10, public deployment smoke, rollback release, và proof/recovery Fuji: **Not Run**.
+
+Bàn giao Khoa dùng B2, B3, B5 và C5 để đối chiếu receipt/recovery Fuji. Dũng tiếp tục PR #30 và xác nhận runtime DB của bản demo. Minh ghép F09 native B10 khi PR #30 vào `main`, dùng `delivery.id` và snapshot `evidenceVersionIds` từ D01, kiểm hai tài khoản độc lập, self-confirm 403, dispute chặn close rồi resolve và refresh T01/T02. F10 ở **In Progress**.

@@ -630,6 +630,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### F09 - Confirmation/dispute/full timeline
 
+- **Minh 16/11, Blocked cho nghiệm thu B10:** Nhánh đã đồng bộ main sau PR #29. Frontend 77 unit và 8 E2E fixture pass. PR #30 còn mở nên F09 E2E real sau merge chưa chạy. Khi B10 vào main, Minh nối xác nhận/tranh chấp và kiểm hai tài khoản, self-confirm, chặn close và refresh timeline. [Kết quả 16/11](../reviews/F10_HOSTING_AUDIT_CHECKLIST_2026_11_15.md#f-kết-quả-minh-ngày-16112026).
+
 - **Minh 15/11, In Review:** Ghép nhận R01 → ghi giao D01 qua projection hồ sơ và tồn P04 của B09. Playwright HTTP fixtures pass và đã bổ sung ca Spring/PostgreSQL với DONOR, ORG_ADMIN, VOLUNTEER. Ca Spring/PostgreSQL còn Not Run, chờ V16. D02/S01/S03 vẫn dùng fixture chờ B10. [Bàn giao](../handoffs/MINH_F05_F09_F10_2026-11-15.md).
 
 - **Minh 14/11, In Review:** D01 fixture theo contract mới, truyền response vào D02 và timeline; S01 chặn hoàn tất dù đã đủ hàng, S03 cập nhật totals. Chờ B09/B10, P05 và T01/T02 cho luồng thật. [Bàn giao và kiểm chứng](../handoffs/MINH_F08_F09_2026-11-14.md).
@@ -647,6 +649,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Status / evidence:** In Review (fixture, 13/11/2026). F09 nối luồng D01 với xác nhận độc lập, mở/giải quyết tranh chấp và VOID_DELIVERY. Xem [bàn giao và kết quả kiểm thử](../handoffs/MINH_F09_2026-11-13.md). Live HTTP/SQL/Fuji của F09 chưa chạy.
 
 ### F10 - Public hosting/recovery
+
+- **Minh 16/11, In Progress:** Smoke HTTPS, cookie/CSRF, T01/T02 và phân quyền evidence chạy local. Restore PostgreSQL lên schema V18 khớp 12 bảng và Spring health UP. Public hosting, chi phí, rollback release và worker/Fuji chưa xác minh. [Checklist kết quả từng mục](../reviews/F10_HOSTING_AUDIT_CHECKLIST_2026_11_15.md#f-kết-quả-minh-ngày-16112026).
 
 - **Khoa Task12 ngày15/11: DONE WITH DEPENDENCIES cho phối hợp/chuẩn bị**, không F10 implementation Done. Đã đối chiếu routes/UI/env/runtime/cookie/proxy/health và lập bảng READY/READY FOR MOCK/BLOCKED, owner và gates tại mục E [F10 checklist](../reviews/F10_HOSTING_AUDIT_CHECKLIST_2026_11_15.md). Chờ V16/C09 actual API, F09/C10 evidence và approval hosting; không deploy hoặc chạy tests mới, không thay owner/estimate/status baseline bên dưới.
 
