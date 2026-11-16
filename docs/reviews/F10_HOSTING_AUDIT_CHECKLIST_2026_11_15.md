@@ -138,7 +138,7 @@ Bàn giao Khoa dùng B2, B3, B5 và C5 để đối chiếu receipt/recovery Fuj
 
 **#2:** `main` trên GitHub ở `ed19bdf`. Merge trên `minh` báo `Already up to date`. Bản ghi test frontend và hai tài liệu đã lên `minh` ở `b551d86`. PR #31 (`minh → dung`) đang mở và GitHub báo không có xung đột với base. [PR #31](https://github.com/chidungbrvt-bit/AidBridge/pull/31)
 
-**#9 · B10:** Báo cáo của Dũng trên `ef30487` ghi Surefire 146 run, 0 fail/error/skip và Failsafe 205 run, 0 fail/error, 2 skip opt-in. ReceiptApiIT 5 và DeliveryRefMigrationIT 9 đều không lỗi và không skip. PR #30 còn mở. PR #31 cũng đang chờ review cho API đọc ngữ cảnh tranh chấp và `reviewCampaign`. F09 tích hợp và E2E sau merge vẫn **Not Run**. [PR #30 và báo cáo kết quả](https://github.com/chidungbrvt-bit/AidBridge/pull/30)
+**#9 · B10:** Báo cáo của Dũng trên `ef30487` ghi Surefire 146 run, 0 fail/error/skip và Failsafe 205 run, 0 fail/error, 2 skip opt-in. ReceiptApiIT 5 và DeliveryRefMigrationIT 9 đều không lỗi và không skip. Tại thời điểm diễn tập rollback ở mục G, PR #30 còn mở. PR #31 đang chờ review cho API đọc ngữ cảnh tranh chấp và `reviewCampaign`. Kết quả cập nhật sau merge ở mục H. [PR #30 và báo cáo kết quả](https://github.com/chidungbrvt-bit/AidBridge/pull/30)
 
 Sau khi B10 và API đọc liên quan vào `main`, chạy với hai phiên độc lập cho VOLUNTEER và DELIVERY_CONFIRMER, cùng các tài khoản seed ORG_ADMIN, PLATFORM_ADMIN và DONOR cần cho từng bước. Dùng R01 → D01, lấy delivery ID và snapshot evidence từ phản hồi D01, kiểm D02 tự xác nhận trả `403 SELF_CONFIRMATION`. Kiểm S01 chặn P05 khi mở tranh chấp, rồi thử S03 `UPHOLD` và `VOID_DELIVERY` trên các hồ sơ riêng. Đọc lại C03/P04 và T01/T02 sau từng thay đổi. P05 lấy ID từ `reviewCampaign` và chỉ hoàn tất khi đủ confirmed totals và hết tranh chấp.
 
@@ -151,3 +151,36 @@ Sau khi B10 và API đọc liên quan vào `main`, chạy với hai phiên độ
 | Chạy lại backend B10 ở `b551d86` | Pass local. P04 và T02 trở về đúng kết quả trước diễn tập. So khớp số dòng và fingerprint nội dung ở 12 bảng trước và sau khi chuyển phiên bản. Không hạ schema hoặc sửa dữ liệu nghiệp vụ. |
 
 Khi DB đã có dữ liệu B10, bản B09 trong diễn tập không an toàn để phục vụ API nghiệp vụ. Dũng cần xác nhận phiên bản tương thích schema và kết quả P04 trước khi rollback trên môi trường demo. Khoa tiếp tục đối chiếu replay/recovery Fuji khi có bằng chứng C10. Public deploy, thao tác trên DB demo, phục hồi signer/worker và link từ proof chain thật vẫn chưa được kiểm trong lượt này. F10 **In Progress**. ML-4 tiếp tục tạm hoãn để ưu tiên F09/F10.
+
+## H. F09 sau khi PR #30 merge
+
+PR #30 đã vào `main` tại `15bcba4`. Nhánh `minh` đã gộp `main@627be56` và `dung@f85d390`. Phần `ml/` đã được bỏ khỏi diff PR #31, bản thay đổi ML vẫn có trong lịch sử `647a68f`.
+
+F09 dùng C03 để đọc deliveries, disputes và tổng theo mặt hàng. `reviewCampaign.id` giữ được ID khi campaign là FULFILLED hoặc CLOSED, còn `campaignId` phục vụ form D01. D02 tải snapshot của đúng lần giao và chặn người ghi tự xác nhận. S01 chặn P05 khi dispute OPEN. S03 dùng màn riêng cho PLATFORM_ADMIN, chỉ mở và tải evidence qua route đọc theo dispute, rồi cập nhật totals từ C03/P04 khi tải lại hồ sơ.
+
+Chạy trên PostgreSQL 16.16 ở loopback với schema test đến V18, Next production Webpack ở chế độ real, JDK 21 và Playwright Chromium. Worker chain tắt. Dùng tài khoản VOLUNTEER và DELIVERY_CONFIRMER riêng, cùng các tài khoản ORG_ADMIN, PLATFORM_ADMIN và DONOR giả lập do fixture tạo.
+
+```powershell
+# Bật AIDBRIDGE_F07_REAL_E2E=true và CI=true trên DB test riêng.
+# Dùng AIDBRIDGE_TEST_DATABASE_* và PG* như workflow F07 real backend E2E.
+cd frontend
+npm test
+npm run typecheck
+cd ../backend/aidbridge-backend
+mvn -B -ntp "-Dtest=CommitmentRequestValidationTest,CancellationRequestValidationTest" "-Dit.test=DonorUiE2EIT" verify
+```
+
+`DonorUiE2EIT` build Next rồi chạy `node node_modules/@playwright/test/cli.js test --project=donor-real --reporter=list,junit`. Trên Windows local dùng thêm `-DargLine=-javaagent:<mockito-core.jar>` để tránh dynamic attach bị Windows chặn. Chạy riêng `ReceiptApiIT,DeliveryApiIT,DeliveryConfirmationIT,CampaignCloseIT,DisputeResolveIT,StaffCaseReviewIT` khi cần số liệu HTTP/DB ngoài browser.
+
+**SHA đã chạy browser:** `5815d715169f9238741cd70f2ee318295462104d`. Playwright real **6 pass, 0 fail, 0 skip** (40,8 giây). `DonorUiE2EIT` **1 pass, 0 fail, 0 error, 0 skip**. Maven verify, `npm test` (77 pass, 0 fail/skip), typecheck và build Webpack đều pass trong lượt cuối.
+
+| Bước F09 | Kết quả |
+|---|---|
+| R01 → D01 | 201/201 với 2 bao Rice và 1 thùng Water. C03 đọc lại đúng delivery mới và snapshot. |
+| D02 | Người ghi có cả hai role vẫn nhận 403 `SELF_CONFIRMATION`. Tài khoản khác nhận 200 `CONFIRMED`, chain là `PENDING_ON_CHAIN`. C03/P04 hiện FULFILLED và tổng xác nhận 2/1. |
+| S01 → P05 | S01 trả 201. UI khóa Close campaign. P05 trả 409 `DISPUTE_OPEN` dù đã đủ số lượng xác nhận. |
+| Đọc evidence theo tranh chấp | Staff thường nhận 403. PLATFORM_ADMIN đọc snapshot đúng nhận 200 và `Cache-Control: no-store`. Version ngoài snapshot và đọc sau resolve trả 404. |
+| S03 → reload | `VOID_DELIVERY` trả 200. C03 và P04 sau reload hiện PUBLISHED, lượng đã nhận vẫn 2/1, lượng đã giao và xác nhận về 0/0 cho mỗi mặt hàng và số dispute OPEN về 0. |
+| Giao thay thế → P05 | D02 xác nhận lại qua tài khoản độc lập. P05 trả 200, UI tải lại thấy campaign CLOSED, hồ sơ COMPLETED, totals 2/1 và T01 có `DELIVERY_CONFIRMED`, `CASE_COMPLETED`. PostgreSQL giữ đúng một bản ghi void và một audit hoàn tất. |
+
+Trên SHA `af7528a`, các lớp `CampaignCloseIT` (5), `DeliveryApiIT` (7), `DeliveryConfirmationIT` (12), `DisputeResolveIT` (7), `ReceiptApiIT` (5), `StaffCaseReviewIT` (7) có tổng **43 pass, 0 fail/error/skip** qua hai lượt. Backend và các lớp này giữ nguyên ở SHA cuối. Lượt browser trước trên `af7528a` có 5 pass, 1 fail, 0 skip. D01 đã trả 201 nhưng bước chọn delivery cho D02 timeout ở giao diện. Lượt cuối thêm xác minh C03 200, tải lại và chọn theo tên trường rõ ràng. Worker/Fuji và hosting công khai chưa chạy trong lượt này.

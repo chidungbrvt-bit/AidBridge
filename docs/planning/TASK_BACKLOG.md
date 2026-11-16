@@ -641,7 +641,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### F09 - Confirmation/dispute/full timeline
 
-- **Minh 16/11, Blocked cho nghiệm thu B10:** Nhánh đã đồng bộ main sau PR #29. Frontend 77 unit và 8 E2E fixture pass. PR #30 còn mở nên F09 E2E real sau merge chưa chạy. Khi B10 vào main, Minh nối xác nhận/tranh chấp và kiểm hai tài khoản, self-confirm, chặn close và refresh timeline. [Kết quả 16/11](../reviews/F10_HOSTING_AUDIT_CHECKLIST_2026_11_15.md#f-kết-quả-minh-ngày-16112026).
+- **Minh 16/11, In Review:** PR #30 đã merge tại `15bcba4`. Nhánh `minh` đã gộp `main@627be56` và `dung@f85d390`. F09 ghép R01/D01, D02, S01/S03 và P05 với B10. Playwright real 6 pass, 0 fail/skip trên `5815d71`. [Kiểm thử và trạng thái nghiệm thu](../reviews/F10_HOSTING_AUDIT_CHECKLIST_2026_11_15.md#h-f09-sau-khi-pr-30-merge).
 
 - **Minh 15/11, In Review:** Ghép nhận R01 → ghi giao D01 qua projection hồ sơ và tồn P04 của B09. Playwright HTTP fixtures pass và đã bổ sung ca Spring/PostgreSQL với DONOR, ORG_ADMIN, VOLUNTEER. Ca Spring/PostgreSQL còn Not Run, chờ V16. D02/S01/S03 vẫn dùng fixture chờ B10. [Bàn giao](../handoffs/MINH_F05_F09_F10_2026-11-15.md).
 
@@ -653,11 +653,11 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Dependencies:** F08, B10, C09; mock prework allowed, integrated acceptance waits.
 - **Schedule:** allocated 2026-11-15 through 2026-11-17; deadline 2026-11-18, Asia/Bangkok.
 - **Description / expected behavior:** Confirmation/dispute/full timeline; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
-- **Output hiện tại:** D02/S01/S03 trong Goods demo của F08, dùng chung dữ liệu fixture và totals. P05 close và timeline đọc API còn chờ backend.
+- **Output hiện tại:** Màn hồ sơ đọc C03, hiển thị totals theo mặt hàng và gửi D02/S01/P05. Màn tranh chấp cho PLATFORM_ADMIN đọc snapshot và gửi S03. Timeline T01/T02 đọc API. Goods demo vẫn chạy fixture.
 - **Acceptance criteria:** Separate reviewer, self blocked, dispute guard, all item target completion, public/internal audit separation; no false chain claim.
 - **Required tests:** BR06-N, BR07-N, BR10-P/N; E2E04/05/06.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
-- **Status / evidence:** In Review (fixture, 13/11/2026). F09 nối luồng D01 với xác nhận độc lập, mở/giải quyết tranh chấp và VOID_DELIVERY. Xem [bàn giao và kết quả kiểm thử](../handoffs/MINH_F09_2026-11-13.md). Live HTTP/SQL/Fuji của F09 chưa chạy.
+- **Status / evidence:** In Review. Dũng review contract và quyền evidence của PLATFORM_ADMIN. Fuji chưa chạy ở lượt này. Xem kiểm thử local tại [bàn giao F09 sau PR #30](../reviews/F10_HOSTING_AUDIT_CHECKLIST_2026_11_15.md#h-f09-sau-khi-pr-30-merge).
 
 ### F10 - Public hosting/recovery
 
