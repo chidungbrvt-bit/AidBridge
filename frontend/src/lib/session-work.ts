@@ -17,20 +17,24 @@ export type CampaignWork = {
 
 export type ReceiptAttempt = PendingWrite<ReceiptRequest> & { commitmentId: string };
 
+export type GoodsReviewAttempt = PendingWrite<GoodsReviewAction> & {
+  actorId: string;
+  route: string;
+  organizationId?: string;
+};
+
 export function createSessionWork() {
   const caseCreates = new Map<string, PendingWrite<CreateCaseRequest>>();
   const campaigns = new Map<string, CampaignWork>();
   const receipts = new Map<string, ReceiptAttempt>();
   const deliveries = new Map<string, PendingWrite<DeliveryRequest>>();
-  const goodsReviews = new Map<string, PendingWrite<GoodsReviewAction>>();
   return {
-    caseCreates, campaigns, receipts, deliveries, goodsReviews,
+    caseCreates, campaigns, receipts, deliveries,
     clear() {
       caseCreates.clear();
       campaigns.clear();
       receipts.clear();
       deliveries.clear();
-      goodsReviews.clear();
     },
   };
 }

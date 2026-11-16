@@ -254,15 +254,18 @@ test('real F09: independent confirmation, dispute guard, void, reload and close'
   const p04 = `/api/campaigns/${reviewCampaign}`;
   const baseURL = new URL(page.url()).origin;
   const contexts: BrowserContext[] = [];
+  async function signIn(view: Page, email: string) {
+    await view.getByLabel('Email address').fill(email);
+    await view.getByLabel('Password', { exact: true }).fill(process.env.F07_E2E_DONOR_PASSWORD!);
+    await view.getByRole('button', { name: /Sign in/ }).click();
+    await expect(view).not.toHaveURL(/\/login$/);
+  }
   async function actor(email: string) {
     const context = await browser.newContext({ baseURL });
     contexts.push(context);
     const view = await context.newPage();
     await view.goto('/login');
-    await view.getByLabel('Email address').fill(email);
-    await view.getByLabel('Password', { exact: true }).fill(process.env.F07_E2E_DONOR_PASSWORD!);
-    await view.getByRole('button', { name: /Sign in/ }).click();
-    await expect(view).not.toHaveURL(/\/login$/);
+    await signIn(view, email);
     return view;
   }
   async function clickWrite(view: Page, path: string, click: () => Promise<void>, status: number) {
@@ -334,14 +337,61 @@ test('real F09: independent confirmation, dispute guard, void, reload and close'
       return clickWrite(recorderPage, `/api/cases/${reviewCase}/deliveries`,
         () => panel.getByRole('button', { name: 'Record delivery', exact: true }).click(), 201);
     }
-    async function confirm(delivery: DeliveryResponse) {
+    async function confirm(delivery: DeliveryResponse, loseResponse = false) {
       await confirmerPage.goto(orgCase);
       const panel = reviewPanel(confirmerPage);
       await panel.getByRole('combobox', { name: 'Delivery to review', exact: true }).selectOption(delivery.id, { timeout: 10_000 });
       await panel.getByLabel('I reviewed the delivery evidence').check();
-      const response = await clickWrite(confirmerPage, `/api/deliveries/${delivery.id}/confirm`,
-        () => panel.getByRole('button', { name: 'Confirm delivery', exact: true }).click(), 200);
-      expect(response).toMatchObject({ reviewerId: confirmerId, decision: 'CONFIRMED', blockchainStatus: 'PENDING_ON_CHAIN' });
+      const path = `/api/deliveries/${delivery.id}/confirm`;
+      const click = () => panel.getByRole('button', { name: 'Confirm delivery', exact: true }).click();
+      const requests: { key?: string; body: string | null }[] = [];
+      let replayed = false;
+      const routePattern = `**${path}`;
+      if (loseResponse) await confirmerPage.route(routePattern, async route => {
+        const request = route.request();
+        requests.push({ key: request.headers()['idempotency-key'], body: request.postData() });
+        const actual = await route.fetch();
+        expect(actual.status()).toBe(200);
+        if (requests.length === 1) {
+          // Let Spring commit to PostgreSQL before discarding the successful response.
+          await route.fulfill({ status: 504, json: { code: 'DEPENDENCY_UNAVAILABLE' } });
+        } else {
+          replayed = actual.headers()['idempotent-replayed'] === 'true';
+          await route.fulfill({ response: actual });
+        }
+      });
+      try {
+        if (loseResponse) {
+          await clickWrite(confirmerPage, path, click, 504);
+          const retry = panel.getByRole('button', { name: 'Retry same request' });
+          await expect(retry).toBeVisible();
+          await expect(confirmerPage.getByRole('button', { name: 'Sign out' })).toBeDisabled();
+          await expect(confirmerPage.getByRole('combobox', { name: 'Active organization' })).toBeDisabled();
+          await confirmerPage.getByRole('navigation').getByRole('link', { name: 'Campaigns' }).click();
+          expect(new URL(confirmerPage.url()).pathname).toBe(orgCase);
+          await confirmerPage.context().clearCookies();
+          const expired = confirmerPage.waitForResponse(r => new URL(r.url()).pathname === '/api/auth/me' && r.status() === 401);
+          await retry.click();
+          await expired;
+          await expect(confirmerPage).toHaveURL(/\/login$/);
+          await expect(confirmerPage.getByText(/same account to check the pending decision/)).toBeVisible();
+          await signIn(confirmerPage, process.env.F09_E2E_CONFIRMER_EMAIL!);
+          await expect.poll(() => new URL(confirmerPage.url()).pathname).toBe(orgCase);
+          const result = await clickWrite(confirmerPage, path, () => retry.click(), 200);
+          expect(result).toMatchObject({ reviewerId: confirmerId, decision: 'CONFIRMED', blockchainStatus: 'PENDING_ON_CHAIN' });
+          expect(requests).toHaveLength(2);
+          expect(requests[0].key).toBeTruthy();
+          expect(requests[1]).toEqual(requests[0]);
+          expect(replayed).toBe(true);
+          expect(Number(sql(`SELECT count(*) FROM delivery_confirmations WHERE delivery_id='${id(delivery.id)}'`))).toBe(1);
+          await expect(confirmerPage.getByRole('button', { name: 'Sign out' })).toBeEnabled();
+        } else {
+          const response = await clickWrite(confirmerPage, path, click, 200);
+          expect(response).toMatchObject({ reviewerId: confirmerId, decision: 'CONFIRMED', blockchainStatus: 'PENDING_ON_CHAIN' });
+        }
+      } finally {
+        if (loseResponse) await confirmerPage.unroute(routePattern);
+      }
     }
     const delivery = await test.step('D01 records a delivery and own D02 is rejected', async () => {
       const saved = await deliver();
@@ -359,8 +409,8 @@ test('real F09: independent confirmation, dispute guard, void, reload and close'
         { decision: 'CONFIRMED', reviewedEvidenceVersionIds: saved.evidenceVersionIds }, 403, 'SELF_CONFIRMATION');
       return saved;
     });
-    await test.step('D02 by a second account reaches FULFILLED', async () => {
-      await confirm(delivery);
+    await test.step('D02 replays an ambiguous result after reauthentication and reaches FULFILLED', async () => {
+      await confirm(delivery, true);
       await staff.reload();
       await assertTotals(staff, 2, 2, 2, 'FULFILLED');
     });
@@ -405,7 +455,6 @@ test('real F09: independent confirmation, dispute guard, void, reload and close'
       const closed = await clickWrite(staff, `${p04}/close`,
         () => panel.getByRole('button', { name: 'Close campaign' }).click(), 200);
       expect(closed.status).toBe('CLOSED');
-      await staff.reload();
       await assertTotals(staff, 2, 2, 2, 'CLOSED');
       await expect(staff.getByText('COMPLETED', { exact: true })).toBeVisible();
       await staff.getByText('Case audit trail', { exact: true }).click();

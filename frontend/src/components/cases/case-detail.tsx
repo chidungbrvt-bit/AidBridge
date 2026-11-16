@@ -23,7 +23,7 @@ function ScopedCaseDetail({ id }: { id: string }) {
   const [detail, setDetail] = useState<CaseDetailResponse | null>(null);
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [refreshCount, setRefreshCount] = useState(0);
+  const [caseRead, setCaseRead] = useState({ background: false });
   const [controlMessage, setControlMessage] = useState("");
   const [controlBusy, setControlBusy] = useState(false);
   const [reviewBusy, setReviewBusy] = useState(false);
@@ -34,9 +34,9 @@ function ScopedCaseDetail({ id }: { id: string }) {
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
+    if (!caseRead.background) setLoading(true);
     setError(null);
-    setDetail(null);
+    if (!caseRead.background) setDetail(null);
     api.getCase(id).then(result => {
       if (cancelled) return;
       if (result.organizationId !== organizationId) {
@@ -46,7 +46,7 @@ function ScopedCaseDetail({ id }: { id: string }) {
       setDetail(result);
     }).catch(reason => { if (!cancelled) setError(describeError(reason)); }).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [api, id, organizationId, refreshCount]);
+  }, [api, id, organizationId, caseRead]);
 
   function applyDecision(decision: DecisionResponse) {
     setDetail(current => current ? {
@@ -67,12 +67,12 @@ function ScopedCaseDetail({ id }: { id: string }) {
   }
 
   if (loading) return <LoadingCard label="Loading case details…" />;
-  if (error || !detail) return <div className="stack"><Link href="/cases" className="back-link">← All cases</Link><ErrorNotice error={error} /><button type="button" className="button secondary" onClick={() => setRefreshCount(value => value + 1)}>Retry loading case</button></div>;
+  if (error || !detail) return <div className="stack"><Link href="/cases" className="back-link">← All cases</Link><ErrorNotice error={error} /><button type="button" className="button secondary" onClick={() => setCaseRead({ background: false })}>Retry loading case</button></div>;
   const canEdit = canCreateCases(user, organizationId) && detail.creator.id === user?.userId && ["SUBMITTED", "CHANGES_REQUESTED"].includes(detail.status);
   const latestChanges = [...(detail.reviewHistory ?? [])].reverse().find(review => review.decision === "CHANGES_REQUESTED");
 
   return <div className="stack">
-    <header className="page-header"><div><Link href="/cases" className="back-link">← All cases</Link><p className="eyebrow">CASE · REVISION {detail.version}</p><h1>{detail.internalTitle}</h1><p className="muted">{detail.beneficiaryAlias} · {detail.approximateArea}</p></div><div className="actions">{canEdit && !reviewBusy && <Link className="button" href={`/cases/${detail.id}/edit`}>Edit case</Link>}<button type="button" className="button secondary" disabled={reviewBusy || campaignBusy} onClick={() => setRefreshCount(value => value + 1)}>Refresh case</button></div></header>
+    <header className="page-header"><div><Link href="/cases" className="back-link">← All cases</Link><p className="eyebrow">CASE · REVISION {detail.version}</p><h1>{detail.internalTitle}</h1><p className="muted">{detail.beneficiaryAlias} · {detail.approximateArea}</p></div><div className="actions">{canEdit && !reviewBusy && <Link className="button" href={`/cases/${detail.id}/edit`}>Edit case</Link>}<button type="button" className="button secondary" disabled={reviewBusy || campaignBusy} onClick={() => setCaseRead({ background: false })}>Refresh case</button></div></header>
     {detail.status === "CHANGES_REQUESTED" && <section className="notice"><strong>Reviewer requested changes</strong><p>{latestChanges?.reason || "Review feedback is not included in this API projection."}</p>{canEdit && <p>Open Edit case, save the requested revision, then explicitly resubmit for independent review.</p>}</section>}
     <div className="status-grid">
       <section className="card status-card"><span className="eyebrow">BUSINESS STATUS</span><StatusBadge status={detail.status} /><p className="muted">The current state of the aid request.</p></section>
@@ -84,15 +84,16 @@ function ScopedCaseDetail({ id }: { id: string }) {
         <section className="card stack"><div><p className="eyebrow">PRIVATE RECORD</p><h2>Case context</h2></div><dl className="metadata"><div><dt>Created by</dt><dd>{detail.creator.displayName}</dd></div><div><dt>Priority</dt><dd>{detail.priority}</dd></div><div><dt>Created at</dt><dd><time dateTime={detail.createdAt}>{new Date(detail.createdAt).toLocaleString("en-GB", { timeZone: "UTC" })} UTC</time></dd></div><div><dt>Consent basis</dt><dd>{detail.consent.basis}</dd></div><div><dt>Consent scope</dt><dd>{detail.consent.scope}</dd></div><div><dt>Public summary permitted</dt><dd>{detail.consent.publicSummaryAllowed ? "Yes" : "No"}</dd></div><div><dt>Case ID</dt><dd className="mono">{detail.id}</dd></div></dl></section>
         <section className="card stack"><div><p className="eyebrow">IMMUTABLE SNAPSHOT</p><h2>Evidence versions</h2><p className="muted">These version IDs form the exact snapshot for the current review.</p></div>{detail.evidenceVersions.length === 0 ? <p className="muted">No evidence versions are available. Review is unavailable.</p> : <ul className="evidence-list">{detail.evidenceVersions.map((evidence, index) => <li key={evidence.id}><div className="toolbar"><strong>Evidence {index + 1}</strong><span className="badge">Version {evidence.versionNo}</span></div><p className="mono">{evidence.id}</p><p className="muted">{evidence.mimeType} · {evidence.byteSize.toLocaleString()} bytes</p><a href={`/api/evidence-versions/${encodeURIComponent(evidence.id)}/content`} className="back-link">Download evidence {index + 1}</a></li>)}</ul>}</section>
       </div>
-      <ReviewPanel detail={detail} onDecision={applyDecision} onRefresh={() => setRefreshCount(value => value + 1)} onBusyChange={setReviewBusy} />
+      <ReviewPanel detail={detail} onDecision={applyDecision} onRefresh={() => setCaseRead({ background: false })} onBusyChange={setReviewBusy} />
     </div>
-    <CampaignPanel detail={detail} onBusyChange={setCampaignBusy} onPublished={() => setRefreshCount(value => value + 1)} />
+    <CampaignPanel detail={detail} onBusyChange={setCampaignBusy} onPublished={() => setCaseRead({ background: false })} />
     <ReceiptPanel detail={detail} onRecorded={() => {
       setReceiptRevision(value => value + 1);
       setAuditRevision(value => value + 1);
     }} />
     <DeliveryPanel detail={detail} receiptRevision={receiptRevision} onRecorded={() => setAuditRevision(value => value + 1)} />
     {mode === "real" && ["IN_PROGRESS", "COMPLETED"].includes(detail.status) && <DeliveryReviewPanel detail={detail} revision={auditRevision} onSaved={() => {
+      setCaseRead({ background: true });
       setAuditRevision(value => value + 1);
       setReceiptRevision(value => value + 1);
     }} />}

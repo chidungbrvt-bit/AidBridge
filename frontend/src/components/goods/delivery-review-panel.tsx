@@ -20,13 +20,13 @@ export function DeliveryReviewPanel({ detail, revision, onSaved }: {
   const [reviewed, setReviewed] = useState(false);
   const [reason, setReason] = useState("");
   const refresh = () => { setStaff(undefined); setReload(value => value + 1); };
-  const write = useGoodsReviewWrite(`case:${detail.organizationId}:${detail.id}`, () => {
+  const write = useGoodsReviewWrite(`/cases/${encodeURIComponent(detail.id)}`, () => {
     setDeliveryId("");
     setReviewed(false);
     setReason("");
     refresh();
     onSaved();
-  }, refresh);
+  }, refresh, detail.organizationId);
 
   useEffect(() => {
     let active = true;

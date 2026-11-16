@@ -14,7 +14,7 @@ export function DisputeReviewPanel({ id }: { id: string }) {
   const [reason, setReason] = useState("");
   const [reviewed, setReviewed] = useState<string[]>([]);
   const [resolved, setResolved] = useState(false);
-  const write = useGoodsReviewWrite(`dispute:${id}`, () => { setResolved(true); setDetail(undefined); });
+  const write = useGoodsReviewWrite(`/disputes/${encodeURIComponent(id)}`, () => { setResolved(true); setDetail(undefined); });
   useEffect(() => {
     if (!authorized) return;
     let active = true;

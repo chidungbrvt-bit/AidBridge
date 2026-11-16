@@ -8,7 +8,7 @@ import { useSession } from './session-provider';
 
 export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const session = useSession();
-  const { user, loading, organizationId, mode, generation, navigationLocked } = session;
+  const { user, loading, organizationId, mode, generation, navigationLocked, goodsReview } = session;
   const router = useRouter();
   const pathname = usePathname();
   const donorPath = pathname === '/campaigns' || pathname.startsWith('/campaigns/') || pathname === '/me/commitments';
@@ -16,6 +16,9 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const [actionError, setActionError] = useState('');
   const [busy, setBusy] = useState(false);
   useEffect(() => { if (!loading && !user && !session.checkingFailed) router.replace('/login'); }, [loading, user, session.checkingFailed, router]);
+  useEffect(() => {
+    if (goodsReview && pathname !== goodsReview.route) router.replace(goodsReview.route);
+  }, [goodsReview, pathname, router]);
   if (session.checkingFailed && !user) return <main className="center-state"><div className="card stack"><p role="alert">{session.error}</p><button className="button" onClick={() => void session.refreshUser()}>Check session again</button></div></main>;
   if (loading || !user) return <main className="center-state" aria-live="polite">Opening your workspace…</main>;
   const memberships = activeMemberships(user);
