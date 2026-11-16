@@ -235,6 +235,12 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### B09 - Delivery records/failed attempts
 
+- **Local fix Khoa sau PR27 review,15/11:** tích hợp7946be1 vào khoa bằng aee0a78; V16 guard format/uniqueness/one-audit/context đã sửa, thêm focused migration tests. Source addressed, runtime validation PENDING/NOT RUN (không có Java/DB env), chưa nghiệm thu PASS/Done hoặc cập nhật PR27. Xem đầu [B09 review](../reviews/B09_DELIVERY_REF_REVIEW_2026_11_15.md).
+
+- **Re-review PR27 Khoa,15/11:** NEEDS FIX. V16 đã được bàn giao tại7946be1, blocker thiếu file RESOLVED; còn guard backfill malformed/ambiguous/context refs và focused migration evidence trước nghiệm thu. Xem kết luận hiện hành [B09 review](../reviews/B09_DELIVERY_REF_REVIEW_2026_11_15.md); ghi chú thiếu migration phía dưới là lịch sử, không Done/không sửa code Dũng.
+
+- **Review Khoa Task3,15/11: NEEDS FIX (High schema delivery_ref).** B09 đã merge PR25; entity/service/tests dùng delivery_ref nhưng V16 chưa có trên main9c24630/dung0fc3e3d, PR25 xác nhận migration chưa commit. REST/SQL/payload/sequence đã review, không phát hiện lỗi logic đáng kể khác; chưa nghiệm thu V16/backfill. Dũng bàn giao migration + upgrade evidence và test checkout sạch; giữ In Review/owner/estimate, không coi thiếu worker/C06 là lỗi B09 REST. [Chi tiết và điều kiện PASS](../reviews/B09_DELIVERY_REF_REVIEW_2026_11_15.md).
+
 - **Feature / priority:** P0-05 / P0.
 - **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Dũng (B) / Khoa / Minh / Khoa kiểm tra payload/chain boundary; Minh kiểm tra API/UI.
 - **Complexity / estimate:** L / 5h.
@@ -408,6 +414,10 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### C08 - Receipt/retry/log reconciliation
 
+- **Task10 Khoa,15/11 — thiết kế, chưa triển khai:** DONE WITH PENDING DECISIONS cho handoff scanner/cursor (deployment scope, durable coverage/observations, finality/completeness, reorg, atomic cursor/replay và D55 VOID); API/schema/policy/batch defaults còn PROPOSED để Dũng/Khoa chốt trước viết code. Scanner/log replay chưa Done, không có tests runtime mới. Xem mục Task10 trong [C08 review](../reviews/C08_RECEIPT_LOG_REVIEW.md) và [checklist F10](../reviews/F10_HOSTING_AUDIT_CHECKLIST_2026_11_15.md); F10 chỉ chuẩn bị, giữ trạng thái hiện hành.
+
+- **Task2 ngày15/11 (Decision, không implementation): DONE WITH PENDING APPROVAL.** Đã bổ sung D56 hiện có: Dũng primary worker đa operation/verifier, Khoa review semantics/C10 và deploy/verify C06 khi đủ gate/phê duyệt riêng; deploy tách cutover DB/worker. Fresh case sequence1, giữ C03 evidence, inventory cả jobs chưa ký và signed attempts trước switch. URI D49 giữ là chuẩn hiện hành theo yêu cầu, nhưng minh-d010595149 đã dùng T02/viện dẫn D57 chưa có trong Decision Log; chờ nhóm chốt lệch consumer này, endpoint thật chưa có. Các ghi chú “chưa thấy D56” ngày14 dưới đây là lịch sử; deliveryRef/V16 vẫn chờ Task3. Không đổi trạng thái/owner/estimate task khác hoặc đánh scanner/C10 Done. Xem mục bổ sung Task2 trong [Decision Log](DECISION_LOG.md).
+
 - **Task9 Khoa,14/11/2026:** chốt receipt recovery PASS sau PR21/R1/R2, tái sử dụng CI26 unit+32 IT; không chạy lại. Full C08 chưa Done vì durable log scanner/cursor/replay chưa triển khai. C07 technical gate giữ PASS; C10 goods chưa có worker/registry C06 Fuji/receipt evidence. Phương án owner/cutover mới còn PROPOSED, chưa thấy D56; phải inventory cả jobs chưa ký trước đổi registry. Xem [chốt C08/C10](../reviews/C08_RECEIPT_LOG_REVIEW.md), không thay owner/estimate task khác.
 
 - **Feature / priority:** P0-06 / P0.
@@ -425,6 +435,14 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Status / evidence (14/11/2026):** In Progress. Chạy lại Task 6 trên snapshot `f225385` cùng bốn file Java C08 trong working tree. `CaseVerifiedWorkerIT`, `CaseVerifiedReceiptVerifierTest`, `Web3jBlockchainAdapterTest` và `VerificationApiIT` đạt 40/40, gồm 31 test trên PostgreSQL biệt lập với Flyway V1–V14. IT03 xác nhận attempt gốc sau timeout và rebroadcast khớp signed bytes trong journal. IT13 xác nhận các mã lỗi khi receipt sai context hoặc revert. IT04 khôi phục đúng một lần qua receipt polling sau SQL rollback. **Not Run:** log replay end-to-end do thiếu scanner/cursor/kho observation và kiểm tra API đọc projection live. Khoa review chain/context và chốt đường ingest, Dũng hỗ trợ SQL transaction và `LogReplayIT` khi có đường ingest. Chờ Khoa nghiệm thu trong Task 7. [Bằng chứng và bàn giao C08](../reviews/C08_DUNG_RECOVERY_2026_11_13.md)
 
 ### C09 - Full sanitized audit API
+
+- **Final high audit15/11:** source integrated PR27 +fixes206d2f4 trên khoa; source/docs review không thấy thêm Critical/High có bằng chứng, không phải runtime PASS. Trước merge cần compile/focused JUnit/Flyway fresh+upgrade/HTTP/proof/privacy/order và frontend integration **NOT RUN — DELEGATED** theo [handoff đủ5 task](../reviews/KHOA_2026_11_15_FINAL_HANDOFF.md). Giữ task In Review cho candidate, không Done/không coi PR27 riêng đã merge.
+
+- **Local fix Khoa sau PR27 review,15/11:** canonical URI/security, causal sequence/opaque public ID và confirmed proof/context guards đã sửa trên khoa; focused tests thêm/cập nhật nhưng Java/DB NOT RUN. Legacy proof thiếu context hiện fail-closed pending; không sửa worker để enrich hoặc giả verified. Chưa merge/push PR27, chưa PASS runtime/Done; [review hiện hành](../reviews/C09_AUDIT_API_READINESS_2026_11_15.md).
+
+- **Re-review PR27 Khoa,15/11:** NEEDS FIX, không còn thiếu implementation. T01/T02/controller/DTO/query/tests có ở head7946be1; còn canonical URI, fail-closed confirmed proof/context, causal sequence và public internal audit UUID. [Findings và gate merge](../reviews/C09_AUDIT_API_READINESS_2026_11_15.md). Tests18/301 là Dũng báo, Khoa không chạy runtime mới. Không merge PR hoặc đánh C09 Done; readiness “chưa có code” phía dưới là lịch sử.
+
+- **Task8 review Khoa,15/11: BLOCKED BY IMPLEMENTATION.** Remote main9c24630/dung0fc3e3d chưa có audit read controller/DTO/query/tests T01/T02, dù PR25 description nói đã có; GitHub files list31 files không có phần này. LocalAuditService chỉ ghi audit. Chờ Dũng bàn giao code/tests/actual response để review privacy/chain mapping; không đánh API PASS từ fixture hoặc receipt report. [Readiness evidence](../reviews/C09_AUDIT_API_READINESS_2026_11_15.md). Không triển khai thay, giữ trạng thái implementation baseline bên dưới, không Done.
 
 - **Feature / priority:** P0-06 / P0.
 - **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
@@ -628,6 +646,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Status / evidence:** In Review (fixture, 13/11/2026). F09 nối luồng D01 với xác nhận độc lập, mở/giải quyết tranh chấp và VOID_DELIVERY. Xem [bàn giao và kết quả kiểm thử](../handoffs/MINH_F09_2026-11-13.md). Live HTTP/SQL/Fuji của F09 chưa chạy.
 
 ### F10 - Public hosting/recovery
+
+- **Khoa Task12 ngày15/11: DONE WITH DEPENDENCIES cho phối hợp/chuẩn bị**, không F10 implementation Done. Đã đối chiếu routes/UI/env/runtime/cookie/proxy/health và lập bảng READY/READY FOR MOCK/BLOCKED, owner và gates tại mục E [F10 checklist](../reviews/F10_HOSTING_AUDIT_CHECKLIST_2026_11_15.md). Chờ V16/C09 actual API, F09/C10 evidence và approval hosting; không deploy hoặc chạy tests mới, không thay owner/estimate/status baseline bên dưới.
 
 - **Feature / priority:** Deployment / P0.
 - **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Minh (F) / Dũng / Khoa / Dũng kiểm tra auth/API; Khoa kiểm tra chain status.
