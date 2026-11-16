@@ -80,6 +80,78 @@ class CaseVerifiedReceiptVerifierTest {
     }
 
     @Test
+    void commitmentReductionRequiresTheExpectedCommitmentRef() {
+        var envelope = new CaseVerifiedEnvelope(
+                b32("10"), b32("20"), b32("30"), 3, b32("40"), 1);
+        var expected = new Expected(TX, REGISTRY, SIGNER, envelope,
+                AidRegistryAbi.Operation.COMMITMENT_REDUCED, List.of(new Bytes32(b32("50"))));
+
+        String topic = org.web3j.crypto.Hash.sha3String(
+                "CommitmentReduced(bytes32,bytes32,bytes32,uint64,bytes32,uint16,uint64,bytes32)");
+        var topics = List.of(topic, Numeric.toHexString(envelope.orgRef()),
+                Numeric.toHexString(envelope.caseRef()), Numeric.toHexString(envelope.eventId()));
+        String commonData = data(3, b32("40"), 1, 1_762_650_000L);
+        var correct = new ChainReceipt.ChainLog(REGISTRY, topics,
+                commonData + TypeEncoder.encode(new Bytes32(b32("50"))), BigInteger.ZERO, false);
+        var wrongRef = new ChainReceipt.ChainLog(REGISTRY, topics,
+                commonData + TypeEncoder.encode(new Bytes32(b32("51"))), BigInteger.ZERO, false);
+
+        assertThat(CaseVerifiedReceiptVerifier.verify(expected,
+                receipt(1, REGISTRY, SIGNER, List.of(correct)), Optional.of(BLOCK_HASH)))
+                .isInstanceOf(Confirmed.class);
+        assertThat(CaseVerifiedReceiptVerifier.verify(expected,
+                receipt(1, REGISTRY, SIGNER, List.of(wrongRef)), Optional.of(BLOCK_HASH)))
+                .isEqualTo(new Mismatch("RECEIPT_OPERATION_REF_MISMATCH"));
+    }
+
+    @Test
+    void goodsReceiptRejectsSwappedReceiptAndCommitmentRefs() {
+        var envelope = new CaseVerifiedEnvelope(b32("10"), b32("20"), b32("30"), 4, b32("40"), 1);
+        var receiptRef = new Bytes32(b32("50"));
+        var commitmentRef = new Bytes32(b32("60"));
+        var expected = new Expected(TX, REGISTRY, SIGNER, envelope,
+                AidRegistryAbi.Operation.GOODS_RECEIVED, List.of(receiptRef, commitmentRef));
+        String topic = org.web3j.crypto.Hash.sha3String(
+                "GoodsReceived(bytes32,bytes32,bytes32,uint64,bytes32,uint16,uint64,bytes32,bytes32)");
+        var topics = List.of(topic, Numeric.toHexString(envelope.orgRef()),
+                Numeric.toHexString(envelope.caseRef()), Numeric.toHexString(envelope.eventId()));
+        String prefix = data(4, b32("40"), 1, 1_762_650_000L);
+        var correct = new ChainReceipt.ChainLog(REGISTRY, topics,
+                prefix + TypeEncoder.encode(receiptRef) + TypeEncoder.encode(commitmentRef), BigInteger.ZERO, false);
+        var swapped = new ChainReceipt.ChainLog(REGISTRY, topics,
+                prefix + TypeEncoder.encode(commitmentRef) + TypeEncoder.encode(receiptRef), BigInteger.ZERO, false);
+
+        assertThat(CaseVerifiedReceiptVerifier.verify(expected,
+                receipt(1, REGISTRY, SIGNER, List.of(correct)), Optional.of(BLOCK_HASH))).isInstanceOf(Confirmed.class);
+        assertThat(CaseVerifiedReceiptVerifier.verify(expected,
+                receipt(1, REGISTRY, SIGNER, List.of(swapped)), Optional.of(BLOCK_HASH)))
+                .isEqualTo(new Mismatch("RECEIPT_OPERATION_REF_MISMATCH"));
+    }
+
+    @Test
+    void deliveryReceiptRequiresTheStoredDeliveryRef() {
+        var envelope = new CaseVerifiedEnvelope(b32("10"), b32("20"), b32("30"), 5, b32("40"), 1);
+        var deliveryRef = new Bytes32(b32("70"));
+        var expected = new Expected(TX, REGISTRY, SIGNER, envelope,
+                AidRegistryAbi.Operation.DELIVERY_RECORDED, List.of(deliveryRef));
+        String topic = org.web3j.crypto.Hash.sha3String(
+                "DeliveryRecorded(bytes32,bytes32,bytes32,uint64,bytes32,uint16,uint64,bytes32)");
+        var topics = List.of(topic, Numeric.toHexString(envelope.orgRef()),
+                Numeric.toHexString(envelope.caseRef()), Numeric.toHexString(envelope.eventId()));
+        String prefix = data(5, b32("40"), 1, 1_762_650_000L);
+        var correct = new ChainReceipt.ChainLog(REGISTRY, topics,
+                prefix + TypeEncoder.encode(deliveryRef), BigInteger.ZERO, false);
+        var wrongRef = new ChainReceipt.ChainLog(REGISTRY, topics,
+                prefix + TypeEncoder.encode(new Bytes32(b32("71"))), BigInteger.ZERO, false);
+
+        assertThat(CaseVerifiedReceiptVerifier.verify(expected,
+                receipt(1, REGISTRY, SIGNER, List.of(correct)), Optional.of(BLOCK_HASH))).isInstanceOf(Confirmed.class);
+        assertThat(CaseVerifiedReceiptVerifier.verify(expected,
+                receipt(1, REGISTRY, SIGNER, List.of(wrongRef)), Optional.of(BLOCK_HASH)))
+                .isEqualTo(new Mismatch("RECEIPT_OPERATION_REF_MISMATCH"));
+    }
+
+    @Test
     void nullOrRevertedReceiptIsNeverConfirmed() {
         assertThat(CaseVerifiedReceiptVerifier.verify(EXPECTED, null, Optional.of(BLOCK_HASH)))
                 .isEqualTo(new Mismatch("RECEIPT_MISSING"));
