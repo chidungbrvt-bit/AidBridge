@@ -641,6 +641,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### F09 - Confirmation/dispute/full timeline
 
+- **Minh 17/11, In Review:** Đóng campaign tự cập nhật COMPLETED trên trang đang mở. D02 giữ payload/key qua mất response và 401, chỉ khôi phục với cùng tài khoản. Playwright real 6 pass, 0 fail/skip trên `a2de59e`. [Kết quả review PR #31](../reviews/F10_HOSTING_AUDIT_CHECKLIST_2026_11_15.md#i-sửa-review-pr-31-ngày-17112026).
+
 - **Minh 16/11, In Review:** PR #30 đã merge tại `15bcba4`. Nhánh `minh` đã gộp `main@627be56` và `dung@f85d390`. F09 ghép R01/D01, D02, S01/S03 và P05 với B10. Playwright real 6 pass, 0 fail/skip trên `5815d71`. [Kiểm thử và trạng thái nghiệm thu](../reviews/F10_HOSTING_AUDIT_CHECKLIST_2026_11_15.md#h-f09-sau-khi-pr-30-merge).
 
 - **Minh 15/11, In Review:** Ghép nhận R01 → ghi giao D01 qua projection hồ sơ và tồn P04 của B09. Playwright HTTP fixtures pass và đã bổ sung ca Spring/PostgreSQL với DONOR, ORG_ADMIN, VOLUNTEER. Ca Spring/PostgreSQL còn Not Run, chờ V16. D02/S01/S03 vẫn dùng fixture chờ B10. [Bàn giao](../handoffs/MINH_F05_F09_F10_2026-11-15.md).
