@@ -384,6 +384,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### C06 - Full milestone contract
 
+- **Khoa Task8 16/11 — preparation DONE WITH GATES:** compile/full C06 artifact consistency + unsigned constructor encoding PASS offline; khớp hash C10 sau rebuild artifact stale. Chưa deploy/cutover, chưa chạy worker/E2E. Cần Task6/7, runner C06 riêng, freeze/approval và queue reconciliation; không đổi trạng thái runtime. [Runbook](../reviews/C06_REDEPLOY_PREPARATION_2026_11_16.md).
+
 - **Feature / priority:** P0-04/P0-05/P0-06 / P0.
 - **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
 - **Complexity / estimate:** L / 6h.
