@@ -24,7 +24,16 @@ class CampaignCloseIT extends AbstractDeliveryHttpIT {
         var sequencesBefore = sequences(stock.caseId());
         String key = newKey();
 
-        var closed = close(orgAdmin, stock, key);
+        // Simulate reopening the staff screen after the independent reviewer confirms the last item.
+        var detail = orgAdmin.browser().send("GET", "/api/org/cases/" + stock.caseId(), null, null, false);
+        status(detail, 200);
+        assertThat(node(detail).hasNonNull("campaignId")).isFalse();
+        var reviewCampaign = node(detail).path("reviewCampaign");
+        assertThat(reviewCampaign.path("status").asText()).isEqualTo("FULFILLED");
+        assertThat(reviewCampaign.path("id").asText()).isEqualTo(stock.campaignId().toString());
+
+        var closed = orgAdmin.browser().send("POST",
+                "/api/campaigns/" + reviewCampaign.path("id").asText() + "/close", Map.of(), key, true);
         status(closed, 200);
         var response = node(closed);
         assertThat(response.path("id").asText()).isEqualTo(stock.campaignId().toString());

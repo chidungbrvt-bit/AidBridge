@@ -14,6 +14,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface DeliveryRepository extends JpaRepository<Delivery, UUID> {
+    Optional<Delivery> findByIdAndCaseId(UUID id, UUID caseId);
+
     interface DeliveredTotal {
         UUID getItemId();
         long getQuantity();
