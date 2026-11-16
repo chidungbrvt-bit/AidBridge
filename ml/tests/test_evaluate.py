@@ -16,7 +16,6 @@ from aidbridge_ml import evaluate, generator, schema
 
 OUTPUT_FILES = {"predictions.csv", "fold_metrics.csv", "summary.csv", "slice_summary.csv",
                 "lofo_metrics.csv", "lofo_summary.csv", "coefficients.csv", "error_cases.csv",
-                "queue_policy_metrics.csv",
                 "run_config.json"}
 
 

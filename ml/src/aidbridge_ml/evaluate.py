@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import platform
 import sys
 import time
@@ -27,10 +28,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 from . import generator, rules, schema
-from .queue_metrics import SCORERS, compare_queues, top_share_flags
 from .validate import validate_frame
 
-EVAL_VERSION = "eval-v2"
+EVAL_VERSION = "eval-v1"
 
 # --- Protocol (ML_SPEC g) ---------------------------------------------------------------------
 TOP_SHARE = rules.TOP_SHARE                 # 0.15, same share as the rule flag
@@ -40,6 +40,7 @@ MIN_GROUP_ROWS = 100                        # below this a slice is reported as 
 MIN_GROUP_POSITIVES = 20
 FEATURES: tuple[str, ...] = schema.FEATURE_COLUMNS
 LABEL = schema.LABEL_COLUMN
+SCORERS = ("model", "rule")
 DEFAULT_SEEDS = (1, 2, 3, 4, 5)
 DEFAULT_N = 10_000
 DEFAULT_FOLDS = 5
@@ -59,6 +60,20 @@ def build_model() -> Pipeline:
         ("scale", StandardScaler()),
         ("model", LogisticRegression(C=1.0, max_iter=1000)),
     ])
+
+
+def top_share_flags(score, waiting_days, case_id, share: float = TOP_SHARE) -> np.ndarray:
+    """1 for the first ceil(share * n) cases of the ranking, in input order.
+
+    Ranking: score descending, then waiting_days descending, then case_id ascending, the same
+    tie-break as rules.rank_frame, so model and rule are flagged by identical rules.
+    """
+    score = np.asarray(score, dtype=float)
+    count = math.ceil(share * len(score))
+    order = np.lexsort((np.asarray(case_id, dtype=str), -np.asarray(waiting_days, dtype=float), -score))
+    flags = np.zeros(len(score), dtype="int64")
+    flags[order[:count]] = 1
+    return flags
 
 
 def score_test_cases(model: Pipeline, test: pd.DataFrame) -> pd.DataFrame:
@@ -297,7 +312,6 @@ def run_config(seeds, n: int, folds: int, hashes: dict[str, str]) -> dict:
         "protocol": {"top_share": TOP_SHARE, "model_threshold": MODEL_THRESHOLD,
                      "rule_threshold": RULE_THRESHOLD, "min_group_rows": MIN_GROUP_ROWS,
                      "min_group_positives": MIN_GROUP_POSITIVES, "features": list(FEATURES),
-                     "queue_comparison": "same CV scores, same fold budget, proportional org quotas",
                      "model": "SimpleImputer(median) -> StandardScaler -> LogisticRegression(C=1.0, max_iter=1000)"},
         "library_versions": {"python": platform.python_version(), "numpy": np.__version__,
                              "pandas": pd.__version__, "scikit-learn": sklearn.__version__},
@@ -315,7 +329,6 @@ def run(seeds, n: int, folds: int, out_dir: Path) -> dict:
         "fold_metrics.csv": _csv_bytes(fold_metrics),
         "summary.csv": _csv_bytes(summarize(fold_metrics)),
         "slice_summary.csv": _csv_bytes(slice_summary),
-        "queue_policy_metrics.csv": _csv_bytes(compare_queues(predictions)),
         "lofo_metrics.csv": _csv_bytes(lofo),
         "lofo_summary.csv": _csv_bytes(summarize_lofo(lofo, slice_summary)),
         "coefficients.csv": _csv_bytes(summarize_coefficients(coefficients)),

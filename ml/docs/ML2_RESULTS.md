@@ -20,11 +20,10 @@ Lệnh chạy khoảng 5–8 giây. `data\eval\fold_metrics.csv` phải có SHA-
 | `fold_metrics.csv` | 25 fold × 2 bên chấm |
 | `summary.csv` | Trung bình ± độ lệch chuẩn, cộng phần so theo cặp mô hình − luật |
 | `slice_summary.csv` | Theo `org_profile` và `zone` |
-| `queue_policy_metrics.csv` | Cùng điểm CV, so top 15% toàn fold với quota theo org. Có số suất, tỷ lệ hồ sơ được chọn, tỷ trọng suất, precision và recall |
 | `lofo_metrics.csv`, `lofo_summary.csv` | Leave-one-org-out |
 | `coefficients.csv` | Trọng số chuẩn hóa của mô hình |
 | `error_cases.csv` | 4 ca sai minh họa, cột `notice=DEMO` |
-| `run_config.json` | Câu DEMO, phiên bản (`eval-v2`, `generator-v2`, schema `1`, `rules-v1`), giao thức đo, mã hash |
+| `run_config.json` | Câu DEMO, phiên bản (`eval-v1`, `generator-v2`, schema `1`, `rules-v1`), giao thức đo, mã hash |
 
 Giao thức đo (chốt ngày 15/11, trước khi xem kết quả) nằm ở [ML_SPEC](ML_SPEC.md) mục g.
 
@@ -64,11 +63,11 @@ Không có nhóm nào dưới 100 hồ sơ hoặc 20 ca dương trong một fold
 | Z4 | 375 / 60 | 0,553 / 0,482 | 21,1% / 20,9% | 0,61 / 0,58 |
 | Z5 | 358 / 55 | 0,549 / 0,476 | 20,6% / 20,8% | 0,61 / 0,59 |
 
-**Phát hiện chính: hàng chờ chung bất lợi cho org A.** A có khoảng 12% hồ sơ mang nhãn nhu cầu cao, nhưng chỉ khoảng 2,9% hồ sơ của A lọt top 15% theo mô hình (2,8% theo luật). Tỷ trọng suất toàn hàng chờ dành cho A có mẫu số riêng, là tổng số suất của cả fold. Cả mô hình lẫn luật đều như vậy.
+**Phát hiện chính: hàng chờ chung bất lợi cho org A.** A có khoảng 12% ca nhu cầu cao nhưng chỉ nhận chưa tới 3% số suất xem trước. Cả mô hình lẫn luật đều như vậy.
 
 Nguyên nhân gốc nằm ở **cách định nghĩa nhãn**: "nhu cầu cao" là *tương đối trong từng org*. Một hồ sơ nhu cầu cao ở A (đô thị, ít thiên tai) có đặc điểm nhẹ hơn hồ sơ nhu cầu cao ở B hay C, nên khi xếp chung thì luôn bị đẩy xuống. Vùng Z1 (45% hồ sơ là của A) chịu hệ quả tương tự.
 
-**Đối chiếu cách xếp hàng.** `queue_policy_metrics.csv` giữ nguyên hồ sơ, nhãn, điểm ngoài mẫu và tổng số suất của từng fold. Phương án theo org phân bổ suất theo tỷ trọng hồ sơ rồi xếp lại trong từng org với cùng quy tắc hòa điểm. So `global_recall` với `within_org_recall` cho cùng seed, fold, org và scorer. Kết quả LOFO bên dưới còn thay đổi tập huấn luyện, nên mức recall khoảng 0,50 của A không được dùng để quy riêng tác động cho cách xếp hàng.
+**Đề xuất (chưa áp dụng, đã chọn giữ giao thức):** ML-4 và bản chính thức nên xếp hạng **trong từng tổ chức**, hoặc đặt hạn mức xem trước theo tổ chức. Khi xếp trong từng org (xem LOFO bên dưới), recall top 15% của A tăng lên khoảng 0,50.
 
 ## Leave-one-org-out (train 2 org, test org còn lại, top 15% trong org test, 5 seed)
 

@@ -124,7 +124,6 @@ Luật là bảng điểm nguyên viết tay, tối đa 12 điểm. Luật chỉ
 | 7 | Mô hình | `SimpleImputer(median)` → `StandardScaler` → `LogisticRegression(C=1.0, max_iter=1000)`; không dò tham số, không `class_weight`; fit trên phần train của từng fold |
 | 8 | Theo nhóm | Cờ top 15% lấy từ xếp hạng chung của fold rồi mới đo theo `org_profile`/`zone`; nhóm dưới 100 hồ sơ hoặc dưới 20 ca dương trong fold ghi "quá ít mẫu" |
 | 9 | Leave-one-org-out | Train 2 org, test org còn lại; 5 seed × 3 org; top 15% lấy trong org test |
-| 10 | Đối chiếu hàng chờ | Giữ nguyên điểm CV đã tính ngoài mẫu. So hàng chờ chung với suất phân theo tỷ trọng số hồ sơ từng org. Cấp số suất nguyên theo phần dư lớn nhất, hòa theo mã org, để tổng suất bằng nhau trong mỗi fold. Báo cáo riêng tỷ lệ hồ sơ trong org được chọn và tỷ trọng trên tổng số suất |
 
 **Mốc của luật cơ sở**, đo trong ML-1 ngày 14/11. Seed 42 đã chạy trên cả Linux và Windows, kết quả trùng nhau; seed 1–5 đo trên Linux:
 
