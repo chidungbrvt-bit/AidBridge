@@ -47,6 +47,12 @@ public interface ContributionRepository extends JpaRepository<Contribution, UUID
     /** G02 page; callers sort by pledgedAt DESC, id (matches idx_contributions_donor_pledged). */
     Page<Contribution> findByDonorUserId(UUID donorUserId, Pageable pageable);
 
+    boolean existsByCampaign_IdAndOrganizationIdAndDonorUserId(
+            UUID campaignId,
+            UUID organizationId,
+            UUID donorUserId
+    );
+
     interface PledgeChainRef {
         UUID getContributionId();
         UUID getAuditEventId();

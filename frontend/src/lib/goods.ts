@@ -1,4 +1,4 @@
-import type { CampaignAuditUrl, ReceiptRequest } from "../../../docs/fixtures/f02/goods-flow.types";
+import type { PublicCaseAuditUrl, ReceiptRequest } from "../../../docs/fixtures/f02/goods-flow.types";
 import type { CaseDetailResponse } from "./types";
 
 export type { ReceiptRequest };
@@ -33,6 +33,12 @@ export type StaffCaseDetail = CaseDetailResponse & { campaignId?: string | null;
 
 type DeliveryItem = { campaignItemId: string; quantity: number };
 
+export type ConfirmationRequest = {
+  decision: "CONFIRMED" | "REQUIRES_REVIEW";
+  reviewedEvidenceVersionIds: string[];
+  reason?: string;
+};
+
 export type DeliveryRequest =
   | { outcome: "DELIVERED"; items: DeliveryItem[]; evidenceVersionIds: string[]; handedOverAt?: string }
   | { outcome: "FAILED"; items: []; evidenceVersionIds: []; reason: string; handedOverAt?: never };
@@ -49,9 +55,4 @@ type DeliveryResult<AuditUrl> = {
 );
 
 export type DeliveryWireResponse = DeliveryResult<string | null>;
-// The API client maps legacy D01 audit URLs to null.
-export type DeliveryResponse = DeliveryResult<CampaignAuditUrl | null>;
-
-export function isCampaignAuditUrl(url: unknown): url is CampaignAuditUrl {
-  return typeof url === "string" && /^\/api\/campaigns\/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\/audit-trail$/i.test(url);
-}
+export type DeliveryResponse = DeliveryResult<PublicCaseAuditUrl | null>;

@@ -59,9 +59,15 @@ abstract class AbstractAuditTrailHttpIT extends AbstractCampaignHttpIT {
                 .substring(0, 32).getBytes(java.nio.charset.StandardCharsets.US_ASCII));
     }
 
+    /** Same opaque public id as AuditTrailService (T02): never the internal audit UUID. */
+    static String publicAuditId(Object eventId) {
+        return "audit_" + com.aidbridge.shared.util.Hashing.sha256(
+                ("public-audit:" + eventId).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
     static JsonNode item(JsonNode page, UUID eventId) {
         for (JsonNode item : page.path("items")) {
-            if ((item.path("eventId").asText().equals(eventId.toString()) || item.path("eventId").asText().equals("audit_"+com.aidbridge.shared.util.Hashing.sha256("public-audit:"+eventId)))) return item;
+            if ((item.path("eventId").asText().equals(eventId.toString()) || item.path("eventId").asText().equals(publicAuditId(eventId)))) return item;
         }
         throw new AssertionError("Event not in trail: " + eventId);
     }
