@@ -223,4 +223,98 @@ public class CampaignService {
             return new ItemSpec(n.getId(), n.getItemName(), n.getUnit(), n.getRequestedQuantity());
         }
     }
+
+    @Transactional
+    public Result<CampaignResponse> close(
+            Authentication authentication,
+            UUID campaignId,
+            String key
+    ) {
+        var memberships = organizations.currentMemberships(authentication);
+        var target = campaigns.findCloseTarget(campaignId, staffOrgIds(memberships))
+                .orElseThrow(BusinessException::missing);
+
+        UUID organizationId = target.getOrganizationId();
+
+        AidCase aidCase = cases.lockScoped(target.getCaseId(), List.of(organizationId))
+                .orElseThrow(BusinessException::missing);
+
+        Campaign campaign = campaigns.lockScoped(campaignId, List.of(organizationId))
+                .orElseThrow(BusinessException::missing);
+
+        var member = requireOrgAdmin(
+                organizations.currentMemberships(authentication),
+                organizationId
+        );
+        UUID actorId = member.getUser().getId();
+
+        return idempotency.execute(
+                actorId,
+                organizationId,
+                "POST:/api/campaigns/" + campaignId + "/close",
+                key,
+                Map.of(),
+                CampaignResponse.class,
+                () -> closeNew(aidCase, campaign, organizationId, actorId)
+        );
+    }
+
+    private Result<CampaignResponse> closeNew(
+            AidCase aidCase,
+            Campaign campaign,
+            UUID organizationId,
+            UUID actorId
+    ) {
+        UUID caseId = aidCase.getId();
+        UUID campaignId = campaign.getId();
+
+        if (campaigns.hasActiveDispute(caseId)) {
+            throw BusinessException.disputeOpen();
+        }
+
+        if (aidCase.getStatus() != AidCase.Status.IN_PROGRESS
+                || campaign.getStatus() != Campaign.Status.FULFILLED) {
+            throw BusinessException.state();
+        }
+
+        List<CampaignItem> items = campaignItems
+                .findByCampaign_IdAndOrganizationIdOrderByCreatedAtAscIdAsc(
+                        campaignId, organizationId
+                );
+
+        if (items.isEmpty()) {
+            throw BusinessException.state();
+        }
+
+        List<UUID> itemIds = items.stream().map(CampaignItem::getId).toList();
+        if (campaignItems.lockByIds(campaignId, itemIds).size() != itemIds.size()) {
+            throw BusinessException.state();
+        }
+
+        var progress = progressTotals(items);
+        for (CampaignItem item : items) {
+            var totals = progress.get(item.getId());
+
+            if (totals == null
+                    || totals.getConfirmedQty() < item.getTargetQuantity()
+                    || totals.getDeliveredQty() != totals.getConfirmedQty()) {
+                throw BusinessException.state();
+            }
+        }
+
+        Instant completedAt = Instant.now();
+        campaign.close(completedAt);
+        aidCase.markCompleted();
+
+        audit.append(
+                organizationId,
+                caseId,
+                actorId,
+                caseId,
+                "CASE_COMPLETED",
+                Map.of("campaignId", campaignId, "completedAt", completedAt)
+        );
+
+        return new Result<>(mapper.toResponse(campaign, items, progress), 200, null, false);
+    }
 }

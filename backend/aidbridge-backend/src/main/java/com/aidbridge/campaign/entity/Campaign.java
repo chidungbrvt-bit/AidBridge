@@ -112,6 +112,50 @@ public class Campaign {
         this.publishedAt = Objects.requireNonNull(now);
     }
 
+    public void markFulfilled() {
+        if (status == Status.FULFILLED) {
+            return;
+        }
+
+        if (status != Status.PUBLISHED) {
+            throw new IllegalStateException(
+                    "Only a published campaign can become fulfilled."
+            );
+        }
+
+        this.status = Status.FULFILLED;
+    }
+
+    public void reopenForDispute() {
+        if (status != Status.CLOSED) {
+            throw new IllegalStateException(
+                    "Only a closed campaign can be reopened."
+            );
+        }
+
+        this.status = Status.FULFILLED;
+        this.closedAt = null;
+    }
+
+    public void markPublishedAfterVoid() {
+        if (status != Status.FULFILLED) {
+            throw new IllegalStateException(
+                    "Only a fulfilled campaign can return to published after a void."
+            );
+        }
+
+        this.status = Status.PUBLISHED;
+    }
+
+    public void close(Instant now) {
+        if (status != Status.FULFILLED) {
+            throw new IllegalStateException("Only a fulfilled campaign can be closed.");
+        }
+
+        this.closedAt = Objects.requireNonNull(now, "now is required");
+        this.status = Status.CLOSED;
+    }
+
     public enum Status {
         DRAFT,
         PUBLISHED,

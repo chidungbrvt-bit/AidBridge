@@ -1,7 +1,10 @@
 package com.aidbridge.delivery.controller;
 
+import com.aidbridge.delivery.dto.request.ConfirmationRequest;
 import com.aidbridge.delivery.dto.request.DeliveryRequest;
+import com.aidbridge.delivery.dto.response.ConfirmationResponse;
 import com.aidbridge.delivery.dto.response.DeliveryResponse;
+import com.aidbridge.delivery.service.ConfirmationService;
 import com.aidbridge.delivery.service.DeliveryService;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class DeliveryController {
     private final DeliveryService deliveries;
+    private final ConfirmationService confirmations;
 
     @PostMapping("/api/cases/{id}/deliveries")
     public ResponseEntity<DeliveryResponse> record(
@@ -36,6 +40,33 @@ public class DeliveryController {
         if (result.replayed()) {
             response.header("Idempotent-Replayed", "true");
         }
+        return response.body(result.body());
+    }
+
+    @PostMapping("/api/deliveries/{id}/confirm")
+    public ResponseEntity<ConfirmationResponse> confirm(
+            Authentication authentication,
+            @PathVariable("id") UUID deliveryId,
+            @RequestHeader(
+                    value = "Idempotency-Key",
+                    required = false
+            ) String key,
+            @Valid @RequestBody ConfirmationRequest request
+    ) {
+        var result = confirmations.confirm(
+                authentication,
+                deliveryId,
+                key,
+                request
+        );
+
+        var response = ResponseEntity.status(result.status())
+                .cacheControl(CacheControl.noStore());
+
+        if (result.replayed()) {
+            response.header("Idempotent-Replayed", "true");
+        }
+
         return response.body(result.body());
     }
 }

@@ -111,6 +111,20 @@ Luật là bảng điểm nguyên viết tay, tối đa 12 điểm. Luật chỉ
 - Chỉ số theo từng `zone` và từng `org_profile`.
 - Tiền xử lý (điền thiếu, chuẩn hóa) phải được fit **trong từng fold**.
 
+**Giao thức đo ML-2 (chốt 15/11 trước khi xem kết quả; chờ Minh duyệt).** Hằng số nằm trong `aidbridge_ml/evaluate.py`.
+
+| # | Quyết định | Giá trị |
+|---|---|---|
+| 1 | Dữ liệu | Seed 1–5, n = 10.000, `generator-v2`, schema `1`, `rules-v1`. Seed 42 chỉ dùng cho smoke test |
+| 2 | Chia fold | `StratifiedKFold(5, shuffle=True, random_state=seed)`; mô hình và luật dùng cùng fold |
+| 3 | PR-AUC | `average_precision_score` (tổng bậc thang, không nội suy hình thang) |
+| 4 | Top 15% | k = ceil(0,15 × số hồ sơ test của fold); xếp điểm giảm dần, hòa thì `waiting_days` giảm dần, rồi `case_id` tăng dần |
+| 5 | Ngưỡng cố định | Luật: điểm ≥ 6. Mô hình: xác suất ≥ 0,5 |
+| 6 | Brier | Chỉ cho mô hình; mốc tham chiếu = dự đoán hằng số bằng tỷ lệ dương của tập train |
+| 7 | Mô hình | `SimpleImputer(median)` → `StandardScaler` → `LogisticRegression(C=1.0, max_iter=1000)`; không dò tham số, không `class_weight`; fit trên phần train của từng fold |
+| 8 | Theo nhóm | Cờ top 15% lấy từ xếp hạng chung của fold rồi mới đo theo `org_profile`/`zone`; nhóm dưới 100 hồ sơ hoặc dưới 20 ca dương trong fold ghi "quá ít mẫu" |
+| 9 | Leave-one-org-out | Train 2 org, test org còn lại; 5 seed × 3 org; top 15% lấy trong org test |
+
 **Mốc của luật cơ sở**, đo trong ML-1 ngày 14/11. Seed 42 đã chạy trên cả Linux và Windows, kết quả trùng nhau; seed 1–5 đo trên Linux:
 
 | | ROC-AUC | PR-AUC |

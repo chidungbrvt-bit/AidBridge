@@ -42,11 +42,21 @@ Lệnh ghi ra 4 file trong `data/`:
 
 Seed 42 phải cho `cases.csv` có SHA-256 bắt đầu bằng `6b23e569`. Kiểm bằng `Get-FileHash data\cases.csv -Algorithm SHA256`.
 
-**3. Chạy test** (khoảng 30 giây, 82 test):
+**3. Chạy test** (khoảng 30 giây, 88 test):
 
 ```powershell
 python -m pytest -q
 ```
+
+## Đánh giá mô hình (ML-2)
+
+So sánh Logistic Regression với luật cơ sở theo giao thức 5 seed × 5 fold (khoảng 5–8 giây):
+
+```powershell
+$env:PYTHONPATH = "src"; python -m aidbridge_ml.evaluate --seeds 1 2 3 4 5 --n 10000 --folds 5 --out data\eval
+```
+
+`data\eval\fold_metrics.csv` phải có SHA-256 bắt đầu bằng `be8286ef`. Kết quả và cách đọc xem [docs/ML2_RESULTS.md](docs/ML2_RESULTS.md).
 
 ## Tham số `generate`
 
@@ -65,6 +75,7 @@ python -m pytest -q
 | `src/aidbridge_ml/rules.py` | Luật cơ sở `rules-v1`: điểm nguyên 0–12, xếp hạng tất định |
 | `src/aidbridge_ml/generator.py` | Bộ sinh dữ liệu `generator-v2` |
 | `src/aidbridge_ml/generate.py` | CLI: sinh, kiểm tra, ghi CSV và manifest |
-| `tests/` | Test cho luật, schema, bộ sinh, cộng một smoke test CLI |
+| `src/aidbridge_ml/evaluate.py` | ML-2: pipeline LR, CV theo seed và fold, so theo cặp với luật, theo nhóm, leave-one-org-out, ca sai |
+| `tests/` | Test cho luật, schema, bộ sinh, đánh giá, cộng smoke test cho hai CLI |
 
-Chưa có: huấn luyện mô hình (ML-2), trang hiển thị (ML-4).
+Chưa có: trang hiển thị (ML-4).
