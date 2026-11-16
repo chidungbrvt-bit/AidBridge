@@ -384,6 +384,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### C06 - Full milestone contract
 
+- **Interim16/11:** Khoa review C06/D55 đã có ở C06_PART2_D55_REVIEW.md; các ghi chú “chờ Khoa review/Not Run review” trong evidence11–12/11 bên dưới là lịch sử. Compile/artifact consistency16/11 PASS offline, không thay kết quả runtime Java/VOID hoặc trạng thái chưa redeploy/cutover.
+
 - **Khoa Task8 16/11 — preparation DONE WITH GATES:** compile/full C06 artifact consistency + unsigned constructor encoding PASS offline; khớp hash C10 sau rebuild artifact stale. Chưa deploy/cutover, chưa chạy worker/E2E. Cần Task6/7, runner C06 riêng, freeze/approval và queue reconciliation; không đổi trạng thái runtime. [Runbook](../reviews/C06_REDEPLOY_PREPARATION_2026_11_16.md).
 
 - **Feature / priority:** P0-04/P0-05/P0-06 / P0.
@@ -463,6 +465,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
 
 ### C10 - Goods-to-chain integration
+
+- **Interim Khoa16/11 — trạng thái hiện hành:** design/review đã thực hiện; Task3 PASS WITH NOTES; Task4 NEEDS FIX F1/F2 (bổ sung reduction và fixtures nhiều commitments/receipts), Dũng xử lý trong Task7. Worker/verifier đa operation, Java parity/DB retry/Hardhat full-chain và Fuji goods chưa có bằng chứng; không đánh C10 Done hoặc runtime PASS. Dòng Not Started baseline bên dưới là lịch sử, không phủ nhận phần design/review đã làm. Artifact C06 consistency đã PASS offline sau Task8; freeze/approval/runner/cutover vẫn pending. [Interim review](../reviews/KHOA_INTERIM_REVIEW_2026_11_16.md).
 
 - **Feature / priority:** P0-05/P0-06 / P0.
 - **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Khoa (C) / Dũng hỗ trợ Java/DB/REST; Minh hỗ trợ UI/TypeScript tests khi có capacity / Dũng kiểm tra SQL/Java/permissions; Minh kiểm tra thông điệp và trạng thái UI.
