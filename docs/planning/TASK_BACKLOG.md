@@ -186,6 +186,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### B06 - Multi-item campaign draft/publish
 
+- **Khoa Task5 16/11:** source/schema xác nhận case có 0..1 campaign (UNIQUE V3, JPA OneToOne, case lock + duplicate guard); không cần migration bổ sung. Đề xuất giữ A; D15 vẫn PROPOSED — PENDING APPROVAL chính thức. Không đổi status B06 hoặc ghi runtime PASS. [Bằng chứng/handoff](../reviews/ONE_CAMPAIGN_PER_CASE_REVIEW_2026_11_16.md).
+
 - **Feature / priority:** P0-04 / P0.
 - **Người chịu trách nhiệm / hỗ trợ / kiểm tra:** Dũng (B) / Khoa / Minh / Khoa kiểm tra payload/chain boundary; Minh kiểm tra API/UI.
 - **Complexity / estimate:** M / 6h.
