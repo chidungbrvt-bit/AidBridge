@@ -41,7 +41,7 @@ public class CampaignMapper {
                             pledged,
                             received,
                             delivered,
-                            0,
+                            confirmed,
                             item.getTargetQuantity() - pledged);
                 })
                 .toList();
