@@ -177,6 +177,14 @@ public class AidCase {
         this.submittedAt = Instant.now();
     }
 
+    public void markCompleted() {
+        if (status != Status.IN_PROGRESS) {
+            throw new IllegalStateException("Only a case in progress can be completed.");
+        }
+
+        this.status = Status.COMPLETED;
+    }
+
     public enum Priority {
         NORMAL,
         URGENT

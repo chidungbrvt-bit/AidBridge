@@ -35,7 +35,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | B07 | P0-04 | Dũng (B) | Khoa / Minh | L | 7 | B06 | 2026-11-13 | 2026-11-13 | In Review |
 | B08 | P0-05 | Dũng (B) | Khoa / Minh | M | 5 | B07 | 2026-11-14 | 2026-11-14 | Testing |
 | B09 | P0-05 | Dũng (B) | Khoa / Minh | L | 5 | B08 | 2026-11-15 | 2026-11-15 | In Review |
-| B10 | P0-05 | Dũng (B) | Khoa / Minh | L | 6 | B09 | 2026-11-18 | 2026-11-17 | Not Started |
+| B10 | P0-05 | Dũng (B) | Khoa / Minh | L | 6 | B09 | 2026-11-18 | 2026-11-17 | In Review |
 | B11 | Quality | Dũng (B) | Khoa / Minh | L | 6 | B03, B04, B05, B06, B07, B08, B09, B10 | 2026-11-20 | 2026-11-20 | Not Started |
 | B12 | Submission | Dũng (B) | Khoa / Minh | M | 3 | B11 | 2026-11-22 | 2026-11-21 | Not Started |
 | C01 | Design | Khoa (C) | Dũng / Minh | L | 4 | B01 | 2026-11-04 | 2026-11-04 | In Review |
@@ -265,13 +265,14 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Dependencies:** B09; mock prework allowed, integrated acceptance waits.
 - **Schedule:** allocated 2026-11-15 through 2026-11-17; deadline 2026-11-18, Asia/Bangkok.
 - **Description / expected behavior:** Confirm/dispute/resolve/close; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
-- **Expected output files (future, not created):** backend delivery confirmation/dispute services; campaign close; migrations; DisputeIT.
+- **Output hiện tại:** D02, S01/S02/S03 và P05; C03 trả totals, delivery snapshot và disputes; P03/P04 trả confirmed totals. V17 giữ lịch sử xác nhận và V18 lưu void riêng. Các test HTTP/PostgreSQL gồm `DeliveryConfirmationIT`, `StaffCaseReviewIT`, `DisputeOpenIT`, `DonorDisputeIT`, `DisputeResolveIT` và `CampaignCloseIT`.
 - **Acceptance criteria:** Separate DC; self403; dispute blocks/reopens close; all item targets confirmed; void preserves old rows; PA cannot auto-confirm.
 - **Required tests:** BR06-P/N, BR07-P/N; IT06, IT07, IT12; concurrent flag+close.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
 - **Phối hợp cụ thể:** Dũng giữ self-confirm/dispute/close guards; Khoa kiểm tra confirmation/dispute event và chain order; hai bạn kiểm tra void/replacement không xóa lịch sử.
 - **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence (15/11/2026):** In Review. Dũng báo toàn bộ bộ 38 test pass sau khi bổ sung IT12 (void → delivery mới → xác nhận độc lập). Báo cáo Maven hiện có trong workspace là lượt khác, ghi 38 skipped vì thiếu biến kết nối PostgreSQL test. Cần đính kèm summary của lượt pass để đối chiếu. Actual effort và ngày hoàn thành chưa ghi nhận.
+- **Bàn giao review:** Minh nối F09 với D02/S01/S03/P05, refresh C03/P04 và kiểm tra quyền, lỗi, replay trên UI. Khoa kiểm tra `DELIVERY_CONFIRMED` outbox, `deliveryRef`, thứ tự `chain_sequence` theo D53 và trạng thái chain theo D57. Workspace hiện chưa có worker xác nhận cho event này hoặc bằng chứng Fuji của B10. Xem [contract triển khai B10](../architecture/API_SPECIFICATION.md#b10-confirmation-dispute-and-close-implementation-15112026).
 
 ### B11 - Backend cross-feature regression
 
@@ -472,7 +473,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
 - **Phối hợp cụ thể:** Dũng cung cấp approved immutable goods/delivery/confirmation/dispute snapshots từ B08–B10; Khoa map contract functions/events/refs/sequence; cả hai kiểm tra retry không tăng số lượng.
 - **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
-- **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
+- **Status / evidence (15/11/2026):** In Progress. Dũng đã chuẩn bị thiết kế Task 9, fixture 2 mặt hàng với sequence 1–4 và ma trận test để Khoa review. Đối chiếu build input/output và ABI C06 bằng Node, encode/decode offline 4/4 mốc bằng ethers. **Not Run:** Java parity/verifier C10, PostgreSQL ordering/retry, Hardhat C06 end-to-end và Fuji. Dũng triển khai worker/verifier và chạy local ngày 16/11 theo D57. Khoa xác nhận ABI/redeploy và chuẩn bị proof độc lập. Cổng 17/11 chờ local pass và Dũng duyệt. Giờ làm thực tế chưa ghi nhận. [Thiết kế và bàn giao Task 9](../reviews/C10_DUNG_WORKER_DESIGN_2026_11_15.md)
 
 ### C11 - Contract/failure regression
 
@@ -749,6 +750,7 @@ Status / evidence: tất cả Not Started; chưa có code, giờ thực tế hay
 | B06 (P01–P04 implementation & tests) | 11/11/2026 | In Review | Estimate gốc 6h (deadline gốc 10/11/2026); actual human effort chưa được cung cấp | V10 reconcile + `Campaign`/`CampaignItem` + `CampaignService`/`CampaignController`; sửa 2 lỗi do test phát hiện (off-by-one reviewed version, so sánh item phụ thuộc thứ tự); Dũng xác nhận `CampaignApiIT` 15/15 và `CampaignRequestValidationTest` 4/4 pass trên `aidbridge_test` | Khoa/Minh cross-owner review; bàn giao P01–P04 cho F06; chốt D50; B07 sẵn sàng khi được phê duyệt |
 | B07 (G01–G03 implementation & tests, T1–T5) | 12/11/2026 | In Review | Estimate gốc 7h (deadline 13/11/2026); actual human effort chưa được cung cấp | V11/V12 + package `contribution` + outbox AID_PLEDGED/COMMITMENT_REDUCED + số liệu pledge công khai; 37 IT + 9 unit B07 và hồi quy toàn bộ được Dũng xác nhận pass trên `aidbridge_test`; sửa lỗi làm tròn `pledgedAt` | Khoa review D53 + worker lọc `event_type`; Minh nối F07 với G01–G03; B08 sẵn sàng khi được phê duyệt |
 | B09 (D01 DELIVERED + FAILED, tests) | 14/11/2026 | In Review | Estimate gốc 5h (deadline 15/11/2026); actual human effort chưa được cung cấp | DeliveryService DELIVERED (khóa, tồn, evidence snapshot, DELIVERY_RECORDED + job D53), P04 deliveredQty; DeliveryApiIT 7/7, DeliveryConcurrencyIT ×3, hồi quy 66 pass theo xác nhận của Dũng | Khoa xác nhận deliveryRef (D56) cho C10; Minh nối F09; B10 loại delivery đã void khỏi tồn kho |
+| B10 (D02, S01–S03, P05 và projection) | 15/11/2026 | In Review | Estimate gốc 6h; actual human effort chưa được cung cấp | Dũng báo 38 test B10 pass, gồm IT12 và concurrent flag+close; báo cáo Maven hiện có ghi 38 skipped | Đính kèm summary lượt pass; Minh kiểm tra F09 live; Khoa kiểm tra outbox và chain ordering cho `DELIVERY_CONFIRMED` |
 
 ### C01 review handoff - 09/11/2026
 

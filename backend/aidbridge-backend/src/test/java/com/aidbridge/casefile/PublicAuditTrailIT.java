@@ -161,7 +161,7 @@ class PublicAuditTrailIT extends AbstractAuditTrailHttpIT {
                 """, String.class, caseId);
 
         Browser anonymous = new Browser();
-        expected = expected.stream().map(id -> "audit_"+com.aidbridge.shared.util.Hashing.sha256("public-audit:"+id)).toList();
+        expected = expected.stream().map(id -> publicAuditId(id)).toList();
         List<String> seen = new ArrayList<>();
         for (int page = 0; ; page++) {
             var response = anonymous.send("GET",
@@ -189,8 +189,8 @@ class PublicAuditTrailIT extends AbstractAuditTrailHttpIT {
         var response=new Browser().send("GET",publicPath(campaign)+"?size=100",null,null,false);
         status(response,200);
         String body=response.body();
-        String p="audit_"+com.aidbridge.shared.util.Hashing.sha256("public-audit:"+pledge);
-        String q="audit_"+com.aidbridge.shared.util.Hashing.sha256("public-audit:"+receipt);
+        String p=publicAuditId(pledge);
+        String q=publicAuditId(receipt);
         assertThat(body.indexOf(p)).isLessThan(body.indexOf(q));
         assertThat(body).doesNotContain(pledge.toString(),receipt.toString());
         problem(new Browser().send("GET","/api/public/cases/not-a-ref/audit",null,null,false),404,"RESOURCE_NOT_FOUND");

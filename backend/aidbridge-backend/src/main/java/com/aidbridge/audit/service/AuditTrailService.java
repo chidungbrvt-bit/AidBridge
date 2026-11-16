@@ -99,7 +99,8 @@ public class AuditTrailService {
     }
 
     private PublicAuditEventResponse publicItem(TrailRow row) {
-        return new PublicAuditEventResponse("audit_" + com.aidbridge.shared.util.Hashing.sha256("public-audit:" + row.getEventId()), row.getEventType(),
+        return new PublicAuditEventResponse("audit_" + com.aidbridge.shared.util.Hashing.sha256(
+                ("public-audit:" + row.getEventId()).getBytes(java.nio.charset.StandardCharsets.UTF_8)), row.getEventType(),
                 Instant.parse(row.getOccurredAtUtc()), PUBLIC_EVENT_ROLES.get(row.getEventType()),
                 row.getLogicalEventId(), row.getChainSequence(),
                 PublicBlockchainStatusResponse.from(chainStatus.resolve(chainInput(row), true)));
