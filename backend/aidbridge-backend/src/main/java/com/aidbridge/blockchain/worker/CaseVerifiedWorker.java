@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -340,13 +341,22 @@ public class CaseVerifiedWorker {
 
         CaseVerifiedReceiptVerifier.Verdict verdict = CaseVerifiedReceiptVerifier.verify(item.expected(), receipt.get(), canonical);
         if (verdict instanceof CaseVerifiedReceiptVerifier.Confirmed confirmed) {
-            String receiptJson = CanonicalJson.toCanonicalString(Map.of(
-                    "blockHash", confirmed.blockHash().toLowerCase(),
-                    "blockNumber", confirmed.blockNumber(),
-                    "blockTimestamp", confirmed.blockTimestamp(),
-                    "logIndex", confirmed.logIndex(),
-                    "status", 1,
-                    "transactionHash", item.txHash().toLowerCase()));
+            var expected = item.expected();
+            var envelope = expected.envelope();
+            String receiptJson = CanonicalJson.toCanonicalString(Map.ofEntries(
+                    Map.entry("blockHash", confirmed.blockHash().toLowerCase(Locale.ROOT)),
+                    Map.entry("blockNumber", confirmed.blockNumber()),
+                    Map.entry("blockTimestamp", confirmed.blockTimestamp()),
+                    Map.entry("logIndex", confirmed.logIndex()),
+                    Map.entry("status", 1),
+                    Map.entry("transactionHash", item.txHash().toLowerCase(Locale.ROOT)),
+                    Map.entry("contractAddress", expected.registryAddress().toLowerCase(Locale.ROOT)),
+                    Map.entry("eventId", Numeric.toHexString(envelope.eventId())),
+                    Map.entry("chainSequence", envelope.chainSequence()),
+                    Map.entry("eventType", "CASE_VERIFIED"),
+                    Map.entry("schemaVersion", envelope.schemaVersion()),
+                    Map.entry("orgRef", Numeric.toHexString(envelope.orgRef())),
+                    Map.entry("caseRef", Numeric.toHexString(envelope.caseRef()))));
             tx.executeWithoutResult(status -> {
                 guard.assertHeld();
                 attempts.findById(item.attemptId()).orElseThrow()

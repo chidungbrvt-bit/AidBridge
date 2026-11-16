@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -191,15 +192,53 @@ class CaseVerifiedWorkerIT extends AbstractCaseHttpIT {
         worker.pollSubmitted();
 
         var row = jdbc.queryForMap("""
-                SELECT j.status, j.last_error, j.lease_until, t.status AS tx_status, t.block_number, t.receipt_status,
-                       t.confirmed_at, t.receipt_private::text AS receipt
-                FROM blockchain_jobs j JOIN blockchain_transactions t ON t.blockchain_job_id = j.id WHERE j.id = ?
+                SELECT j.status, j.last_error, j.lease_until, t.status AS tx_status,
+                       t.block_number, t.receipt_status, t.confirmed_at,
+                       CAST(t.receipt_private AS text) AS receipt,
+                       j.logical_event_id, j.audit_event_id, j.aid_case_id AS case_id,
+                       o.public_ref AS org_ref, c.public_ref AS case_ref
+                FROM blockchain_jobs j
+                JOIN blockchain_transactions t ON t.blockchain_job_id = j.id
+                JOIN aid_cases c ON c.id = j.aid_case_id
+                JOIN organizations o ON o.id = c.organization_id
+                WHERE j.id = ?
                 """, jobId);
         assertThat(row).containsEntry("status", "CONFIRMED").containsEntry("tx_status", "CONFIRMED")
                 .containsEntry("block_number", 100L).containsEntry("last_error", null).containsEntry("lease_until", null);
         assertThat(((Number) row.get("receipt_status")).intValue()).isEqualTo(1);
         assertThat(row.get("confirmed_at")).isNotNull();
-        assertThat((String) row.get("receipt")).contains("\"blockNumber\": 100").contains("\"status\": 1");
+
+        var receipt = json.readTree((String) row.get("receipt"));
+        assertThat(receipt.path("blockNumber").asLong()).isEqualTo(100L);
+        assertThat(receipt.path("status").asInt()).isEqualTo(1);
+        assertThat(receipt.path("contractAddress").asText())
+                .as("receipt_private.contractAddress").isEqualTo(REGISTRY);
+        assertThat(receipt.path("eventId").asText()).as("receipt_private.eventId")
+                .isEqualTo(Numeric.toHexString((byte[]) row.get("logical_event_id")));
+        assertThat(receipt.path("chainSequence").isIntegralNumber())
+                .as("receipt_private.chainSequence is an integer").isTrue();
+        assertThat(receipt.path("chainSequence").asLong())
+                .as("receipt_private.chainSequence").isEqualTo(1L);
+        assertThat(receipt.path("eventType").asText())
+                .as("receipt_private.eventType").isEqualTo("CASE_VERIFIED");
+        assertThat(receipt.path("schemaVersion").isIntegralNumber())
+                .as("receipt_private.schemaVersion is an integer").isTrue();
+        assertThat(receipt.path("schemaVersion").asInt())
+                .as("receipt_private.schemaVersion").isEqualTo(1);
+        assertThat(receipt.path("orgRef").asText()).as("receipt_private.orgRef")
+                .isEqualTo(Numeric.toHexString((byte[]) row.get("org_ref")));
+        assertThat(receipt.path("caseRef").asText()).as("receipt_private.caseRef")
+                .isEqualTo(Numeric.toHexString((byte[]) row.get("case_ref")));
+
+        var trail = volunteer.browser().send(
+                "GET", "/api/cases/" + row.get("case_id") + "/audit-trail", null, null, false);
+        status(trail, 200);
+        var event = StreamSupport.stream(node(trail).path("items").spliterator(), false)
+                .filter(item -> row.get("audit_event_id").toString().equals(item.path("eventId").asText()))
+                .findFirst()
+                .orElseThrow();
+        assertThat(event.path("logicalEventId").asText()).isEqualTo(receipt.path("eventId").asText());
+        assertThat(event.path("blockchain").path("status").asText()).isEqualTo("CONFIRMED_ON_CHAIN");
     }
 
     @Test
