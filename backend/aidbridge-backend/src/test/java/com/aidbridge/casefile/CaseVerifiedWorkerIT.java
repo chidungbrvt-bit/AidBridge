@@ -17,8 +17,10 @@ import com.aidbridge.blockchain.worker.CaseVerifiedManifestBuilder;
 import com.aidbridge.blockchain.worker.CaseVerifiedWorker;
 import com.aidbridge.blockchain.worker.SignerSessionLock;
 import com.aidbridge.verification.service.VerificationOutboxService;
+import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +34,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.web3j.crypto.Hash;
 import org.web3j.crypto.SignedRawTransaction;
 import org.web3j.crypto.TransactionDecoder;
 import org.web3j.utils.Numeric;
@@ -44,7 +47,7 @@ import org.web3j.utils.Numeric;
 @EnabledIfEnvironmentVariable(named = "AIDBRIDGE_TEST_DATABASE_URL", matches = ".+")
 @EnabledIfEnvironmentVariable(named = "AIDBRIDGE_TEST_DATABASE_USERNAME", matches = ".+")
 @EnabledIfEnvironmentVariable(named = "AIDBRIDGE_TEST_DATABASE_PASSWORD", matches = ".+")
-class CaseVerifiedWorkerIT extends AbstractCaseHttpIT {
+class CaseVerifiedWorkerIT extends AbstractCampaignHttpIT {
 
     // Public Hardhat development account #0 (documented test key, never funded on a real network).
     private static final String HARDHAT_KEY_0 = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
@@ -613,6 +616,366 @@ class CaseVerifiedWorkerIT extends AbstractCaseHttpIT {
         jdbc.update("UPDATE blockchain_jobs SET chain_sequence = 2 WHERE id = ?", jobId);
         assertThat(worker.processNextJob().orElseThrow().reasonCode()).isEqualTo("INVALID_CASE_VERIFICATION_SEQUENCE");
         assertThat(node.broadcasts).isEmpty();
+    }
+
+    @Test
+    void predecessorRequiresConfirmedAttemptOnTheSameDeployment() throws Exception {
+        UUID predecessorId = newLocalCaseVerifiedJob();
+        UUID caseId = jdbc.queryForObject(
+                "SELECT aid_case_id FROM blockchain_jobs WHERE id = ?", UUID.class, predecessorId);
+
+        assertThat(jobs.findPredecessorState(caseId, 3L, 31337L, REGISTRY))
+                .isEqualTo("PREDECESSOR_MISSING");
+        assertThat(jobs.findPredecessorState(caseId, 2L, 31337L, REGISTRY))
+                .isEqualTo("PREDECESSOR_NOT_CONFIRMED");
+
+        jdbc.update("UPDATE blockchain_jobs SET status = 'FAILED' WHERE id = ?", predecessorId);
+        assertThat(jobs.findPredecessorState(caseId, 2L, 31337L, REGISTRY))
+                .isEqualTo("PREDECESSOR_FAILED");
+        jdbc.update("UPDATE blockchain_jobs SET status = 'PENDING' WHERE id = ?", predecessorId);
+
+        assertThat(worker.processNextJob().orElseThrow().outcome())
+                .isEqualTo(CaseVerifiedWorker.Outcome.SUBMITTED);
+        assertThat(jobs.findPredecessorState(caseId, 2L, 31337L, REGISTRY))
+                .isEqualTo("PREDECESSOR_NOT_CONFIRMED");
+
+        node.mine(node.broadcasts.get(0), REGISTRY, 100, null);
+        assertThat(worker.pollSubmitted()).containsExactly(
+                new CaseVerifiedWorker.PollResult(
+                        predecessorId, CaseVerifiedWorker.PollOutcome.CONFIRMED, null));
+
+        assertThat(jobs.findPredecessorState(caseId, 2L, 31337L, REGISTRY))
+                .isEqualTo("READY");
+        assertThat(jobs.findPredecessorState(caseId, 2L, 31337L, "0x" + "22".repeat(20)))
+                .isEqualTo("PREDECESSOR_DEPLOYMENT_MISMATCH");
+        assertThat(jobs.findPredecessorState(caseId, 2L, 43113L, REGISTRY))
+                .isEqualTo("PREDECESSOR_DEPLOYMENT_MISMATCH");
+    }
+
+    @Test
+    void localPledgeWaitsForVerifiedPredecessorThenConfirmsUsingOriginalRefs() throws Exception {
+        UUID campaignId = publishedCampaign(actor(ORG_A, "ORG_ADMIN", false));
+        List<UUID> itemIds = campaignItemIds(campaignId);
+        var body = Map.of("items", List.of(
+                Map.of("campaignItemId", itemIds.get(0), "quantity", 2),
+                Map.of("campaignItemId", itemIds.get(1), "quantity", 1)));
+        var response = donor(true).browser().send(
+                "POST", "/api/campaigns/" + campaignId + "/commitments", body, newKey(), true);
+        status(response, 201);
+        UUID contributionId = UUID.fromString(node(response).path("id").asText());
+        UUID pledgeAuditId = UUID.fromString(node(response).path("auditEventId").asText());
+        UUID pledgeJobId = jdbc.queryForObject("SELECT id FROM blockchain_jobs WHERE audit_event_id = ?",
+                UUID.class, pledgeAuditId);
+        UUID caseId = jdbc.queryForObject("SELECT aid_case_id FROM blockchain_jobs WHERE id = ?",
+                UUID.class, pledgeJobId);
+        UUID verifiedJobId = jdbc.queryForObject("""
+                SELECT id FROM blockchain_jobs WHERE aid_case_id = ? AND chain_sequence = 1
+                """, UUID.class, caseId);
+        assertThat(jdbc.update("UPDATE blockchain_jobs SET chain_id = 31337 WHERE id IN (?, ?)",
+                verifiedJobId, pledgeJobId)).isEqualTo(2);
+        jdbc.update("UPDATE blockchain_jobs SET next_retry_at = now() + interval '1 hour' WHERE id = ?",
+                verifiedJobId);
+
+        node.beforeSign = () -> { throw new AssertionError("Pledge signed before its predecessor confirmed"); };
+        assertThat(worker.processNextJob().orElseThrow()).isEqualTo(new CaseVerifiedWorker.Result(
+                pledgeJobId, CaseVerifiedWorker.Outcome.RETRY_SCHEDULED, "PREDECESSOR_NOT_CONFIRMED"));
+        assertThat(jdbc.queryForMap("SELECT status, manifest_private FROM blockchain_jobs WHERE id = ?", pledgeJobId))
+                .containsEntry("status", "PENDING").containsEntry("manifest_private", null);
+        assertThat(count("blockchain_transactions", "blockchain_job_id", pledgeJobId)).isZero();
+        assertThat(node.broadcasts).isEmpty();
+        node.beforeSign = () -> { };
+
+        jdbc.update("UPDATE blockchain_jobs SET next_retry_at = NULL WHERE id = ?", verifiedJobId);
+        assertThat(worker.processNextJob().orElseThrow().jobId()).isEqualTo(verifiedJobId);
+        node.mine(node.broadcasts.get(0), REGISTRY, 100, null);
+        assertThat(worker.pollSubmitted()).containsExactly(new CaseVerifiedWorker.PollResult(
+                verifiedJobId, CaseVerifiedWorker.PollOutcome.CONFIRMED, null));
+
+        jdbc.update("UPDATE blockchain_jobs SET next_retry_at = NULL WHERE id = ?", pledgeJobId);
+        assertThat(worker.processNextJob().orElseThrow()).isEqualTo(new CaseVerifiedWorker.Result(
+                pledgeJobId, CaseVerifiedWorker.Outcome.SUBMITTED, null));
+        mineGoodsMilestone(pledgeJobId, "89f8809e", "AidCommitted", 101, 2, 2);
+
+        assertThat(worker.pollSubmitted()).containsExactly(new CaseVerifiedWorker.PollResult(
+                pledgeJobId, CaseVerifiedWorker.PollOutcome.CONFIRMED, null));
+        var state = receiptState(pledgeJobId);
+        assertThat(state).containsEntry("job_status", "CONFIRMED").containsEntry("attempt_status", "CONFIRMED");
+        assertThat(json.readTree((String) state.get("receipt")).path("eventType").asText()).isEqualTo("AID_PLEDGED");
+        assertThat(worker.processNextJob()).isEmpty();
+        assertThat(count("blockchain_transactions", "blockchain_job_id", pledgeJobId)).isEqualTo(1);
+        assertThat(count("blockchain_jobs", "audit_event_id", pledgeAuditId)).isEqualTo(1);
+        assertThat(jdbc.queryForList("""
+                SELECT pledged_quantity FROM contribution_items WHERE contribution_id = ? ORDER BY pledged_quantity
+                """, Integer.class, contributionId)).containsExactly(1, 2);
+    }
+
+    @Test
+    void localReductionRequiresItsOriginalPledgeEvenWhenThePreviousJobIsConfirmed() throws Exception {
+        UUID campaignId = publishedCampaign(actor(ORG_A, "ORG_ADMIN", false));
+        List<UUID> campaignItems = campaignItemIds(campaignId);
+        Actor originalDonor = donor(true);
+        String pledgePath = "/api/campaigns/" + campaignId + "/commitments";
+        var originalResponse = originalDonor.browser().send("POST", pledgePath, Map.of("items", List.of(
+                Map.of("campaignItemId", campaignItems.get(0), "quantity", 2),
+                Map.of("campaignItemId", campaignItems.get(1), "quantity", 1))), newKey(), true);
+        status(originalResponse, 201);
+        var original = node(originalResponse);
+        UUID originalJobId = jobIdForAudit(UUID.fromString(original.path("auditEventId").asText()));
+        String contributionId = original.path("id").asText();
+        String lineId = jdbc.queryForObject("""
+                SELECT id FROM contribution_items WHERE contribution_id = ? AND campaign_item_id = ?
+                """, UUID.class, UUID.fromString(contributionId), campaignItems.get(0)).toString();
+
+        var secondResponse = donor(true).browser().send("POST", pledgePath, Map.of("items", List.of(
+                Map.of("campaignItemId", campaignItems.get(1), "quantity", 1))), newKey(), true);
+        status(secondResponse, 201);
+        UUID secondJobId = jobIdForAudit(UUID.fromString(node(secondResponse).path("auditEventId").asText()));
+
+        String cancelPath = "/api/commitments/" + contributionId + "/cancellations";
+        var cancelBody = Map.of("items", List.of(Map.of("contributionItemId", lineId, "quantity", 1)),
+                "reason", "Partial stock adjustment");
+        String cancelKey = newKey();
+        var cancelled = originalDonor.browser().send("POST", cancelPath, cancelBody, cancelKey, true);
+        status(cancelled, 200);
+        UUID reductionAuditId = UUID.fromString(node(cancelled).path("auditEventId").asText());
+        UUID reductionJobId = jobIdForAudit(reductionAuditId);
+        UUID caseId = jdbc.queryForObject("SELECT aid_case_id FROM blockchain_jobs WHERE id = ?",
+                UUID.class, reductionJobId);
+        assertThat(jdbc.update("UPDATE blockchain_jobs SET chain_id = 31337 WHERE aid_case_id = ?", caseId))
+                .isEqualTo(4);
+
+        UUID verifiedJobId = jdbc.queryForObject("""
+                SELECT id FROM blockchain_jobs WHERE aid_case_id = ? AND chain_sequence = 1
+                """, UUID.class, caseId);
+        assertThat(worker.processNextJob().orElseThrow().jobId()).isEqualTo(verifiedJobId);
+        node.mine(node.broadcasts.get(0), REGISTRY, 110, null);
+        assertThat(worker.pollSubmitted()).containsExactly(new CaseVerifiedWorker.PollResult(
+                verifiedJobId, CaseVerifiedWorker.PollOutcome.CONFIRMED, null));
+        assertThat(worker.processNextJob().orElseThrow().jobId()).isEqualTo(originalJobId);
+        mineGoodsMilestone(originalJobId, "89f8809e", "AidCommitted", 111, 2, 2);
+        assertThat(worker.pollSubmitted()).containsExactly(new CaseVerifiedWorker.PollResult(
+                originalJobId, CaseVerifiedWorker.PollOutcome.CONFIRMED, null));
+        assertThat(worker.processNextJob().orElseThrow().jobId()).isEqualTo(secondJobId);
+        mineGoodsMilestone(secondJobId, "89f8809e", "AidCommitted", 112, 3, 1);
+        assertThat(worker.pollSubmitted()).containsExactly(new CaseVerifiedWorker.PollResult(
+                secondJobId, CaseVerifiedWorker.PollOutcome.CONFIRMED, null));
+
+        // Model an original pledge anchored at the wrong deployment in this isolated test schema.
+        jdbc.update("UPDATE blockchain_transactions SET contract_address = ? WHERE blockchain_job_id = ?",
+                "0x" + "22".repeat(20), originalJobId);
+        node.beforeSign = () -> { throw new AssertionError("Reduction signed without its original pledge"); };
+        assertThat(worker.processNextJob().orElseThrow()).isEqualTo(new CaseVerifiedWorker.Result(
+                reductionJobId, CaseVerifiedWorker.Outcome.RETRY_SCHEDULED, "ORIGINAL_PLEDGE_NOT_CONFIRMED"));
+        assertThat(jdbc.queryForMap("SELECT status, manifest_private FROM blockchain_jobs WHERE id = ?", reductionJobId))
+                .containsEntry("status", "PENDING").containsEntry("manifest_private", null);
+        assertThat(count("blockchain_transactions", "blockchain_job_id", reductionJobId)).isZero();
+        assertThat(node.broadcasts).hasSize(3);
+        node.beforeSign = () -> { };
+
+        jdbc.update("UPDATE blockchain_transactions SET contract_address = ? WHERE blockchain_job_id = ?",
+                REGISTRY, originalJobId);
+        jdbc.update("UPDATE blockchain_jobs SET next_retry_at = NULL WHERE id = ?", reductionJobId);
+        assertThat(worker.processNextJob().orElseThrow()).isEqualTo(new CaseVerifiedWorker.Result(
+                reductionJobId, CaseVerifiedWorker.Outcome.SUBMITTED, null));
+        String reductionSelector = Hash.sha3String(
+                "recordCommitmentReduction(bytes32,bytes32,bytes32,uint64,bytes32,uint16,bytes32)").substring(2, 10);
+        mineGoodsMilestone(reductionJobId, reductionSelector, "CommitmentReduced", 113, 4, 1);
+        assertThat(worker.pollSubmitted()).containsExactly(new CaseVerifiedWorker.PollResult(
+                reductionJobId, CaseVerifiedWorker.PollOutcome.CONFIRMED, null));
+        var state = receiptState(reductionJobId);
+        assertThat(state).containsEntry("job_status", "CONFIRMED").containsEntry("attempt_status", "CONFIRMED");
+        assertThat(json.readTree((String) state.get("receipt")).path("eventType").asText())
+                .isEqualTo("COMMITMENT_REDUCED");
+        var manifest = json.readTree(jdbc.queryForObject(
+                "SELECT CAST(manifest_private AS text) FROM blockchain_jobs WHERE id = ?", String.class, reductionJobId));
+        assertThat(manifest.path("reason").asText()).isEqualTo("Partial stock adjustment");
+        assertThat(manifest.path("lines").get(0).path("contributionItemId").asText()).isEqualTo(lineId);
+        assertThat(manifest.path("lines").get(0).path("quantity").asInt()).isEqualTo(1);
+
+        var replay = originalDonor.browser().send("POST", cancelPath, cancelBody, cancelKey, true);
+        status(replay, 200);
+        assertThat(node(replay).path("auditEventId").asText()).isEqualTo(reductionAuditId.toString());
+        assertThat(worker.processNextJob()).isEmpty();
+        assertThat(count("blockchain_jobs", "audit_event_id", reductionAuditId)).isEqualTo(1);
+        assertThat(count("blockchain_transactions", "blockchain_job_id", reductionJobId)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT cancelled_quantity FROM contribution_items WHERE id = ?",
+                Integer.class, UUID.fromString(lineId))).isEqualTo(1);
+    }
+
+    private UUID jobIdForAudit(UUID auditEventId) {
+        return jdbc.queryForObject("SELECT id FROM blockchain_jobs WHERE audit_event_id = ?", UUID.class, auditEventId);
+    }
+
+    @Test
+    void localFiveMilestonesConfirmWithStoredReceiptAndDeliveryRefs() throws Exception {
+        Actor orgAdmin = actor(ORG_A, "ORG_ADMIN", false);
+        Actor donor = donor(true);
+        UUID campaignId = publishedCampaign(orgAdmin);
+        List<UUID> itemIds = campaignItemIds(campaignId);
+        var pledged = donor.browser().send("POST", "/api/campaigns/" + campaignId + "/commitments",
+                Map.of("items", List.of(Map.of("campaignItemId", itemIds.get(0), "quantity", 2),
+                        Map.of("campaignItemId", itemIds.get(1), "quantity", 2))), newKey(), true);
+        status(pledged, 201);
+        var pledge = node(pledged);
+        UUID pledgeJobId = jobIdForAudit(UUID.fromString(pledge.path("auditEventId").asText()));
+        String commitmentPath = "/api/commitments/" + pledge.path("id").asText();
+        String firstLine = pledge.path("items").get(0).path("id").asText();
+        String secondLine = pledge.path("items").get(1).path("id").asText();
+        var reduction = donor.browser().send("POST", commitmentPath + "/cancellations", Map.of(
+                "reason", "Partial stock adjustment", "items", List.of(Map.of("contributionItemId", firstLine,
+                        "quantity", 1))), newKey(), true);
+        status(reduction, 200);
+        UUID reductionJobId = jobIdForAudit(UUID.fromString(node(reduction).path("auditEventId").asText()));
+
+        var receiptRequest = Map.of("receivedAt", Instant.now().toString(), "items", List.of(
+                Map.of("contributionItemId", firstLine, "quantity", 1),
+                Map.of("contributionItemId", secondLine, "quantity", 2)));
+        String receiptKey = newKey();
+        var receiptResponse = orgAdmin.browser().send("POST", commitmentPath + "/receipts", receiptRequest,
+                receiptKey, true);
+        status(receiptResponse, 201);
+        var receipt = node(receiptResponse);
+        UUID receiptId = UUID.fromString(receipt.path("id").asText());
+        UUID receiptAuditId = UUID.fromString(receipt.path("auditEventId").asText());
+        UUID receiptJobId = jobIdForAudit(receiptAuditId);
+        UUID caseId = jdbc.queryForObject("SELECT aid_case_id FROM blockchain_jobs WHERE id = ?", UUID.class, receiptJobId);
+        List<UUID> evidenceIds = jdbc.queryForList("""
+                SELECT DISTINCT evidence_version_id FROM case_evidence_links
+                WHERE aid_case_id = ? ORDER BY evidence_version_id
+                """, UUID.class, caseId);
+        String deliveryPath = "/api/cases/" + caseId + "/deliveries";
+        var deliveryRequest = Map.of("outcome", "DELIVERED", "handedOverAt", Instant.now().toString(),
+                "items", List.of(Map.of("campaignItemId", itemIds.get(0), "quantity", 1),
+                        Map.of("campaignItemId", itemIds.get(1), "quantity", 1)), "evidenceVersionIds", evidenceIds);
+        String deliveryKey = newKey();
+        var deliveryResponse = volunteer.browser().send("POST", deliveryPath, deliveryRequest, deliveryKey, true);
+        status(deliveryResponse, 201);
+        var delivery = node(deliveryResponse);
+        assertThat(delivery.path("reviewStatus").asText()).isEqualTo("PENDING");
+        UUID deliveryId = UUID.fromString(delivery.path("id").asText());
+        UUID deliveryAuditId = UUID.fromString(delivery.path("auditEventId").asText());
+        UUID deliveryJobId = jobIdForAudit(deliveryAuditId);
+        assertThat(jdbc.update("UPDATE blockchain_jobs SET chain_id = 31337 WHERE aid_case_id = ?", caseId)).isEqualTo(5);
+
+        UUID verifiedJobId = jdbc.queryForObject("SELECT id FROM blockchain_jobs WHERE aid_case_id = ? AND chain_sequence = 1",
+                UUID.class, caseId);
+        assertThat(worker.processNextJob().orElseThrow().jobId()).isEqualTo(verifiedJobId);
+        node.mine(node.broadcasts.get(0), REGISTRY, 120, null);
+        assertConfirmed(verifiedJobId);
+
+        assertThat(worker.processNextJob().orElseThrow().jobId()).isEqualTo(pledgeJobId);
+        mineGoodsMilestone(pledgeJobId, "89f8809e", "AidCommitted", 121, 2, 2);
+        assertConfirmed(pledgeJobId);
+
+        assertThat(worker.processNextJob().orElseThrow().jobId()).isEqualTo(reductionJobId);
+        String reductionSelector = Hash.sha3String(
+                "recordCommitmentReduction(bytes32,bytes32,bytes32,uint64,bytes32,uint16,bytes32)").substring(2, 10);
+        mineGoodsMilestone(reductionJobId, reductionSelector, "CommitmentReduced", 122, 3, 1);
+        assertConfirmed(reductionJobId);
+
+        assertThat(worker.processNextJob().orElseThrow()).isEqualTo(new CaseVerifiedWorker.Result(
+                receiptJobId, CaseVerifiedWorker.Outcome.SUBMITTED, null));
+        mineGoodsMilestone(receiptJobId, "73a5f8b9", "GoodsReceived", 123, 4, 2);
+        assertConfirmed(receiptJobId);
+        var state = receiptState(receiptJobId);
+        assertThat(state).containsEntry("job_status", "CONFIRMED").containsEntry("attempt_status", "CONFIRMED");
+        assertThat(json.readTree((String) state.get("receipt")).path("eventType").asText()).isEqualTo("GOODS_RECEIVED");
+
+        assertThat(worker.processNextJob().orElseThrow()).isEqualTo(new CaseVerifiedWorker.Result(
+                deliveryJobId, CaseVerifiedWorker.Outcome.SUBMITTED, null));
+        mineGoodsMilestone(deliveryJobId, "2df45447", "DeliveryRecorded", 124, 5, 2);
+        assertConfirmed(deliveryJobId);
+        var deliveryState = receiptState(deliveryJobId);
+        assertThat(deliveryState).containsEntry("job_status", "CONFIRMED").containsEntry("attempt_status", "CONFIRMED");
+        assertThat(json.readTree((String) deliveryState.get("receipt")).path("eventType").asText())
+                .isEqualTo("DELIVERY_RECORDED");
+        var manifest = json.readTree(jdbc.queryForObject(
+                "SELECT CAST(manifest_private AS text) FROM blockchain_jobs WHERE id = ?", String.class, deliveryJobId));
+        assertThat(StreamSupport.stream(manifest.path("evidenceVersions").spliterator(), false)
+                .map(version -> UUID.fromString(version.path("evidenceVersionId").asText())).toList())
+                .containsExactlyInAnyOrderElementsOf(evidenceIds);
+
+        var replay = orgAdmin.browser().send("POST", commitmentPath + "/receipts", receiptRequest, receiptKey, true);
+        status(replay, 201);
+        assertThat(node(replay).path("auditEventId").asText()).isEqualTo(receiptAuditId.toString());
+        var deliveryReplay = volunteer.browser().send("POST", deliveryPath, deliveryRequest, deliveryKey, true);
+        status(deliveryReplay, 201);
+        assertThat(node(deliveryReplay).path("auditEventId").asText()).isEqualTo(deliveryAuditId.toString());
+        assertThat(worker.processNextJob()).isEmpty();
+        assertThat(count("blockchain_jobs", "audit_event_id", receiptAuditId)).isEqualTo(1);
+        assertThat(count("blockchain_transactions", "blockchain_job_id", receiptJobId)).isEqualTo(1);
+        assertThat(count("goods_receipts", "contribution_id", UUID.fromString(pledge.path("id").asText()))).isEqualTo(1);
+        assertThat(count("blockchain_jobs", "audit_event_id", deliveryAuditId)).isEqualTo(1);
+        assertThat(count("blockchain_transactions", "blockchain_job_id", deliveryJobId)).isEqualTo(1);
+        assertThat(count("deliveries", "aid_case_id", caseId)).isEqualTo(1);
+        assertThat(jdbc.queryForList("""
+                SELECT delivered_quantity FROM delivery_items WHERE delivery_id = ? ORDER BY campaign_item_id
+                """, Integer.class, deliveryId)).containsExactly(1, 1);
+        assertThat(jdbc.queryForList("""
+                SELECT received_quantity FROM goods_receipt_items WHERE goods_receipt_id = ? ORDER BY contribution_item_id
+                """, Integer.class, receiptId)).containsExactlyInAnyOrder(1, 2);
+    }
+
+    private void assertConfirmed(UUID jobId) {
+        assertThat(worker.pollSubmitted()).containsExactly(new CaseVerifiedWorker.PollResult(
+                jobId, CaseVerifiedWorker.PollOutcome.CONFIRMED, null));
+    }
+
+    private void mineGoodsMilestone(UUID jobId, String selector, String eventName, long blockNumber,
+            long expectedSequence, int expectedLines) {
+        var row = jdbc.queryForMap("""
+                SELECT o.public_ref AS org_ref, c.public_ref AS case_ref, j.logical_event_id,
+                       j.chain_sequence, j.schema_version, j.evidence_commitment,
+                       CAST(j.manifest_private AS text) AS manifest, t.tx_hash,
+                       COALESCE(d.delivery_ref, x.public_ref) AS operation_ref,
+                       a.payload_private ->> 'receiptRef' AS receipt_ref,
+                       a.payload_private ->> 'deliveryRef' AS audit_delivery_ref
+                FROM blockchain_jobs j
+                JOIN blockchain_transactions t ON t.blockchain_job_id = j.id
+                JOIN audit_events a ON a.id = j.audit_event_id
+                LEFT JOIN goods_receipts r ON a.event_type = 'GOODS_RECEIVED' AND r.id = a.entity_id
+                LEFT JOIN deliveries d ON a.event_type = 'DELIVERY_RECORDED' AND d.id = a.entity_id
+                LEFT JOIN contributions x ON d.id IS NULL AND x.id = COALESCE(r.contribution_id, a.entity_id)
+                JOIN aid_cases c ON c.id = j.aid_case_id
+                JOIN organizations o ON o.id = c.organization_id
+                WHERE j.id = ?
+                """, jobId);
+        assertThat(row.get("chain_sequence")).isEqualTo(expectedSequence);
+        String ref = Numeric.toHexString((byte[]) row.get("operation_ref"));
+        var manifest = json.readTree((String) row.get("manifest"));
+        if ("DeliveryRecorded".equals(eventName)) {
+            assertThat(row.get("audit_delivery_ref")).isEqualTo(ref);
+            assertThat(manifest.path("deliveryRef").asText()).isEqualTo(ref);
+        } else {
+            assertThat(manifest.path("commitmentRef").asText()).isEqualTo(ref);
+        }
+        assertThat(manifest.path("lines").size()).isEqualTo(expectedLines);
+        String receiptRef = (String) row.get("receipt_ref");
+        String eventExtraTypes = ",bytes32";
+        String refWords = Numeric.cleanHexPrefix(ref);
+        if (receiptRef != null) {
+            assertThat(manifest.path("receiptRef").asText()).isEqualTo(receiptRef);
+            refWords = Numeric.cleanHexPrefix(receiptRef) + refWords;
+            eventExtraTypes += ",bytes32";
+        }
+
+        String raw = node.broadcasts.getLast();
+        String calldata = Numeric.cleanHexPrefix(TransactionDecoder.decode(raw).getData());
+        assertThat(calldata).startsWith(selector).endsWith(refWords).hasSize(8 + 6 * 64 + refWords.length());
+        String hash = (String) row.get("tx_hash");
+        BigInteger block = BigInteger.valueOf(blockNumber);
+        String blockHash = "0x" + String.format("%064x", blockNumber);
+        String logData = "0x" + String.format("%064x", ((Number) row.get("chain_sequence")).longValue())
+                + Numeric.cleanHexPrefix(Numeric.toHexString((byte[]) row.get("evidence_commitment")))
+                + String.format("%064x%064x", ((Number) row.get("schema_version")).intValue(), 1_762_650_000L)
+                + refWords;
+        var log = new ChainReceipt.ChainLog(REGISTRY, List.of(
+                Hash.sha3String(eventName + "(bytes32,bytes32,bytes32,uint64,bytes32,uint16,uint64" + eventExtraTypes + ")"),
+                Numeric.toHexString((byte[]) row.get("org_ref")), Numeric.toHexString((byte[]) row.get("case_ref")),
+                Numeric.toHexString((byte[]) row.get("logical_event_id"))), logData, BigInteger.ZERO, false);
+        node.canonicalBlocks.put(block, blockHash);
+        node.receipts.put(hash, new ChainReceipt(hash, 1, block, blockHash,
+                HARDHAT_ADDRESS_0, REGISTRY, List.of(log)));
     }
 
     private Map<String, Object> receiptState(UUID jobId) {

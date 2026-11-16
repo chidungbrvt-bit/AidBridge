@@ -28,10 +28,11 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.utils.Numeric;
 
 /**
- * C05 submission path for CASE_VERIFIED jobs. Every SQL step is a short transaction and no RPC call runs
+ * Submission path for CASE_VERIFIED and local C06 goods milestones. SQL steps are short and no RPC call runs
  * while a transaction is open. The signed attempt is persisted (PREPARED) before broadcast; after a crash
  * the same bytes are re-broadcast instead of signing a new transaction.
  */
@@ -71,10 +72,11 @@ public class CaseVerifiedWorker {
     public record Result(UUID jobId, Outcome outcome, String reasonCode) {
     }
 
-    private record Claim(UUID jobId, CaseVerifiedEnvelope envelope, UUID openAttemptId) {
+    private record Claim(UUID jobId, CaseVerifiedEnvelope envelope, AidRegistryAbi.Operation operation,
+            List<Bytes32> refs, UUID openAttemptId) {
     }
 
-    /** Processes at most one CASE_VERIFIED job; empty when nothing is due. */
+    /** Processes at most one supported job; empty when nothing is due. */
     public Optional<Result> processNextJob() {
         Optional<SignerSessionLock.Guard> acquired = signerLock.tryAcquire(properties.chainId(), adapter.relayerAddress());
         if (acquired.isEmpty()) return Optional.empty();
@@ -92,6 +94,16 @@ public class CaseVerifiedWorker {
             return Optional.of(skipped);
         }
         Claim claim = (Claim) claimed;
+
+        if (claim.operation() != AidRegistryAbi.Operation.CASE_VERIFIED) {
+            try {
+                if (adapter.readChainId() != properties.chainId()) {
+                    return Optional.of(retry(claim.jobId(), "INVALID_CHAIN_ID", guard));
+                }
+            } catch (BlockchainRpcException e) {
+                return Optional.of(retry(claim.jobId(), e.code(), guard));
+            }
+        }
 
         String rawTransaction;
         String expectedHash;
@@ -116,7 +128,8 @@ public class CaseVerifiedWorker {
             }
             guard.assertHeld();
             SignedTransaction signed = adapter.signTransaction(properties.registryAddress(),
-                    AidRegistryAbi.encodeRecordCaseVerification(claim.envelope()), nonce, gasPrice, properties.gasLimit());
+                    AidRegistryAbi.encode(claim.operation(), claim.envelope(), claim.refs()), nonce, gasPrice,
+                    properties.gasLimit());
             try {
                 attemptId = tx.execute(status -> {
                     guard.assertHeld();
@@ -173,11 +186,15 @@ public class CaseVerifiedWorker {
 
     /** TX1: lock one due job, check the org binding, prepare once, take a lease. No RPC here. */
     private Object claimNext(Instant now) {
-        Optional<BlockchainJob> next = jobs.lockNextCaseVerifiedJob(properties.chainId(), adapter.relayerAddress(), now);
+        Optional<BlockchainJob> next = jobs.lockNextMilestoneJob(properties.chainId(), adapter.relayerAddress(), now);
         if (next.isEmpty()) {
             return null;
         }
         BlockchainJob job = next.get();
+        AidRegistryAbi.Operation operation = operation(job);
+        if (operation != AidRegistryAbi.Operation.CASE_VERIFIED) {
+            return claimGoodsMilestone(job, operation, now);
+        }
         if (job.getChainSequence() != 1) {
             job.markFailed("INVALID_CASE_VERIFICATION_SEQUENCE");
             return new Result(job.getId(), Outcome.FAILED, "INVALID_CASE_VERIFICATION_SEQUENCE");
@@ -189,11 +206,8 @@ public class CaseVerifiedWorker {
         }
         CaseVerifiedSource source = found.get();
 
-        String relayer = adapter.relayerAddress();
-        if (!"APPROVED".equals(source.getOrganizationStatus()) || source.getRelayerAddress() == null
-                || !relayer.equalsIgnoreCase(source.getRelayerAddress())) {
-            job.scheduleRetry("ORGANIZATION_RELAYER_NOT_BOUND", now.plus(BINDING_RETRY_DELAY));
-            return new Result(job.getId(), Outcome.BINDING_MISSING, "ORGANIZATION_RELAYER_NOT_BOUND");
+        if (!relayerBound(source.getOrganizationStatus(), source.getRelayerAddress())) {
+            return deferClaim(job, now, Outcome.BINDING_MISSING, "ORGANIZATION_RELAYER_NOT_BOUND");
         }
 
         if (!job.isPrepared()) {
@@ -207,23 +221,105 @@ public class CaseVerifiedWorker {
                 job.markFailed(code);
                 return new Result(job.getId(), Outcome.FAILED, code);
             }
-            byte[] salt = ChainRefs.randomBytes32();
-            byte[] commitment = EvidenceCommitments.evidenceCommitment(properties.chainId(),
-                    properties.registryAddress(), source.getCasePublicRef(), job.getLogicalEventId(),
-                    EvidenceCommitments.manifestDigest(manifest.canonicalUtf8()), salt);
-            job.attachPreparation(manifest.canonical(),
-                    cipher.encrypt(salt, JobSecretCipher.associatedData(job.getId(), "salt")), commitment);
+            attachPreparation(job, source.getCasePublicRef(), manifest);
         }
         job.claim(now.plus(LEASE));
+        return new Claim(job.getId(), envelope(job, source.getOrgPublicRef(), source.getCasePublicRef()),
+                AidRegistryAbi.Operation.CASE_VERIFIED, List.of(), preparedAttemptId(job.getId()));
+    }
 
-        CaseVerifiedEnvelope envelope = new CaseVerifiedEnvelope(source.getOrgPublicRef(), source.getCasePublicRef(),
-                job.getLogicalEventId(), job.getChainSequence(), job.getEvidenceCommitment(), job.getSchemaVersion());
-        UUID openAttempt = attempts.findByJob_IdOrderByPreparedAtAsc(job.getId()).stream()
+    private Object claimGoodsMilestone(BlockchainJob job, AidRegistryAbi.Operation operation, Instant now) {
+        UUID openAttemptId = preparedAttemptId(job.getId());
+        if (job.getChainSequence() <= 1 || job.getCaseId() == null) {
+            return invalidGoodsMilestone(job, openAttemptId, now, "INVALID_" + operation.name() + "_SEQUENCE");
+        }
+        if (openAttemptId == null) {
+            String predecessor = jobs.findPredecessorState(job.getCaseId(), job.getChainSequence(),
+                    job.getChainId(), properties.registryAddress());
+            if (!"READY".equals(predecessor)) {
+                return deferClaim(job, now, Outcome.RETRY_SCHEDULED, predecessor);
+            }
+        }
+        var found = findGoodsMilestoneSource(job.getId(), operation);
+        if (found.isEmpty()) {
+            return invalidGoodsMilestone(job, openAttemptId, now, operation.name() + "_SOURCE_MISSING");
+        }
+        GoodsMilestoneSource source = found.get();
+        if (!relayerBound(source.getOrganizationStatus(), source.getRelayerAddress())) {
+            return deferClaim(job, now, Outcome.BINDING_MISSING, "ORGANIZATION_RELAYER_NOT_BOUND");
+        }
+
+        try {
+            if (openAttemptId == null && source instanceof CommitmentMilestoneSource contribution
+                    && (operation == AidRegistryAbi.Operation.COMMITMENT_REDUCED
+                    || operation == AidRegistryAbi.Operation.GOODS_RECEIVED)
+                    && !jobs.hasConfirmedOriginalPledge(job.getId(), Numeric.toHexString(contribution.getCommitmentRef()),
+                            properties.registryAddress())) {
+                return deferClaim(job, now, Outcome.RETRY_SCHEDULED, "ORIGINAL_PLEDGE_NOT_CONFIRMED");
+            }
+            if (!job.isPrepared()) {
+                if (openAttemptId != null) {
+                    return invalidGoodsMilestone(job, openAttemptId, now, "GOODS_PREPARATION_MISSING");
+                }
+                attachPreparation(job, source.getCasePublicRef(), manifests.buildGoodsMilestone(source, job,
+                        properties.registryAddress(), operation));
+            }
+            List<Bytes32> refs = manifests.preparedGoodsRefs(source, job, properties.registryAddress(), operation);
+            CaseVerifiedEnvelope envelope = envelope(job, source.getOrgPublicRef(), source.getCasePublicRef());
+            job.claim(now.plus(LEASE));
+            return new Claim(job.getId(), envelope, operation, refs, openAttemptId);
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            return invalidGoodsMilestone(job, openAttemptId, now, reasonCode(e, "GOODS_PREPARATION_INVALID"));
+        }
+    }
+
+    private Optional<? extends GoodsMilestoneSource> findGoodsMilestoneSource(UUID jobId,
+            AidRegistryAbi.Operation operation) {
+        return operation == AidRegistryAbi.Operation.DELIVERY_RECORDED
+                ? jobs.findDeliveryMilestoneSource(jobId)
+                : jobs.findCommitmentMilestoneSource(jobId);
+    }
+
+    private Result invalidGoodsMilestone(BlockchainJob job, UUID openAttemptId, Instant now, String reason) {
+        if (openAttemptId != null || "GOODS_PREPARATION_DEPLOYMENT_MISMATCH".equals(reason)) {
+            return deferClaim(job, now, Outcome.RETRY_SCHEDULED, reason);
+        }
+        job.markFailed(reason);
+        return new Result(job.getId(), Outcome.FAILED, reason);
+    }
+
+    private Result deferClaim(BlockchainJob job, Instant now, Outcome outcome, String reason) {
+        job.scheduleRetry(reason, now.plus(BINDING_RETRY_DELAY));
+        return new Result(job.getId(), outcome, reason);
+    }
+
+    private boolean relayerBound(String organizationStatus, String relayerAddress) {
+        return "APPROVED".equals(organizationStatus) && adapter.relayerAddress().equalsIgnoreCase(relayerAddress);
+    }
+
+    private void attachPreparation(BlockchainJob job, byte[] caseRef, CaseVerifiedManifestBuilder.Manifest manifest) {
+        byte[] salt = ChainRefs.randomBytes32();
+        byte[] commitment = EvidenceCommitments.evidenceCommitment(job.getChainId(), properties.registryAddress(),
+                caseRef, job.getLogicalEventId(), EvidenceCommitments.manifestDigest(manifest.canonicalUtf8()), salt);
+        job.attachPreparation(manifest.canonical(),
+                cipher.encrypt(salt, JobSecretCipher.associatedData(job.getId(), "salt")), commitment);
+    }
+
+    private static CaseVerifiedEnvelope envelope(BlockchainJob job, byte[] orgRef, byte[] caseRef) {
+        return new CaseVerifiedEnvelope(orgRef, caseRef, job.getLogicalEventId(), job.getChainSequence(),
+                job.getEvidenceCommitment(), job.getSchemaVersion());
+    }
+
+    private static AidRegistryAbi.Operation operation(BlockchainJob job) {
+        return AidRegistryAbi.Operation.valueOf(job.getAuditEvent().getEventType());
+    }
+
+    private UUID preparedAttemptId(UUID jobId) {
+        return attempts.findByJob_IdOrderByPreparedAtAsc(jobId).stream()
                 .filter(a -> BlockchainTransaction.PREPARED.equals(a.getStatus()))
                 .max(Comparator.comparing(BlockchainTransaction::getPreparedAt))
                 .map(BlockchainTransaction::getId)
                 .orElse(null);
-        return new Claim(job.getId(), envelope, openAttempt);
     }
 
     /** Stable code = text before the first ':' of our own exception messages (no payload data). */
@@ -261,8 +357,8 @@ public class CaseVerifiedWorker {
     }
 
     /**
-     * Checks receipts of SUBMITTED CASE_VERIFIED jobs. A job becomes CONFIRMED only when the receipt and its
-     * single CaseVerified log match every field prepared in the database (BR-10); RPC runs outside any SQL
+     * Checks receipts of supported SUBMITTED jobs. A job becomes CONFIRMED only when the receipt and its
+     * operation log match every field prepared in the database (BR-10); RPC runs outside any SQL
      * transaction, and the job + attempt update for each verdict is one short transaction.
      */
     public List<PollResult> pollSubmitted() {
@@ -285,20 +381,16 @@ public class CaseVerifiedWorker {
 
     private List<PollItem> lockSubmitted(Instant now, List<PollResult> results) {
         List<PollItem> items = new ArrayList<>();
-        for (BlockchainJob job : jobs.lockSubmittedCaseVerifiedJobs(properties.chainId(), now, POLL_BATCH)) {
+        for (BlockchainJob job : jobs.lockSubmittedMilestoneJobs(properties.chainId(), now, POLL_BATCH)) {
             Optional<BlockchainTransaction> attempt = attempts.findByJob_IdOrderByPreparedAtAsc(job.getId()).stream()
                     .filter(a -> BlockchainTransaction.SUBMITTED.equals(a.getStatus()))
                     .max(Comparator.comparing(BlockchainTransaction::getSubmittedAt));
-            Optional<CaseVerifiedSource> source = jobs.findCaseVerifiedSource(job.getId());
-            if (attempt.isEmpty() || source.isEmpty()) {
-                String code = attempt.isEmpty() ? "SUBMITTED_WITHOUT_ATTEMPT" : "CASE_VERIFIED_SOURCE_MISSING";
+            if (attempt.isEmpty()) {
+                String code = "SUBMITTED_WITHOUT_ATTEMPT";
                 job.markFailed(code);
                 results.add(new PollResult(job.getId(), PollOutcome.FAILED, code));
                 continue;
             }
-            CaseVerifiedEnvelope envelope = new CaseVerifiedEnvelope(source.get().getOrgPublicRef(),
-                    source.get().getCasePublicRef(), job.getLogicalEventId(), job.getChainSequence(),
-                    job.getEvidenceCommitment(), job.getSchemaVersion());
             BlockchainTransaction submitted = attempt.get();
             if (submitted.getChainId() != properties.chainId()
                     || !submitted.getSignerAddress().equalsIgnoreCase(adapter.relayerAddress())
@@ -307,10 +399,39 @@ public class CaseVerifiedWorker {
                 results.add(new PollResult(job.getId(), PollOutcome.PENDING, "SUBMITTED_ATTEMPT_BINDING_MISMATCH"));
                 continue;
             }
+            CaseVerifiedReceiptVerifier.Expected expected;
+            AidRegistryAbi.Operation operation = operation(job);
+            if (operation != AidRegistryAbi.Operation.CASE_VERIFIED) {
+                try {
+                    GoodsMilestoneSource source = findGoodsMilestoneSource(job.getId(), operation)
+                            .orElseThrow(() -> new IllegalStateException(operation.name() + "_SOURCE_MISSING"));
+                    List<Bytes32> refs = manifests.preparedGoodsRefs(source, job, submitted.getContractAddress(), operation);
+                    expected = new CaseVerifiedReceiptVerifier.Expected(submitted.getTxHash(),
+                            submitted.getContractAddress(), submitted.getSignerAddress(),
+                            envelope(job, source.getOrgPublicRef(), source.getCasePublicRef()),
+                            operation, refs);
+                } catch (IllegalStateException | IllegalArgumentException e) {
+                    String code = reasonCode(e, "GOODS_PREPARATION_INVALID");
+                    submitted.recordError(code);
+                    job.deferPolling(now.plus(RECEIPT_POLL_DELAY));
+                    results.add(new PollResult(job.getId(), PollOutcome.PENDING, code));
+                    continue;
+                }
+            } else {
+                Optional<CaseVerifiedSource> source = jobs.findCaseVerifiedSource(job.getId());
+                if (source.isEmpty()) {
+                    String code = "CASE_VERIFIED_SOURCE_MISSING";
+                    job.markFailed(code);
+                    results.add(new PollResult(job.getId(), PollOutcome.FAILED, code));
+                    continue;
+                }
+                expected = new CaseVerifiedReceiptVerifier.Expected(submitted.getTxHash(),
+                        submitted.getContractAddress(), submitted.getSignerAddress(),
+                        envelope(job, source.get().getOrgPublicRef(), source.get().getCasePublicRef()));
+            }
             job.leaseForPolling(now.plus(LEASE));
             items.add(new PollItem(job.getId(), submitted.getId(), submitted.getTxHash(), submitted.getSubmittedAt(),
-                    job.getRetryCount(), new CaseVerifiedReceiptVerifier.Expected(submitted.getTxHash(),
-                            submitted.getContractAddress(), submitted.getSignerAddress(), envelope)));
+                    job.getRetryCount(), expected));
         }
         return items;
     }
@@ -353,7 +474,7 @@ public class CaseVerifiedWorker {
                     Map.entry("contractAddress", expected.registryAddress().toLowerCase(Locale.ROOT)),
                     Map.entry("eventId", Numeric.toHexString(envelope.eventId())),
                     Map.entry("chainSequence", envelope.chainSequence()),
-                    Map.entry("eventType", "CASE_VERIFIED"),
+                    Map.entry("eventType", expected.operation().name()),
                     Map.entry("schemaVersion", envelope.schemaVersion()),
                     Map.entry("orgRef", Numeric.toHexString(envelope.orgRef())),
                     Map.entry("caseRef", Numeric.toHexString(envelope.caseRef()))));

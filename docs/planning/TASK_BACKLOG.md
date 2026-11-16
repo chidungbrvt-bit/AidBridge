@@ -47,7 +47,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | C07 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C05 | 2026-11-14 | 2026-11-14 | In Review |
 | C08 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C06, C07 | 2026-11-15 | 2026-11-15 | In Progress |
 | C09 | P0-06 | Khoa (C) | Dũng / Minh | M | 3 | C08 | 2026-11-16 | 2026-11-16 | Not Started |
-| C10 | P0-05/P0-06 | Khoa (C) | Dũng / Minh | L | 4 | B08, B09, C08 | 2026-11-17 | 2026-11-17 | Not Started |
+| C10 | P0-05/P0-06 | Khoa (C) | Dũng / Minh | L | 4 | B08, B09, C08 | 2026-11-17 | 2026-11-17 | In Progress |
 | C11 | Quality | Khoa (C) | Dũng / Minh | L | 6 | C06, C07, C08, C09, C10 | 2026-11-20 | 2026-11-20 | Not Started |
 | C12 | Submission | Khoa (C) | Dũng / Minh | M | 3 | C11 | 2026-11-22 | 2026-11-21 | Not Started |
 | F01 | Validation | Minh (F) | Dũng / Khoa | M | 2 | Planning review | 2026-11-03 | 2026-11-03 | In Review |
@@ -474,6 +474,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Phối hợp cụ thể:** Dũng cung cấp approved immutable goods/delivery/confirmation/dispute snapshots từ B08–B10; Khoa map contract functions/events/refs/sequence; cả hai kiểm tra retry không tăng số lượng.
 - **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
 - **Status / evidence (15/11/2026):** In Progress. Dũng đã chuẩn bị thiết kế Task 9, fixture 2 mặt hàng với sequence 1–4 và ma trận test để Khoa review. Đối chiếu build input/output và ABI C06 bằng Node, encode/decode offline 4/4 mốc bằng ethers. **Not Run:** Java parity/verifier C10, PostgreSQL ordering/retry, Hardhat C06 end-to-end và Fuji. Dũng triển khai worker/verifier và chạy local ngày 16/11 theo D57. Khoa xác nhận ABI/redeploy và chuẩn bị proof độc lập. Cổng 17/11 chờ local pass và Dũng duyệt. Giờ làm thực tế chưa ghi nhận. [Thiết kế và bàn giao Task 9](../reviews/C10_DUNG_WORKER_DESIGN_2026_11_15.md)
+- **Status / evidence (16/11/2026, Task #7):** **Local PASS · Pending Review** cho phạm vi năm mốc. Dũng chạy `mvnw.cmd -B -ntp '-Dit.test=CaseVerifiedHardhatE2EIT' verify` trên Hardhat `31337` và PostgreSQL test. Failsafe ghi **2 tests, 0 failures, 0 errors, 0 skipped** ở SHA nền `b1a59a6` cùng patch Task #7 trước phần mở rộng. Cả năm job/attempt `CONFIRMED`; restart ở `COMMITMENT_REDUCED` dùng lại attempt, nonce, tx hash và signed bytes. Dũng bàn giao bằng chứng, Khoa review proof và xác nhận phạm vi nghiệm thu. Ca hồi quy tám mốc **Not Run** và chỉ tính vào gate nếu Khoa xác nhận. Fuji **Not Run**, thuộc task riêng. C10 tiếp tục `In Progress`; giờ làm thực tế chưa ghi nhận. [Bàn giao cho Khoa](../reviews/C10_DUNG_WORKER_DESIGN_2026_11_15.md#bàn-giao-kết-quả-local-cho-khoa)
 
 ### C11 - Contract/failure regression
 
