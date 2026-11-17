@@ -467,6 +467,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### C10 - Goods-to-chain integration
 
+- **Handoff Task3 / readiness Task4 Khoa17/11:** fetch lại PR33 vẫn f85d390, chưa có patch chain-guard/XML mới; giữ local gate NEEDS FIX, F1/F2 runtime acceptance OPEN. Đã ghi bộ evidence tối thiểu cho Dũng và checklist READY FOR DEPLOY APPROVAL; hiện chưa ready, chưa freeze/runner/preflight/approval. Deploy và cutover là hai gate riêng; không nghiệm thu Task5/6/8 ngày17/11. Xem [gate/handoff](../reviews/C10_LOCAL_GATE_REVIEW_2026_11_17.md) và [runbook](../reviews/C06_REDEPLOY_PREPARATION_2026_11_16.md).
+
 - **Khoa Task3 17/11 — local gate NEEDS FIX:** PR33 f85d390 đã có source fix receipt7context và reduction/multi-commitment harness; F1/F2 source addressed nhưng runtime acceptance OPEN. Chain guard CASE_VERIFIED trước ký/rebroadcast còn thiếu trên remote; patch/test Dũng báo chưa commit. Không có XML mới để bind3testsPASS với PRhead; review Task6 cũ PASS source, regression runtime chưa nghiệm thu. Chưa deploy/cutover, không đánh Task7 DONE. [Bằng chứng/findings](../reviews/C10_LOCAL_GATE_REVIEW_2026_11_17.md).
 
 - **Handoff Khoa16/11:** #3 review DONE/PASS WITH NOTES; #4 review DONE, F1/F2 OPEN chờ Dũng Task7; #5 review DONE, D15 PROPOSED; #8 preparation DONE WITH GATES, C06 chưa deploy/cutover. Interim PASS WITH NOTES. Review #6 CHƯA THỰC HIỆN; không đánh Task7 DONE. Xem báo cáo interim và từng task bên dưới.

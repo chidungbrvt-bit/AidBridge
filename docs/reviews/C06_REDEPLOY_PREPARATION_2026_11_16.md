@@ -99,3 +99,31 @@ Hardhat config pin chain43113, compiler0.8.28/paris/200, Fuji accounts=[]; deplo
 Khoa bàn giao candidate fingerprints + runbook; Dũng giữ Task6/7/runtime + queue/cutover; người dùng/nhóm quyết định deploy và cutover riêng. D15 formal approval đang pending theo Task5, không tự thay cardinality trong kế hoạch. Gates không đạt thì chưa deploy; fallback snapshot/offline cần nhóm chốt, không tuyên bố goods Fuji đã PASS.
 
 Chỉ compile và offline/static checks nêu trên đã chạy; không local EVM deploy, gas simulation, Java/DB/CI, explorer/RPC readback mới, wallet/key access, transaction, fee/funding, worker/config/queue mutation. Source/runner/config không sửa; artifacts/cache generated ignored được giữ local. Commit chỉ runbook và backlog note; giữ khoa và mọi review local, không push/PR/merge. Chưa làm Task7 hoặc review6.
+
+## Task4 readiness preparation — 17/11/2026 (chưa deploy)
+
+**PREPARATION UPDATED / BLOCKED BY LOCAL GATE AND APPROVAL.** Main627be56, PR33/dungf85d390; Task3 review dd77cfb giữ NEEDS FIX: RPC chain guard CASE_VERIFIED chưa push, XML/provenance thiếu. Receipt7context source PASS và F1/F2 source addressed không thay local acceptance. Chưa triển khai runner C06, chưa freeze/approve release, không dùng source PASS thay tests.
+
+Đọc lại artifact/source hash/full committed ABI: vẫn khớp fingerprints phần2 và source/config/scripts không đổi so dung. Đây chỉ là file/hash comparison, **không compile/dry-run/runtime mới**; kết quả compile/unsigned constructor ngày16/11 là evidence lịch sử đã nêu. Không có approval freeze mới. Deploy CLI hiện vẫn pin C03 snapshot và journal cũ; không dùng nó để gửi C06.
+
+### Điều kiện chuyển sang READY FOR DEPLOY APPROVAL
+
+| Điều kiện | Owner / tình trạng |
+|---|---|
+| Chốt Task3 local gate trên committed candidate | Dũng push guard/test + XML/provenance; Khoa review focused rồi mới PASS/PASS WITH NOTES nếu đủ; hiện BLOCKED |
+| Freeze source/build input/output/ABI/artifact và hash release | Khoa/nhóm xác nhận candidate/final SHA, compiler0.8.28/paris/200, full C06 ABI; offline consistency PASS nhưng formal freeze PENDING |
+| Runner/plan/journal C06 riêng reviewable | Khoa chuẩn bị khi được giao triển khai; pin hashes mới, constructor admin, chain43113, phí/gas caps, unknown-outcome resume/reconcile; bảo toàn runner/journal C03; hiện PENDING |
+| Public deployment/setup plan | Public admin khác relayer, orgRef rõ; phải đăng ký org/roles lại trên C06 khi được phép; addresses hiện ghi lịch sử, không tự coi current rights/gas sẵn sàng |
+| Preflight hiện hành trước xin deploy | Chain/code/roles/public balances/admin nonce pending-vs-latest, gas estimate/caps theo C06; không đọc key, không sign/broadcast; chưa chạy ở Task4 readiness này |
+| C03 preservation + cutover/abort plan | Runbook phần6 đã có; Dũng xác nhận owner/window/routing+recovery; không tự di chuyển C03 jobs/proofs/refs/sequence |
+
+Khi đủ các mục trên mới trình **READY FOR DEPLOY APPROVAL** cùng reviewed plan/fingerprints/evidence. Đây là trạng thái đủ để xin phê duyệt, không phải đã được phép deploy. Sau đó vẫn cần approval deployment/setup rõ ràng và kiểm lại plan không drift trước execution. C06 address/txHash/block/explorer status vẫn chưa có.
+
+### Tách khỏi gate cutover / Fuji pilot
+
+- Deployment contract mới không tự chuyển backend, jobs hoặc quyền/state C03; approval deploy không bao gồm cutover. Binding registry DB, inventory mọi jobs/attempts và nonce nghĩa vụ thật là **Dũng thực hiện/xác nhận trước cutover riêng**; kế hoạch đã chuẩn bị không phải inventory đã PASS.
+- Trước cutover: kiểm PENDING/PROCESSING/SUBMITTED jobs, PREPARED/SUBMITTED/signed attempts, jobs chưa pin registry, quyền/current binding, C03 proof retention, AES/journal recovery và signer concurrency. Sai/unknown context → NO-GO, giữ worker tắt; không redirect signed bytes hoặc sequence sang deployment mới.
+- Query worker PR33 chỉ enable goods trên31337; local PASS không tự bật goods43113. Cần Dũng bàn giao kế hoạch/implementation activation Fuji được review đúng deployment khi đến bước đó, không sửa allowlist/config trong readiness này. Đây không phải yêu cầu triển khai mới thuộc local review hoặc lệnh cutover.
+- Task4 preparation không nghiệm thu Task5 DB/cutover, Task6 Fuji pilot hoặc Task8 audit17/11. Không đòi scanner/hosting để chốt local worker gate.
+
+**Handoff:** nhận patch+committed-tree evidence của Dũng → Khoa chốt delta gateTask3 → hoàn thiện release runner/plan/freeze và preflight thuộc scope được phép → trình deployment approval riêng → deployment/readback nếu được phép → cutover approval/evidence riêng. Không dùng lịch hoặc compile PASS để bỏ qua bất kỳ bước nào.

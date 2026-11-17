@@ -77,3 +77,15 @@ Matrix wrong chain/registry/ref/duplicate/malformed/predecessor và11verifier/3w
 **Task4 readiness:** có thể đọc checklist chuẩn bị sẵn nhưng **chưa đủ điều kiện chốt readiness/go-deploy**; không thực hiện Task4 trong lượt này. Sau source+evidence gate PASS vẫn phải freeze/runner/preflight và approval deploy/cutover riêng. Không chuyển sang Fuji pilot hay audit Task8.
 
 Task3 ngày17/11 hoàn tất review tối đa trên remote hiện có; không chờ vô hạn và không triển khai thay Dũng. Commit chỉ tài liệu local trên khoa; giữ mọi review/handoff trước, không push/PR/merge/runtime/blockchain.
+
+## Task3 handoff + Task4 readiness preparation — cập nhật17/11
+
+Fetch lại sau dd77cfb: main627be56, dung/PR33 vẫn f85d390; PR OPEN, không comment mới/XML tracked, không commit chain-guard/regression mới. **Giữ NEEDS FIX R1 và insufficient evidence; F1/F2 acceptance OPEN.** Không review lại implementation hoặc chạy tests thay Dũng. Review receipt7context vẫn PASS source, regression runtime chưa nghiệm thu.
+
+**Bộ bàn giao tối thiểu Dũng cần gửi để chốt lại ngay:**
+1. Commit/push RPC chain guard cho CASE_VERIFIED fresh sign và PREPARED rebroadcast, kèm regression; gửi final head SHA + Git tree và trạng thái working tree. Không chỉ gửi SHA nền nếu có patch chưa commit.
+2. XML của `CaseVerifiedWorkerIT.confirmsOnlyAfterTheExactReceiptAndStoresTheBlock`/receipt-context regression (7fields và T01), cùng regression chain guard mới; tên test, tests/failures/errors/skipped và lệnh thực chạy. Bổ sung unit/worker XML đã báo nếu dùng chúng làm acceptance evidence, không bắt chạy full suite lại.
+3. Failsafe XML CaseVerifiedHardhatE2EIT có ca `c06ConfirmsMultipleCommitmentsAndPartialReceiptsInPersistedOrder`, expected8jobs/attemptsCONFIRMED; nếu chạy toàn class thì3tests,0F/0E/0S. Giữ system-out/artifact/buildID và C06_E2E8records; không gửi secrets/raw signed bytes.
+4. Evidence scoped predecessor/original pledge cùng registry, receipt/log canonical, registry/eventId/sequence/txHash/block/logIndex, restart reduction giữ attemptID/nonce/hash/bytes. XML/log phải bind đúng committed tree; test từ uncommitted tree cần commit rồi chứng minh content identity (tree/file hashes) hoặc focused rerun trên commit, không tự coi commit mới đã được test chỉ vì báo cùng SHA nền.
+
+Đối chiếu tiếp chỉ các delta R1/provenance/open acceptance, không lặp toàn PR. Không có thay đổi code mới được nghiệm thu trong lượt handoff này. Task4 đã chuẩn bị checklist ở [runbook cập nhật](C06_REDEPLOY_PREPARATION_2026_11_16.md), **chưa READY FOR DEPLOY APPROVAL** và không phải deploy/cutover authorization.
