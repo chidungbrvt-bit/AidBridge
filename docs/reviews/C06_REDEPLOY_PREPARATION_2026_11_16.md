@@ -142,3 +142,11 @@ Delta PR34 chỉ worker/test, không đổi source C06/ABI/compiler/deploy confi
 - Goods query hiện chỉ bật31337; local PASS không tự cho phép workerFuji43113. Dũng/nhóm chốt activation/scope/pinning khi đến bước được phép.
 
 **Mở khóa công việc:** đủ thông tin để Dũng tiếp tục hoàn thiện Task2/local và chuẩn bị Task5 plan/inventory; **chưa đủ go-cutover hoặc Task6pilot**. Sau local gate đạt còn freeze/runner/preflight/deployment approval, deploy/readback thật rồi cutover approval riêng. Không có C06 address/txHash mới, không lập proof giả, không thực thi Task5/6 trong review này.
+
+## Evidence delta trên406d5d8 — readiness cập nhật17/11
+
+**Task4 vẫn BLOCKED để READY FOR DEPLOY APPROVAL.** Worker11/T013/HardhatC061 đều được Dũng báo PASS,0F/0E/0S trênhead406d5d8/tree59eb1487; **REPORTED PASS — EVIDENCE NOT INSPECTED**, chưa có XML/log truy cập được để Khoa chốt Task3. Không nói các tests chưa chạy, cũng không ghi independently verified. Không có source/artifact/config/registry mới cần review lại.
+
+Combined PREPARED+wrong-chain không được matrix hiện hành ghi thành testcase local bắt buộc riêng; không thêm nó làm blocker local. Vẫn giữ targeted regression này **trước deploy/cutover**: không broadcast/resign/tạo attempt mới trên sai RPCchain, bảo toàn nonce/hash/bytes/attempt và recovery đúng-chain. Dũng có thể bổ sung đúng một focused test, không cần full suite.
+
+Sau khi Task3 đủ artifacts để PASS/PASS WITH NOTES, vẫn phải freeze release/ABI/hash, runner/journal C06 riêng, current rights/gas/nonce preflight và deployment approval. Queue/signed attempts C03 được Dũng **báo mới kiểm kê read-only**, không đồng nghĩa drain/pinning đã nghiệm thu hoặc có quyền chuyển DB/worker. Dũng tiếp tục Task5plan/inventory và bàn giao bảng trạng thái/readback; **chưa go-cutover hoặc Task6Fuji pilot**. Deploy và cutover hai approval độc lập, không gộp local PASS vào quyền triển khai.

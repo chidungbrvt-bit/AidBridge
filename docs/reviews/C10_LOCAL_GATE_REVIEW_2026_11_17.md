@@ -2,6 +2,24 @@
 
 **LOCAL C10 GATE: NEEDS FIX.** Một finding Medium có thật trên PR head: CASE_VERIFIED thiếu RPC chain guard trước ký/rebroadcast. Đồng thời **INSUFFICIENT EVIDENCE** cho runtime acceptance trên đúng committed SHA. F1/F2 đã addressed ở source/design, **OPEN ở cấp nghiệm thu runtime**, không còn mô tả là thiếu implementation. Không merge/deploy/cutover trong review này.
 
+## Evidence delta mới trên cùng PR34 — kết luận cập nhật17/11
+
+**Task3: INSUFFICIENT EVIDENCE cho reviewer acceptance; Dũng REPORTED PASS — EVIDENCE NOT INSPECTED.** Không có source blocker mới; R1 source CLOSED. Không giữ yêu cầu chạy lại full suite và không đánh các kết quả mới là NOT RUN: đã được Dũng báo chạy, nhưng reviewer chưa có artifacts để xác minh.
+
+Fetch lại: PR34 head406d5d8/tree59eb1487fa9154568210444a035d5aa088e03d81 vẫn đúng, maina870577 không đổi. PR34/35 OPEN; comments vẫn rỗng; PR34 description chưa cập nhật counters mới. Tìm XML CaseVerified/AuditTrail/Failsafe trong repo và workspace không có kết quả, chưa có path/download artifact cụ thể. **Nguồn evidence mới là tin nhắn Dũng do người dùng chuyển tiếp**, không phải XML được Khoa đọc.
+
+| Bộ test được báo trên406d5d8 | Counters Dũng báo | Mức kiểm chứng |
+|---|---|---|
+| Worker IT mục tiêu |11/11 PASS,0F/0E/0S | REPORTED PASS — EVIDENCE NOT INSPECTED; chưa có tên11cases/timestamps/XML để bind tree |
+| T01 |3/3 PASS,0F/0E/0S | REPORTED PASS — EVIDENCE NOT INSPECTED; không coi report16/11 có sẵn là report mới này |
+| Hardhat C068events |1/1 PASS,0F/0E/0S | REPORTED PASS — EVIDENCE NOT INSPECTED; expected source method c06ConfirmsMultipleCommitmentsAndPartialReceiptsInPersistedOrder, không suy actual testcase name từ summary |
+
+Dũng báo8jobs/attemptsCONFIRMED, reductionseq4 restart giữ attempt/nonce25/txHash/bytes, fresh wrong-chain đã chạy và PREPARED restart đúng-chain đã chạy. Đây là observations mới thuộc lượt được báo; không ghép nonce25 với nonce3/11/2 của các lượt cũ. Source assertions tương ứng đã đọc ở review trước; chưa xem8rawlogs/canonical block và XMLsystem-out để independently verify runtime.
+
+**PREPARED + wrong-chain:** không tìm thấy matrix/baseline hiện hành quy định tổ hợp này là một testcase riêng bắt buộc local gate; matrix yêu cầu chain guard và retry/restart safety, source406d5d8 đặt cùng guard trước nhánh sign/rebroadcast (CaseVerifiedWorker:98–110). Fresh wrong-chain và correct-chain recovery có coverage source riêng. Vì vậy **không dùng thiếu combined-case để giữ local gate OPEN**; giữ đây là **pre-deployment/cutover regression gate riêng**, owner Dũng. Một targeted test: persisted PREPARED → đổi RPCchain →0broadcast/0newattempt/0resign, giữ nonce/hash/ciphertext; chain phục hồi thì gửi lại đúng bytes/attempt. Chưa chứng minh tổ hợp, không cho phép rebroadcast signed transaction sai chain. Không cần mở full QA.
+
+**Để chốt local gate trên evidence có thể kiểm tra:** gửi XML/log nguyên bản hoặc link/path truy cập được của11worker/3T01/1Hardhat cùng command/env/timestamps và final SHA/tree/clean-state (hoặc chứng minh content identity), system-out8events/restart nonce25. Reviewer chỉ kiểm counters/test names/provenance và assertions/proof delta; nếu artifacts khớp không cần rerun toàn bộ. Tới lúc đó F1/F2 source accepted, runtime acceptance vẫn OPEN do evidence inaccessible, không còn thiếu implementation.
+
 ## Review delta PR #34 — kết luận hiện hành17/11
 
 **Task #3: INSUFFICIENT EVIDENCE. R1 CLOSED ở source; F1/F2 source addressed, runtime acceptance vẫn OPEN.** Nội dung NEEDS FIX bên dưới là snapshot PR33 trước patch, không phải finding source còn tồn tại ở PR34.
