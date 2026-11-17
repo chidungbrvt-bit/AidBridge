@@ -24,7 +24,8 @@ export function validatePlan(p) {
   return p;
 }
 export function collectCandidate(root = ROOT) {
-  const plan = validatePlan(JSON.parse(read(root, 'deployment/c06-fuji-plan.public.json')));
+  const planBytes = read(root, 'deployment/c06-fuji-plan.public.json');
+  const plan = validatePlan(JSON.parse(planBytes));
   const source = norm(read(root, 'contracts/AidRegistry.sol').toString('utf8'));
   const bytes = read(root, 'artifacts/contracts/AidRegistry.sol/AidRegistry.json');
   const artifact = JSON.parse(bytes);
@@ -54,7 +55,7 @@ export function collectCandidate(root = ROOT) {
     constructor: { types: ['address'], values: [getAddress(plan.admin)] }, chainId: 43113,
     approval: 'PENDING_GROUP_FREEZE_AND_DEPLOY_DECISION',
   };
-  return { manifest, artifact, plan };
+  return { manifest, artifact, plan, planBytes };
 }
 export function verifyManifest(manifest, bundle) {
   const expected = { ...bundle.manifest, status: manifest.status, approval: manifest.approval };
@@ -74,6 +75,29 @@ export function verifyApproval(manifest, manifestBytes, planBytes, approval) {
   assert(Number.isFinite(Date.parse(approval.expiresAt)) && Date.now() < Date.parse(approval.expiresAt), 'APPROVAL_EXPIRED');
 }
 export async function chain(provider) { assert.equal(BigInt(await provider.send('eth_chainId', [])), 43113n, 'RPC_WRONG_CHAIN'); }
+export async function broadcastPreparedDeployment(provider, plan, record, raw, assertApproved) {
+  const known = await provider.getTransaction(record.transactionHash);
+  if (known) {
+    assert(
+      known.hash.toLowerCase() === record.transactionHash.toLowerCase()
+        && known.chainId === 43113n && known.nonce === record.nonce
+        && known.from.toLowerCase() === plan.deployer.toLowerCase() && known.to === null,
+      'OBSERVED_DEPLOYMENT_MISMATCH',
+    );
+    return;
+  }
+  const [latest, pending, code] = await Promise.all([
+    provider.getTransactionCount(plan.deployer, 'latest'),
+    provider.getTransactionCount(plan.deployer, 'pending'),
+    provider.getCode(record.address),
+  ]);
+  assert(latest === record.nonce && pending === record.nonce, 'DEPLOYMENT_NONCE_UNRESOLVED');
+  assert.equal(code, '0x', 'DEPLOYMENT_TARGET_OCCUPIED');
+  await chain(provider);
+  assertApproved();
+  const response = await provider.broadcastTransaction(raw);
+  assert.equal(response.hash.toLowerCase(), record.transactionHash.toLowerCase(), 'RPC_HASH_MISMATCH');
+}
 export async function preflight(provider, bundle) {
   const { artifact, plan } = bundle; await chain(provider);
   for (const a of [plan.deployer, plan.relayer]) assert.equal(await provider.getCode(a), '0x', 'EOA_REQUIRED');

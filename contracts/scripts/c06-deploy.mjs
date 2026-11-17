@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { collectCandidate, ROOT, sha, verifyManifest, verifyApproval, preflight, chain,
-  seal, unseal, validateSigned, writeNew, updateJournal, verifyDeployment } from './c06-release.mjs';
+  seal, unseal, validateSigned, writeNew, updateJournal, verifyDeployment,
+  broadcastPreparedDeployment } from './c06-release.mjs';
 
 let provider;
 try {
@@ -24,18 +25,19 @@ try {
   } else {
     const manifestBytes = readFileSync(options['--manifest'] ?? resolve(ROOT, 'deployment/c06-freeze-candidate.json'));
     const manifest = JSON.parse(manifestBytes); verifyManifest(manifest, bundle);
-    const planBytes = readFileSync(resolve(ROOT, 'deployment/c06-fuji-plan.public.json'));
+    const { planBytes } = bundle;
     const manifestSha256 = sha(manifestBytes), planSha256 = sha(planBytes);
     const publicPath = resolve(ROOT, bundle.plan.publicJournal), privatePath = resolve(ROOT, bundle.plan.privateJournal);
     let approval;
+    const assertApproved = () => verifyApproval(manifest, manifestBytes, planBytes, approval);
     // Validate local approval BEFORE creating a provider or reading secret environment variables.
     if (mode === 'broadcast') {
       assert(options['--execute-approved'] === true && options['--approval'], 'EXPLICIT_APPROVAL_REQUIRED');
       approval = JSON.parse(readFileSync(options['--approval']));
-      verifyApproval(manifest, manifestBytes, planBytes, approval);
+      assertApproved();
     } else assert(!options['--approval'] && !options['--execute-approved'], 'READ_ONLY_MODE');
     const { JsonRpcProvider, Wallet, keccak256, getAddress } = await import('ethers');
-    provider = new JsonRpcProvider(bundle.plan.rpcUrl);
+    provider = new JsonRpcProvider(bundle.plan.rpcUrl, undefined, { cacheTimeout: -1 });
     await chain(provider);
     if (mode === 'preflight') {
       assert(!existsSync(publicPath) && !existsSync(privatePath), 'EXISTING_C06_JOURNAL_RECONCILE');
@@ -75,6 +77,7 @@ try {
         const signer = new Wallet(process.env.C06_DEPLOYER_PRIVATE_KEY);
         assert.equal(signer.address.toLowerCase(), bundle.plan.deployer.toLowerCase(), 'SIGNER_MISMATCH');
         await chain(provider); // immediately before signing
+        assertApproved();
         raw = await signer.signTransaction({ ...p.unsigned, type: 0, chainId: 43113,
           nonce: p.nonce, gasLimit: p.gasLimit, gasPrice: p.gasPrice });
         record = { status: 'PREPARED', chainId: 43113, address: p.address, nonce: p.nonce,
@@ -86,9 +89,7 @@ try {
         writeNew(privatePath, { context, ...seal(raw, key, context) });
         writeNew(publicPath, record); // both journals exist BEFORE any broadcast
       }
-      await chain(provider); // immediately before initial send OR same-bytes rebroadcast
-      const response = await provider.broadcastTransaction(raw);
-      assert.equal(response.hash.toLowerCase(), record.transactionHash.toLowerCase(), 'RPC_HASH_MISMATCH');
+      await broadcastPreparedDeployment(provider, bundle.plan, record, raw, assertApproved);
       updateJournal(publicPath, { ...record, status: 'SUBMITTED' });
       // Bounded receipt wait; timeout preserves journals and hash for the next approved resume.
       const receipt = await provider.waitForTransaction(record.transactionHash, 1, 120000);
@@ -104,7 +105,8 @@ try {
     'PRESERVATION_PLAN_NOT_REVIEWED', 'RPC_WRONG_CHAIN', 'EXISTING_C06_JOURNAL_RECONCILE',
     'PARTIAL_JOURNAL_MANUAL_RECONCILE', 'APPROVED_NONCE_CHANGED', 'APPROVED_TARGET_CHANGED', 'SIGNER_MISMATCH',
     'PENDING_SIGNER_TX', 'DEPLOYMENT_TARGET_OCCUPIED', 'GAS_CAP', 'FEE_CAP', 'INSUFFICIENT_GAS_BALANCE',
-    'RECOVERY_KEY_REQUIRED', 'RPC_HASH_MISMATCH', 'RECEIPT_PENDING', 'DEPLOY_REVERTED', 'BLOCK_NOT_CANONICAL',
+    'RECOVERY_KEY_REQUIRED', 'DEPLOYMENT_NONCE_UNRESOLVED', 'OBSERVED_DEPLOYMENT_MISMATCH',
+    'RPC_HASH_MISMATCH', 'RECEIPT_PENDING', 'DEPLOY_REVERTED', 'BLOCK_NOT_CANONICAL',
     'RUNTIME_BYTES_MISMATCH', 'REGISTRY_ALREADY_CONFIGURED']);
   const code = String(error?.message ?? '').split('\n')[0];
   console.error(safeCodes.has(code) ? code : 'C06_OPERATION_STOPPED_RECONCILE_JOURNALS_AND_REVIEW_LOCAL_GATES');
