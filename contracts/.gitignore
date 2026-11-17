@@ -11,3 +11,7 @@ coverage/
 *.clixml
 *.key
 *.pem
+
+# C06 encrypted signed-transaction recovery material stays local.
+deployment/c06-fuji-recovery.private.aes.json
+deployment/c06-fuji-recovery.private.aes.json.next

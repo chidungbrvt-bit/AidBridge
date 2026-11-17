@@ -1,5 +1,7 @@
 # Task #8 — C06 redeploy preparation / offline dry-run, 16/11/2026
 
+**Gói kỹ thuật cập nhật17/11:** entrypoint chính `contracts/scripts/c06-deploy.mjs`; manifest sinh từ build thực tế `contracts/deployment/c06-freeze-candidate.json` (**FREEZE CANDIDATE**, không FROZEN); plan publicC06riêng, coreC06riêng và7offline tests PASS. Runner đã được viết, chưa chạy preflightFuji/broadcast/post-deploy thật. Các ghi chú “chưa có runner” bên dưới là snapshot cũ, được mục “Gói deployment readiness hoàn chỉnh” cuối tài liệu thay thế. HandoffTask4 DONE; approval/combinedregression/currentpreflight/DBcutover vẫn riêng.
+
 **KẾT LUẬN HIỆN HÀNH17/11 — Task4: READY FOR HANDOFF TO TASK #5.** Phần readiness/preparation của Khoa đã hoàn tất, Task3 local PASS WITH NOTES. **Chưa READY FOR DEPLOY APPROVAL; chưa có quyền deploy/cutover.** Các nhãn BLOCKED ở snapshot cũ bên dưới mô tả execution gates tại thời điểm đó, không còn là trạng thái handoff Task4. Xem mục “Chốt acceptance Task4” cuối tài liệu.
 
 **DONE WITH GATES.** Chuẩn bị của Khoa hoàn tất; **BLOCKED BY WORKER / C06 RUNNER / FREEZE-APPROVAL** trước deployment. Artifact consistency kỹ thuật đã PASS sau compile, chưa phải approved release artifact. **C06 NOT DEPLOYED; CUTOVER NOT EXECUTED.** Tài liệu này không cấp phép deploy, đăng ký org, chuyển cấu hình hoặc bật worker. Deploy và cutover cần hai approval riêng.
@@ -207,3 +209,67 @@ Dũng lập **disposition ledger** cho từng job: job/audit/case/type/chain/seq
 ### D. Bàn giao dứt điểm
 
 **Task4 READY FOR HANDOFF TO TASK #5**; không còn việc khảo sát/document/offline verifier nào cần Dũng chờ Khoa trong phạm vi readiness hiện tại. Dũng bắt đầu ngay inventory/disposition/stagingqualification và đề xuất DB/binding plan theoB. Các execution tooling/preflight/gates/approval được liệt kê hữu hạn theoowner để đi tới deployment, không coi là đã hoàn thành hoặc gộp trách nhiệm Task5 vào Task4. Không thay DB/worker/backendconfig/registry, không giữ Task4handoff BLOCKED vì approval chưa cấp.
+
+## Gói deployment readiness hoàn chỉnh — phân công mới17/11
+
+**READY FOR HANDOFF TO TASK #5; candidate kỹ thuật có thể review để freeze, CHƯA READY FOR DEPLOY APPROVAL.** Bốn đầu ra đã có: manifest thực sinh, runnerC06riêng, pre/post verification checklist, binding/sequence/regression criteria. Task3 PASS WITH NOTES giữ nguyên; không chạy lại Task3.
+
+### 1. Artifact freeze candidate / reproducibility
+
+- `contracts/deployment/c06-freeze-candidate.json`: sinh bằng entrypoint prepare từ actual source/compiler/build output/artifact. Chứa source commit6944fff/fileSHA(LF), compiler0.8.28+commit.7893614a, **toàn bộ compilationSettings** (paris, optimizer200, remappings, outputSelection), standard input SHA, hash từng build source/dependency, ABI/artifactSHA, creation/runtimeKeccak, constructor types/values và artifact path.
+- ArtifactSHA `976825c365d0dd99c2097e90b0bbced2d36556524fcb785de4ac19367499c592`; runtimeKeccak `0x525314d10311e01e01a61a6f9e75ee432f59ca09ff3aa27445aed3962e09011e`. Không điền hashes thủ công trong manifest: prepare tính từ files và so compiler outputs. Helper prepare-c06.mjs cũ giữ quick offline pins check; **entrypoint gói mới là c06-deploy.mjs**.
+- Rebuild: checkout source/dependencies đúng release, Hardhat compiler/settings/standardJSON như manifest; preserve **exact compiler input bytes/source line endings**, không chỉ normalized LF source. Chạy compile offline/toolchain đã có khi cần, rồi `prepare` ra file tạm và so mọi field với manifest. Input sourceSHA có thể khác normalized fileSHA do CRLF; không tự normalize build input hoặc sửa pin để “reproducible”. Build/artifact files vẫn ignored; khi formalfreeze phải lưu release bundle/standard input/artifact/hash ở nơi kiểm soát để reviewer/operator tái lập, không phụ thuộc cache mất đi.
+- Điều kiện FROZEN: nhóm xác nhận candidate/source/release tree và constructor/public binding, lưu quyết định freeze; tạo bản manifest **được kiểm soát riêng** với statusFROZEN và approval-reference được xác nhận. Không sửa candidate thànhFROZEN trong lượt này. Broadcast cần approvalrecord riêng bind SHA256 của **đúng bytes manifestFROZEN** và planC06, không dùng approval của candidate/C03.
+
+### 2. RunnerC06 / modes / recovery
+
+Files: `scripts/c06-release.mjs` core; `scripts/c06-deploy.mjs` CLI; `deployment/c06-fuji-plan.public.json`; manifest ởtrên; `scripts/c06-readiness.test.mjs`. Tất cả paths dưới tương đối contracts/.
+
+```text
+node scripts/c06-deploy.mjs
+node scripts/c06-deploy.mjs prepare
+node scripts/c06-deploy.mjs preflight --manifest <reviewed-manifest-path>
+node scripts/c06-deploy.mjs post-deploy --manifest <same-frozen-manifest-path>
+```
+
+Default/prepare **OFFLINE**, chỉ đọc/printcandidate, khôngwritefiles/RPC/envsecret. Nếu muốn sinh lại file candidate, operator capture stdout vào file riêng rồi diff, không overwrite releaseđã duyệt.
+
+Preflight **read-onlyRPC** (NOTRUNtrênFuji trong lượt này): validatecandidate/fullartifact/config, RPCchain43113, deployer/relayerEOA, latestnonce=pendingnonce, predicted target chưa cócode, gasestimateC06+20%,gasprice+20% và capplan, balance đủcost; trả manifest/planSHA,nonce/address/estimate/relayerbalance. Plan gascap4M/pricecap25gwei là giới hạn dừng, **không phải estimate hoặc gas đã dùng**. Không đụng worker/config/DB, không tự đăng kýorg hoặc chuyểnRelayer.
+
+**Future broadcast command — NOT RUN, chỉ sau approvals/gates:**
+
+```text
+node scripts/c06-deploy.mjs broadcast --manifest <frozen-manifest-path> --approval <approved-public-record-path> --execute-approved
+```
+
+- Localapproval kiểm **trước provider/secret access**: manifestFROZEN, statusAPPROVED/scopeC06_DEPLOY_ONLY/chain43113, exactmanifestSHA/planSHA, approvedBy, expiresAt, expectedNonce/predictedAddress; combinedPreparedWrongChainRegression=PASS và preservationPlanReviewed=true. Approvalfile là record do operator cung cấp, **không phải cơ chế xác minh danh tính nhóm**; nhóm review/quản lý provenance của file ngoàiCLI. Không có approval thật được tạo/commit trong lượt này.
+- Template record cần các fields kể trên; values lấy từ reviewedpreflight, không dùng placeholder làmapproval. Mất/chỉnh config/manifest/nonce/target hết hạn → stop. Không hỗ trợ --force hoặc bypass.
+- Chỉ nhánh approvedbroadcast mới đọc tên env `C06_DEPLOYER_PRIVATE_KEY` (freshsign) và `C06_RECOVERY_KEY` (32byte AESkey,64hex). **Không nạp/đọc giá trị envsecrets trong lượt này**, không tự sao chép DPAPI/wallet-store. Futureoperator chọn secretinjection được kiểm soát; không đặt key trên argv/repo/report.
+- Chainguard trước signing và trước initialbroadcast/**rebroadcast**. Signed deployment kiểm chain,from,to=null,value0,nonce,target,gas/fee caps,exactcreation+constructor và txhash. Không gửi registration/funding/jobnghiệp vụ trong runner này.
+- Publicjournal `deployment/c06-fuji-deployment.public.json`; AES256GCM recovery `deployment/c06-fuji-recovery.private.aes.json` riêng và Gitignored. AADbindmanifest/planSHA; signedbytesmãhóa, không log rawtx. Private+publicrecord tạo bằng flagwx **trước broadcast**. Partialjournal/orphan/unknown/mismatch → stop/manualreconcile, không xóa để retrynewnonce.
+- Resume cùng approvedmanifest/plan/nonce/address: nếu receipt đã có, verify/readback không sign/gửi; chưa córeceipt thì decrypt+validate/rebroadcast **chính bytes/hash cũ**, không tạo attemptmới. Timeout120s/unknownRPC giữjournal, chạy lại approvedresume sau reconcile. Không tự tăngfee/replace tx hoặc deployagain. `.next` leftover phải reconcile, không xóa dữliệu tùyý.
+- Errors CLI chỉ thông báo sanitized STOP, không dumpRPC/signer/crypto errors; operator cần kiểm journal/gates theo runbook. Không có worker/queue/clientconfig mutation ở bất kỳ mode.
+
+### 3. Post-deploy / metadata / explorer (NOT RUN thật)
+
+`post-deploy` read-only kiểm chain,receiptstatus1/hash/from/to/contractAddress/canonicalblock, originaltxchain/nonce/calldata constructor, **full runtimebytes/hash**, DEFAULT_ADMIN_ROLE đúngadmin và admin không implicitrelayer. Registry mới phải chưa registerorg: getOrganization(planorgRef) trống và relayer chưa cóROLE. Đây là initialstate của contract; không giả định quyềnC03 chuyểnqua. Runnerbroadcast cũng verify và lưu metadata tự động nếu approvedexecution thànhcông.
+
+Public metadata: chainId,address,txHash/nonce/block/hash/gasUsed,admin/relayer/orgRef,constructor,buildID,manifest/planSHA/runtimehash; sourceVerification/organizationSetup/backendCutover=NOTRUN. Chạy postverifytrước orgsetup; nếu đã có orgsetup thì verifierinitialstate dừng để reconcile, không overwriteproof cũ.
+
+Sau actualdeploy, explorerexactmatch: dùng đúng standardJSON/compilerlongversion/settings/constructor encodedaddress và deployedaddress thật; lưu sourceverificationrequest/result côngkhai ở namespaceC06. Runner không gửi requestexplorer hoặc tạo verdictVERIFIEDgiả. Orgregistration/roles cần approvalsetup riêng và readback orgRef/active/assignedrelayer/RELAYER_ROLE sau setup; **runnerchỉdeploy**, không tự register. Dũng chỉ lấy registry/binding từ manifest/readback đã kiểm, không dùng predictedaddress/Hardhataddress.
+
+### 4. Gate/ownership — trạng thái thực tế
+
+| Output/gate | Status | Owner / next action |
+|---|---|---|
+| Candidate manifest/source/build/ABI/constructor | PASS offline | Khoa đã sinh và đối chiếu; nhóm chốtformalfreeze |
+| RunnerC06riêng / journals recovery / approvalguards | PASS offline tests | Khoa đã viết; execution/network behavior chưa live-run, reviewrelease trướcapproval |
+| Offline validation | PASS7tests,0F/0E/0S | manifestreproducible,approvalbinding/expiry/gates,wrongchain/pendingnonce/occupiedtarget,AEStamper/AAD,postcanonicalnegative,CLIdefault/noapproval; mocks, **khôngsigner/RPC thật** |
+| PreflightFuji/fees/currentrights | NOT RUN | Khoa/operator ở bước được phép; xác nhận proposedaddresses/caps/balance/currentchain/nonce, không dùng sốlịch sử |
+| PREPARED+wrong-chain worker regression | PENDING evidenceDũng | wrongchain0sign/newattempt/broadcast, byte/nonce/hash/attemptunchanged; restorechainrecover samebytes/no duplicate; localgate không bị mởlại |
+| ArtifactFROZEN +deploymentapproval | PENDING nhóm/operator | Táchfreeze/deployrecord khỏi compile/sourcePASS; candidate vẫn FREEZECANDIDATE |
+| C03/staging inventory/disposition +cutoverplan | PENDING Task5Dũng | Theo phầnChốtacceptanceB:3legacyPENDINGgiữC03lane,5stagingqualifytypes/refs/preparation; không tự rebind/delete |
+| Actualdeploy/postreadback/explorer/orgsetup | NOT RUN | Chỉ sauapproval; không address/hash/blockC06thật ở gói này |
+| Cutover / Fuji pilot | NOT RUN | Sauverifieddeployment+setup,Task5plan/readback+approvedcutover; không phải output readiness đã chạy |
+
+**Task4 gói readiness hoàn thành thực chất**, Dũng dùng ngay manifest/candidatepins, entrypoint/runbook, DBbinding/sequence và regressioncriteria để hoàn thiệnTask5. Candidateplan và recordFROZEN/approval chưa được nhóm chốt không làm mất giá trị handoff, nhưng vẫn chặn actualbroadcast. Không sửaworker, DB, queue, signerstate hoặc tạoFuji evidence. KhôngreviewTask3/Task6/Task8 lại.
