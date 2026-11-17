@@ -443,6 +443,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### C09 - Full sanitized audit API
 
+- **Khoa Task8 17/11 — PREPARED:** C09 source main627be56 PASS WITH NOTES (D49/privacy/sequence/proof guards); checklist Fuji đã lập, FUJI PROOF VERIFICATION PENDING vì chưa có C06 pilot bundle nghiệm thu. Không coi pending/local/source là goodsFujiPASS; main writer thiếu context giữ fail-closed, fix writerPR33 chưa nghiệm thu. Không đổi C09 Done hoặc mở scanner/UI. [Review/checklist](../reviews/C09_FUJI_PROOF_ACCEPTANCE_2026_11_17.md).
+
 - **Final high audit15/11:** source integrated PR27 +fixes206d2f4 trên khoa; source/docs review không thấy thêm Critical/High có bằng chứng, không phải runtime PASS. Trước merge cần compile/focused JUnit/Flyway fresh+upgrade/HTTP/proof/privacy/order và frontend integration **NOT RUN — DELEGATED** theo [handoff đủ5 task](../reviews/KHOA_2026_11_15_FINAL_HANDOFF.md). Giữ task In Review cho candidate, không Done/không coi PR27 riêng đã merge.
 
 - **Local fix Khoa sau PR27 review,15/11:** canonical URI/security, causal sequence/opaque public ID và confirmed proof/context guards đã sửa trên khoa; focused tests thêm/cập nhật nhưng Java/DB NOT RUN. Legacy proof thiếu context hiện fail-closed pending; không sửa worker để enrich hoặc giả verified. Chưa merge/push PR27, chưa PASS runtime/Done; [review hiện hành](../reviews/C09_AUDIT_API_READINESS_2026_11_15.md).
