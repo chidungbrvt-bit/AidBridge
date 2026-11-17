@@ -2,6 +2,26 @@
 
 **LOCAL C10 GATE: NEEDS FIX.** Một finding Medium có thật trên PR head: CASE_VERIFIED thiếu RPC chain guard trước ký/rebroadcast. Đồng thời **INSUFFICIENT EVIDENCE** cho runtime acceptance trên đúng committed SHA. F1/F2 đã addressed ở source/design, **OPEN ở cấp nghiệm thu runtime**, không còn mô tả là thiếu implementation. Không merge/deploy/cutover trong review này.
 
+## Evidence attachment inspected — kết luận cuối local17/11
+
+**TASK3 LOCAL GATE: PASS WITH NOTES. F1/F2 CLOSED cho acceptance local; R1 source CLOSED, receipt7context local regression accepted theo evidence bàn giao.** Các kết luận thiếu evidence phía dưới là lịch sử trước attachment. Không suy thành Fuji PASS hoặc deploy approval.
+
+Nguồn: [comment Dũng](https://github.com/chidungbrvt-bit/AidBridge/pull/34#issuecomment-6952865519), posted17/11/2026 15:41:11UTC (22:41:11+07); [AidBridge-PR34-406d5d8-evidence.txt](https://github.com/user-attachments/files/34979086/AidBridge-PR34-406d5d8-evidence.txt). Reviewer đã mở/đọc đủ file7945bytes; SHA256 `a71446717e91b791088465c6cf37c30e1e62b4e4f2adc914a9bc915c7032a8af`.
+
+**Đã tự đối chiếu trong file:**
+- Header commit406d5d8befda40eca00549635d0d77cc7cd1359e/tree59eb1487fa9154568210444a035d5aa088e03d81 khớp Git object đã fetch. Environment được khai báo Java26.0.1, PostgreSQL test cô lập, Hardhat31337; có reproduction commands targeted, không chạy lại.
+- WorkerIT tests11/F0/E0/S0, đúng11testcase entries gồm fresh wrong-chain, receipt7context/T01, predecessor same deployment, original pledge, canonical poll, recovery/rebroadcast và4parameterized wrong-proof cases. Report time khai báo21:24:43+07.
+- AuditTrailApiIT tests3/F0/E0/S0, đúng3names everyChainStateIsReportedHonestly/onlyMembersOfTheOwningOrganizationCanRead/pagesAreStableAndBounded; report time21:24:27+07.
+- HardhatC06 tests1/F0/E0/S0, testcase c06ConfirmsMultipleCommitmentsAndPartialReceiptsInPersistedOrder; report time21:26:02+07. BuildID6d69e2cf…/artifactSHA976825c3… khớp candidate đã review.
+- C06_E2E có8rows sequence1–8: verify,pledgeA,pledgeB,reduction,3receipts,delivery; registry duy nhất0x610178da211fef7d417bc0e6fed39f05609ad788, blocks43–50/logIndex0;8eventIds/txHashes riêng; job/attemptCONFIRMED từngrow. Registry này **Hardhat31337**, không phải địa chỉ FujiC06.
+- Restart eventId/txHash khớp chính row reductionseq4,nonce33,signedBytesReused=true; cuối log có confirmedJobs8/oneattemptperjob/restart-stockPASS. Không ghép nonce33 với các lượt25/11/3 trước. Đây khớp assertions harness đã source-review, không review source lại ở lượt evidence.
+
+**Mức chứng minh:** file là bản trích testsuite opening tags/testcase tags và system-out, không full XML document (thiếu closing/body đầy đủ), không có original XML hash hoặc clean-working-tree log. Commit/tree/env/report times là provenance Dũng khai báo, không phải attestation độc lập. Reviewer kiểm được counters/names/ledger/restart consistency và đối chiếu chúng với harness/acceptance đã review; không xác thực máy chạy hoặc tự quan sát canonical RPC/logs/raw refs. Raw blockHash/topics/data/receiptRef/commitmentRef không được xuất trong excerpt, kết luận refs/canonicality/stock dựa vào test được báo PASS với assertions đã review. Không mô tả parse-full-XML PASS hoặc independently executed/cryptographically attested runtime. Giữ nguyên attachment/original XML nếu cần audit sâu về sau, không yêu cầu rerun chỉ vì đây là excerpt.
+
+Đủ chốt **local acceptance có notes**: đúng candidate được khai báo, testcase bắt buộc/counters/ledger phù hợp và không mâu thuẫn evidence; thiếu full XML được ghi là giới hạn provenance, không giữ missing-evidence blocker cũ. Combined PREPARED+wrong-chain vẫn chưa được chứng minh; không phải testcase local riêng trong matrix đã xem, nhưng giữ targeted regression gate trước deploy/cutover. Không bỏ qua nguy cơ rebroadcast sai chain.
+
+**Handoff:** Dũng có thể dùng local PASS WITH NOTES để tiến hành chuẩn bị/đối soát Task5 và hoàn thiện các deploy gates. Chưa go-cutover/Task6Fuji: runnerC06riêng,formal freeze,currentpreflight,combined regression,approvaldeploy/readback và approvalcutover/queue pinning vẫn cần. Comment mới chỉ báo DBread-only inventory,2B05txkhớpC03/noopenattempt/3PENDINGjobs: đây là summary vận hành của Dũng, không phải DBreadback Khoa đã kiểm;3jobs vẫn cần disposition được duyệt, không tự đổi registry.
+
 ## Evidence delta mới trên cùng PR34 — kết luận cập nhật17/11
 
 **Task3: INSUFFICIENT EVIDENCE cho reviewer acceptance; Dũng REPORTED PASS — EVIDENCE NOT INSPECTED.** Không có source blocker mới; R1 source CLOSED. Không giữ yêu cầu chạy lại full suite và không đánh các kết quả mới là NOT RUN: đã được Dũng báo chạy, nhưng reviewer chưa có artifacts để xác minh.

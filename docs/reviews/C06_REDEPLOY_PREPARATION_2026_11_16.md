@@ -150,3 +150,11 @@ Delta PR34 chỉ worker/test, không đổi source C06/ABI/compiler/deploy confi
 Combined PREPARED+wrong-chain không được matrix hiện hành ghi thành testcase local bắt buộc riêng; không thêm nó làm blocker local. Vẫn giữ targeted regression này **trước deploy/cutover**: không broadcast/resign/tạo attempt mới trên sai RPCchain, bảo toàn nonce/hash/bytes/attempt và recovery đúng-chain. Dũng có thể bổ sung đúng một focused test, không cần full suite.
 
 Sau khi Task3 đủ artifacts để PASS/PASS WITH NOTES, vẫn phải freeze release/ABI/hash, runner/journal C06 riêng, current rights/gas/nonce preflight và deployment approval. Queue/signed attempts C03 được Dũng **báo mới kiểm kê read-only**, không đồng nghĩa drain/pinning đã nghiệm thu hoặc có quyền chuyển DB/worker. Dũng tiếp tục Task5plan/inventory và bàn giao bảng trạng thái/readback; **chưa go-cutover hoặc Task6Fuji pilot**. Deploy và cutover hai approval độc lập, không gộp local PASS vào quyền triển khai.
+
+## Sau khi inspect attachment PR34 — 17/11
+
+**Task3 local PASS WITH NOTES**, F1/F2 local CLOSED theo excerpt11Worker/3T01/1Hardhat,8confirmed/restartseq4nonce33 tại declared406d5d8/tree59eb1487. Xem gate review cho giới hạn provenance: đã đọc attachment, không phải full original XML hoặc independent RPC verification. Không tiếp tục ghi “không có evidence accessible” như current status.
+
+**Task4 vẫn BLOCKED để READY FOR DEPLOY APPROVAL** do runner/journalC06riêng,formal freeze,current roles/gas/nonce preflight và combined PREPARED+wrong-chain regression chưa hoàn tất/được chứng minh. Local acceptance gate đã gỡ; deployment/cutover approvals vẫn riêng và chưa cấp.
+
+Dũng có thể tiếp tục Task5 inventory/disposition plan. Comment báo2B05transactions đúngC03/noopenattempt nhưng còn3PENDINGjobs ởDBcũ: cần record job/registry ownership và phương án được duyệt (drain/park/reconcile theo deployment), không tự chuyển3jobs sangC06. Đây là author summary chưa đối chiếu raw DBreadback. Chưa chạy Task6Fuji trước actual deployment/readback + DB/worker cutover được phép; không dùng Hardhat address0x610178… làm registryFuji. Không deploy/cutover ở lượt evidence.
