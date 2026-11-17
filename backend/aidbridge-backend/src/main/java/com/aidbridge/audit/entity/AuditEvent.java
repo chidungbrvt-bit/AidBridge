@@ -40,6 +40,7 @@ public class AuditEvent {
     @Column(name = "entity_id", nullable = false)
     private UUID entityId;
 
+    @Getter
     @Column(name = "event_type", length = 80, nullable = false)
     private String eventType;
 

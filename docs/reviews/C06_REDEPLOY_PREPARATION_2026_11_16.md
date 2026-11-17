@@ -127,3 +127,18 @@ Khi đủ các mục trên mới trình **READY FOR DEPLOY APPROVAL** cùng revi
 - Task4 preparation không nghiệm thu Task5 DB/cutover, Task6 Fuji pilot hoặc Task8 audit17/11. Không đòi scanner/hosting để chốt local worker gate.
 
 **Handoff:** nhận patch+committed-tree evidence của Dũng → Khoa chốt delta gateTask3 → hoàn thiện release runner/plan/freeze và preflight thuộc scope được phép → trình deployment approval riêng → deployment/readback nếu được phép → cutover approval/evidence riêng. Không dùng lịch hoặc compile PASS để bỏ qua bất kỳ bước nào.
+
+## Task4 review PR34 — readiness hiện hành17/11
+
+**BLOCKED để chuyển READY FOR DEPLOY APPROVAL.** Maina870577 (PR33 đã merge), PR34head406d5d8/tree59eb1487…, patch chain guard đã source PASS; Task3 còn INSUFFICIENT EVIDENCE vì XML/provenance trên final head chưa bàn giao. Không giữ nhận định patch chưa push cho PR34; các đoạn trước là lịch sử các lần fetch.
+
+Delta PR34 chỉ worker/test, không đổi source C06/ABI/compiler/deploy config. Đọc artifact hiện có: SHA256976825c365d0dd99c2097e90b0bbced2d36556524fcb785de4ac19367499c592 vẫn đúng candidate phần2; không compile/runtime/preflight RPC mới. Artifact consistency không đồng nghĩa formal freeze/approval hoặc actual deployed address.
+
+**Gates còn thiếu và owner:**
+- Dũng: focused evidence receipt7context/T01 + chain-guard +8events/Hardhat/PostgreSQL đúng committed SHA/tree; gửi canonical proof và restart identity. Khoa chỉ review delta rồi mới chốt local gate.
+- Khoa/nhóm: freeze release C06/input/output/ABI/hash và runner/config+journal C06 riêng được review; runner hiện tại vẫn pin C03 và journal lịch sử, không dùng để gửi C06.
+- Owner triển khai/nhóm: public admin/relayer/orgRef và gas/nonce/read-only preflight hiện hành; dữ liệu role/balance cũ không phải xác nhận17/11. Không đọc key hoặc tự cấp approval.
+- Dũng trước cutover: inventory PENDING/PROCESSING/SUBMITTED jobs, PREPARED/SUBMITTED/signed attempts, jobs chưa pin registry, nonce obligations và schema/binding; chưa có readback/inventory trong PR34 để nghiệm thu. Giữ C03 proofs/attempts/journals đúng registry, không chuyển unsigned jobs cũ bằng global address mới. Deployment approval và cutover approval riêng; cutover cần evidence mới ngay trước switching.
+- Goods query hiện chỉ bật31337; local PASS không tự cho phép workerFuji43113. Dũng/nhóm chốt activation/scope/pinning khi đến bước được phép.
+
+**Mở khóa công việc:** đủ thông tin để Dũng tiếp tục hoàn thiện Task2/local và chuẩn bị Task5 plan/inventory; **chưa đủ go-cutover hoặc Task6pilot**. Sau local gate đạt còn freeze/runner/preflight/deployment approval, deploy/readback thật rồi cutover approval riêng. Không có C06 address/txHash mới, không lập proof giả, không thực thi Task5/6 trong review này.

@@ -2,6 +2,19 @@
 
 **LOCAL C10 GATE: NEEDS FIX.** Một finding Medium có thật trên PR head: CASE_VERIFIED thiếu RPC chain guard trước ký/rebroadcast. Đồng thời **INSUFFICIENT EVIDENCE** cho runtime acceptance trên đúng committed SHA. F1/F2 đã addressed ở source/design, **OPEN ở cấp nghiệm thu runtime**, không còn mô tả là thiếu implementation. Không merge/deploy/cutover trong review này.
 
+## Review delta PR #34 — kết luận hiện hành17/11
+
+**Task #3: INSUFFICIENT EVIDENCE. R1 CLOSED ở source; F1/F2 source addressed, runtime acceptance vẫn OPEN.** Nội dung NEEDS FIX bên dưới là snapshot PR33 trước patch, không phải finding source còn tồn tại ở PR34.
+
+- Main `a87057783e971f610457bafa78a82ce99de5249a` đã merge PR33; PR34 OPEN, basea870577, head `406d5d8befda40eca00549635d0d77cc7cd1359e`, tree `59eb1487fa9154568210444a035d5aa088e03d81`. PR34 chỉ đổi CaseVerifiedWorker.java và CaseVerifiedWorkerIT.java, không thay contracts/ABI/audit guard.
+- Delta worker:95–104 bỏ nhánh loại trừ CASE_VERIFIED, RPC chain guard chạy trước chọn ký mới/PREPARED recovery. Sai chain hoặc RPC exception schedule retry trước sign/broadcast. Persisted attempt chain/signer/registry/hash checks giữ nguyên; retry không tạo refs hoặc attempt mới. Không phát hiện lỗi source mới trong delta.
+- Regression mới CaseVerifiedWorkerIT.doesNotPrepareCaseVerificationWhileRpcReportsWrongChain:1070 trở đi assert0attempt/0broadcast khi sai chain, tiếp tục1attempt khi chain đúng, logical eventId không đổi. Đây là coverage fresh signing; evidence PREPARED recovery wrong-chain vẫn cần đối chiếu trong regression/restart results, không suy test fresh đã chứng minh cả recovery.
+- Bảy trường proof source và SQL guard không đổi so review trước; source PASS. F1/F2/8event harness đã ở main qua PR33, không review lại toàn bộ. Không coi mergePR33 là runtime acceptance.
+- **Evidence mới:** PR34 description tự ghi XML hiện có chưa chứa regression mới, T01 report từ16/11, receipt-proof/8event chưa xác nhận trên final SHA. Không comment/XML mới trong PR; repo không có tracked test XML, tìm target/backend và D:/Codex vẫn không có XML mục tiêu. Không có raw XML/test log để reviewer xác minh counts hoặc canonical observations8events. Các số3tests0F/0E/0S trước đó vẫn là người dùng chuyển lời Dũng về dirty tree; không gắn chúng vào406d5d8.
+- Dũng chỉ cần bàn giao focused XML+system-out cho receipt7context/T01, newchain guard và Hardhat8events với final SHA/tree + command/env/artifact. Chứng minh predecessor/original pledge cùng deployment; canonical receipt/log; restart giữ attempt/nonce/hash/bytes; số failures/errors/skipped0 cho các ca bắt buộc. Có thể chứng minh dirty-tree content identity bằng hashes đầy đủ nếu áp dụng, hoặc focused rerun trên commit. Không yêu cầu full repository rerun.
+
+**Bàn giao sử dụng ngay:** Dũng có thể lấy source review R1/F1/F2 và checklist evidence để chốt Task2/local; chuẩn bị DB/queue inventory và plan Task5. **Chưa được dùng làm go-cutover hoặc Task6 Fuji pilot:** Task3 chưa PASS, Task4 chưa ready, chưa có deployment/queue approval/readback. Khoa không merge PR34 hoặc bật worker.
+
 ## 1. Phiên bản / provenance
 
 Fetch main `627be561bc224286a3dc62d5d14898dc1b438141`, dung và PR33 head `f85d3902b7c2549987c78cd4438c6366a752d23a`; khoa `67cad7a` trước review, không merge nhánh Dũng/main vào khoa. PR33 OPEN, base627be56. Receipt fix `b1a59a63f2e3ba2cd00dcfdf8556fae580ec6d8c`, worker C06 `993ef8d605aba05da6b47830d089ef81440734f6`, DB handoff93bd88a, mergef85d390. Không có commit mới chứa chain-check fix/test được nhắc trong tin nhắn cuối. Không suy working tree ở máy Dũng là nội dung PR head.

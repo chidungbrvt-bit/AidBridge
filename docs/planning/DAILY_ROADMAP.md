@@ -363,6 +363,7 @@ Feature-complete18/11 gồm all P0 integrated, feature tests/reviews, real Fuji 
 
 - **Main objective:** M3 reliable chain sync/audit gate.
 - **Dũng — Backend:** B10 2.5h.
+- **Task #11 · Tiến độ thực tế** — Dũng chuẩn bị `aidbridge_demo_v16` ở staging port `8082`, tắt worker và xác nhận smoke đến D02. Trạng thái `In Review`, chờ lưu kết quả đọc lại API và outbox. Minh dùng staging cho F09/E2E. Application cutover `Not Run`.
 - **Khoa — Blockchain:** C09 0.5h, C10 2h.
 - **Minh — Frontend/Product:** F09 1h, F10 1h; reserve 0.5h.
 - **Prerequisites:** B08, B09, B10, C08, C09, C10, F08, F09; mock prework not integrated Done.

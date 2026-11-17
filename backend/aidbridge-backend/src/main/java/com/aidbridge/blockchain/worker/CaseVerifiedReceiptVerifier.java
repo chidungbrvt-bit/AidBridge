@@ -7,6 +7,8 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+
+import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.utils.Numeric;
 
 /**
@@ -20,7 +22,17 @@ public final class CaseVerifiedReceiptVerifier {
     }
 
     public record Expected(String transactionHash, String registryAddress, String signerAddress,
-            CaseVerifiedEnvelope envelope) {
+                           CaseVerifiedEnvelope envelope, AidRegistryAbi.Operation operation, List<Bytes32> refs) {
+
+        public Expected {
+            refs = List.copyOf(refs);
+            operation.validateRefs(refs);
+        }
+
+        public Expected(String transactionHash, String registryAddress, String signerAddress, CaseVerifiedEnvelope envelope) {
+            this(transactionHash, registryAddress, signerAddress, envelope,
+                    AidRegistryAbi.Operation.CASE_VERIFIED, List.of());
+        }
     }
 
     public sealed interface Verdict permits Confirmed, Reverted, Mismatch {
@@ -69,7 +81,7 @@ public final class CaseVerifiedReceiptVerifier {
         List<ChainReceipt.ChainLog> events = receipt.logs().stream()
                 .filter(log -> !log.removed())
                 .filter(log -> same(log.address(), expected.registryAddress()))
-                .filter(log -> !log.topics().isEmpty() && same(log.topics().get(0), AidRegistryAbi.CASE_VERIFIED_TOPIC0))
+                .filter(log -> !log.topics().isEmpty() && same(log.topics().get(0), expected.operation().topic0()))
                 .toList();
         if (events.isEmpty()) {
             return new Mismatch("RECEIPT_EVENT_MISSING");
@@ -93,7 +105,7 @@ public final class CaseVerifiedReceiptVerifier {
         }
 
         byte[] data = Numeric.hexStringToByteArray(log.data() == null ? "0x" : log.data());
-        if (data.length != AidRegistryAbi.CASE_VERIFIED_DATA_BYTES) {
+        if (data.length != expected.operation().dataBytes()) {
             return new Mismatch("RECEIPT_DATA_LENGTH");
         }
         Optional<BigInteger> sequence = uintWord(data, 0, 8);
@@ -110,6 +122,13 @@ public final class CaseVerifiedReceiptVerifier {
         }
         if (schema.get().intValueExact() != envelope.schemaVersion()) {
             return new Mismatch("RECEIPT_SCHEMA_MISMATCH");
+        }
+        for (int i = 0; i < expected.refs().size(); i++) {
+            int offset = AidRegistryAbi.CASE_VERIFIED_DATA_BYTES + 32 * i;
+            byte[] actual = Arrays.copyOfRange(data, offset, offset + 32);
+            if (!Arrays.equals(actual, expected.refs().get(i).getValue())) {
+                return new Mismatch("RECEIPT_OPERATION_REF_MISMATCH");
+            }
         }
         if (log.logIndex() == null || log.logIndex().signum() < 0 || log.logIndex().bitLength() > 63) {
             return new Mismatch("RECEIPT_LOG_INDEX_INVALID");
