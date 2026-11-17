@@ -47,7 +47,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | C07 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C05 | 2026-11-14 | 2026-11-14 | In Review |
 | C08 | P0-06 | Khoa (C) | Dũng / Minh | L | 7 | C06, C07 | 2026-11-15 | 2026-11-15 | In Progress |
 | C09 | P0-06 | Khoa (C) | Dũng / Minh | M | 3 | C08 | 2026-11-16 | 2026-11-16 | Not Started |
-| C10 | P0-05/P0-06 | Khoa (C) | Dũng / Minh | L | 4 | B08, B09, C08 | 2026-11-17 | 2026-11-17 | Not Started |
+| C10 | P0-05/P0-06 | Khoa (C) | Dũng / Minh | L | 4 | B08, B09, C08 | 2026-11-17 | 2026-11-17 | In Progress |
 | C11 | Quality | Khoa (C) | Dũng / Minh | L | 6 | C06, C07, C08, C09, C10 | 2026-11-20 | 2026-11-20 | Not Started |
 | C12 | Submission | Khoa (C) | Dũng / Minh | M | 3 | C11 | 2026-11-22 | 2026-11-21 | Not Started |
 | F01 | Validation | Minh (F) | Dũng / Khoa | M | 2 | Planning review | 2026-11-03 | 2026-11-03 | In Review |
@@ -484,6 +484,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Phối hợp cụ thể:** Dũng cung cấp approved immutable goods/delivery/confirmation/dispute snapshots từ B08–B10; Khoa map contract functions/events/refs/sequence; cả hai kiểm tra retry không tăng số lượng.
 - **Ghi công hỗ trợ:** ghi phần việc/người/giờ trong task này, không tính cùng một giờ vào cả task B và C; chưa có giờ hoặc bằng chứng thực thi.
 - **Status / evidence (15/11/2026):** In Progress. Dũng đã chuẩn bị thiết kế Task 9, fixture 2 mặt hàng với sequence 1–4 và ma trận test để Khoa review. Đối chiếu build input/output và ABI C06 bằng Node, encode/decode offline 4/4 mốc bằng ethers. **Not Run:** Java parity/verifier C10, PostgreSQL ordering/retry, Hardhat C06 end-to-end và Fuji. Dũng triển khai worker/verifier và chạy local ngày 16/11 theo D57. Khoa xác nhận ABI/redeploy và chuẩn bị proof độc lập. Cổng 17/11 chờ local pass và Dũng duyệt. Giờ làm thực tế chưa ghi nhận. [Thiết kế và bàn giao Task 9](../reviews/C10_DUNG_WORKER_DESIGN_2026_11_15.md)
+- **Status / evidence (16/11/2026, Task #7):** **Local PASS · Pending Review** cho phạm vi năm mốc. Dũng chạy `mvnw.cmd -B -ntp '-Dit.test=CaseVerifiedHardhatE2EIT' verify` trên Hardhat `31337` và PostgreSQL test. Failsafe ghi **2 tests, 0 failures, 0 errors, 0 skipped** ở SHA nền `b1a59a6` cùng patch Task #7 trước phần mở rộng. Cả năm job/attempt `CONFIRMED`; restart ở `COMMITMENT_REDUCED` dùng lại attempt, nonce, tx hash và signed bytes. Dũng bàn giao bằng chứng, Khoa review proof và xác nhận phạm vi nghiệm thu. Ca hồi quy tám mốc **Not Run** và chỉ tính vào gate nếu Khoa xác nhận. Fuji **Not Run**, thuộc task riêng. C10 tiếp tục `In Progress`; giờ làm thực tế chưa ghi nhận. [Bàn giao cho Khoa](../reviews/C10_DUNG_WORKER_DESIGN_2026_11_15.md#bàn-giao-kết-quả-local-cho-khoa)
 
 ### C11 - Contract/failure regression
 
@@ -761,6 +762,7 @@ Status / evidence: tất cả Not Started; chưa có code, giờ thực tế hay
 | B07 (G01–G03 implementation & tests, T1–T5) | 12/11/2026 | In Review | Estimate gốc 7h (deadline 13/11/2026); actual human effort chưa được cung cấp | V11/V12 + package `contribution` + outbox AID_PLEDGED/COMMITMENT_REDUCED + số liệu pledge công khai; 37 IT + 9 unit B07 và hồi quy toàn bộ được Dũng xác nhận pass trên `aidbridge_test`; sửa lỗi làm tròn `pledgedAt` | Khoa review D53 + worker lọc `event_type`; Minh nối F07 với G01–G03; B08 sẵn sàng khi được phê duyệt |
 | B09 (D01 DELIVERED + FAILED, tests) | 14/11/2026 | In Review | Estimate gốc 5h (deadline 15/11/2026); actual human effort chưa được cung cấp | DeliveryService DELIVERED (khóa, tồn, evidence snapshot, DELIVERY_RECORDED + job D53), P04 deliveredQty; DeliveryApiIT 7/7, DeliveryConcurrencyIT ×3, hồi quy 66 pass theo xác nhận của Dũng | Khoa xác nhận deliveryRef (D56) cho C10; Minh nối F09; B10 loại delivery đã void khỏi tồn kho |
 | B10 (D02, S01–S03, P05 và projection) | 15/11/2026 | In Review | Estimate gốc 6h; actual human effort chưa được cung cấp | Dũng báo 38 test B10 pass, gồm IT12 và concurrent flag+close; báo cáo Maven hiện có ghi 38 skipped | Đính kèm summary lượt pass; Minh kiểm tra F09 live; Khoa kiểm tra outbox và chain ordering cho `DELIVERY_CONFIRMED` |
+| Task #11 (demo DB sau PR #30) | 16/11/2026 | In Review | Dũng. Chưa ghi nhận giờ thực tế | Phương án A `USER_CONFIRMED`. DB staging riêng `aidbridge_demo_v16` trên SHA `15bcba4ec5cce8bf07b929353e68d26b006a0668`. Dũng xác nhận Flyway đến V18, checksum V16 `-569862596` và smoke đến D02 thành công. XML Failsafe trên DB test riêng ghi `ReceiptApiIT` 5/5, `DeliveryRefMigrationIT` 9/9, 0 failures, 0 errors, 0 skipped. | Dũng lưu bảng đọc lại API và outbox để chốt kiểm chứng DB. Minh kiểm tra F09/E2E. Khoa đối chiếu sequence 1–5. Worker staging đang tắt. Cutover và Fuji với DB mới `Not Run`. |
 
 ### C01 review handoff - 09/11/2026
 

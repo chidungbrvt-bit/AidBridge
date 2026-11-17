@@ -1,81 +1,98 @@
-# Task 9 · Thiết kế worker Java cho C10 · 15/11/2026
+# C10 · Thiết kế worker Java và local gate
 
-**Bản thiết kế để review.** Dũng phụ trách worker và receipt verifier Java, dự kiến hoàn thành cùng kiểm thử local ngày 16/11. Khoa giữ vai trò primary owner C10 (4h), phụ trách ABI, xác nhận redeploy registry C06 và script xác minh độc lập. Mốc xét Fuji là 17/11. Giờ thực tế của Dũng chưa được ghi nhận. [D49/D56](../planning/DECISION_LOG.md) · [Backlog C10](../planning/TASK_BACKLOG.md#c10---goods-to-chain-integration)
+Thiết kế Task #9 ngày 15/11, cập nhật Task #7 ngày 16/11/2026. Dũng phụ trách worker, verifier và test local. Khoa giữ primary owner C10 (4h), review ABI và proof, và phụ trách các quyết định redeploy/cutover thuộc task sau. Căn cứ [D56 bổ sung ngày 15/11](../planning/DECISION_LOG.md) và [Backlog C10](../planning/TASK_BACKLOG.md#c10---goods-to-chain-integration). Giờ thực tế chưa được ghi nhận.
 
-Baseline đã đọc là `dung` tại `017490dd4ae64273fbfc4bccf4d8ceb8f878aaf2` cùng D49/D56 và các thay đổi đang có trong working tree. B09 đã có outbox D01 và `delivery_ref` ở V16. B10 đã có D02 tạo outbox `DELIVERY_CONFIRMED`, V17/V18 và luồng xử lý sau giao. Hiện worker Java vẫn chỉ claim/poll `CASE_VERIFIED`. [B08 R01](B08_R01_HANDOFF.md) · [B09 và B10](../planning/TASK_BACKLOG.md#b09---delivery-recordsfailed-attempts) · [BlockchainJobRepository](../../backend/aidbridge-backend/src/main/java/com/aidbridge/blockchain/repository/BlockchainJobRepository.java)
+## Fixture review ngày 16/11
 
-## Một case giả lập, bốn sequence
+[Fixture JSON](../fixtures/c10-goods-milestones.design.json) là dữ liệu giả lập cho một case mới, hai mặt hàng, hai donor độc lập, hai pledge, một lần hủy một phần và ba receipt. Tất cả commitment dùng để encode ABI trong JSON là placeholder. Mỗi `observed` để `NOT_RUN`; bằng chứng runtime nằm trong report Failsafe của lượt tương ứng.
 
-[Fixture JSON](../fixtures/c10-goods-milestones.design.json) dùng tổ chức mới đã đăng ký relayer test, một creator/recorder `VOLUNTEER`, một `VERIFIER` độc lập, một `ORG_ADMIN` và một donor đã được cấp quyền. Creator tạo case có consent cho public summary và evidence fixtures hợp lệ. Verifier duyệt đúng revision đang hiển thị. Admin tạo và publish campaign, đưa case lên `IN_PROGRESS`. Donor cam kết hai dòng, admin nhận từng phần trong một receipt, rồi volunteer ghi giao hai dòng và chọn evidence versions của lần giao. Các bước nghiệp vụ dùng API thật khi chạy harness. Publish là audit local, nên chỉ có bốn job.
+`VOLUNTEER` tạo case, `VERIFIER` khác người duyệt đúng revision và evidence versions. `ORG_ADMIN` publish campaign và thực hiện R01. Hai donor gọi G01 và donor A gọi G03 cho pledge A. `VOLUNTEER` ghi giao D01 với evidence versions của lần giao. Campaign publish chỉ ghi audit local.
 
-Thứ tự HTTP để dựng fixture: `POST /api/cases` → `POST /api/cases/{id}/verify` → `POST /api/campaigns` → `POST /api/campaigns/{id}/publish` → `POST /api/campaigns/{id}/commitments` → `POST /api/commitments/{id}/receipts` → `POST /api/cases/{id}/deliveries`. Harness lấy ID từ các response, mỗi actor có session/CSRF riêng và dùng lại cùng key/body khi kiểm replay. [API Specification](../architecture/API_SPECIFICATION.md)
+| Mặt hàng | Target | Pledge A | Pledge B | Hủy A | Nhận A1 | Nhận B1 | Nhận A2 | Giao | Còn giao được |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Rice (BAG) | 10 | 6 | 2 | 2 | 1 | 1 | 3 | 4 | 1 |
+| Water (BOX) | 6 | 4 | 1 | 1 | 1 | 1 | 1 | 2 | 1 |
 
-| Mặt hàng | Target | Pledged | Received | Delivered | Confirmed | Available to deliver |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Rice (kg) | 10 | 8 | 5 | 4 | 0 | 1 |
-| Drinking Water (box) | 6 | 5 | 3 | 2 | 0 | 1 |
+Tổng cam kết hiệu lực là `6/4`, tổng nhận là `5/3`, tổng giao là `4/2`. Review nghiệp vụ của delivery là `PENDING`, confirmed quantity là `0/0`.
 
-Calldata có sáu trường chung theo thứ tự `orgRef, caseRef, eventId, chainSequence, evidenceCommitment, schemaVersion`. Mỗi event có `topics = [topic0, orgRef, caseRef, eventId]`. Data bắt đầu từ `chainSequence, evidenceCommitment, schemaVersion, timestamp`; các refs bổ sung nối theo thứ tự ở bảng. `timestamp` là giờ block do contract ghi.
+### Mapping ABI
 
-| Seq. | Audit type / nguồn snapshot | Function, selector và refs bổ sung | Expected log |
+Calldata có sáu trường chung `orgRef, caseRef, eventId, chainSequence, evidenceCommitment, schemaVersion`. Mọi log có `[topic0, orgRef, caseRef, eventId]` và data bắt đầu bằng `chainSequence, evidenceCommitment, schemaVersion, timestamp`. Sau phần chung là các refs ở bảng. `auditEventId` và `event_key` là UUID riêng trong SQL. `eventId` dùng `logical_event_id` bytes32 từ job.
+
+| Sequence fixture | Audit type, nguồn bất biến và refs | Function | Expected log |
 | ---: | --- | --- | --- |
-| 1 | `CASE_VERIFIED` · `verificationId`, `reviewedCaseVersion` từ payload v1 và `case_revisions.snapshot_private` theo đúng org/case/version. | `recordCaseVerification` · `0x1bd1fadf` · 6 tham số chung. | `CaseVerified` · 128 bytes data. Hồi quy C05 giữ nguyên envelope và manifest hiện tại. |
-| 2 | `AID_PLEDGED` · payload v1 có `contributionId`, `lines[{campaignItemId,quantity}]`. Scoped join contribution → campaign → case/org để lấy `contributions.public_ref` và kiểm ownership các dòng. Đọc lượng pledge gốc từ audit. | `recordAidCommitment` · `0x89f8809e` · thêm `commitmentRef`. | `AidCommitted` · 160 bytes data, word cuối là `commitmentRef`. |
-| 3 | `GOODS_RECEIVED` · payload v1 có `receiptId`, `contributionId`, `receiptRef`, `commitmentRef`, `receivedAt` và các dòng có `contributionItemId`. So receipt và từng dòng với cam kết cùng org/case; so `commitmentRef` trong audit với pledge gốc và `contributions.public_ref`. | `recordGoodsReceipt` · `0x73a5f8b9` · thêm `receiptRef, commitmentRef`. | `GoodsReceived` · 192 bytes data, hai word cuối đúng thứ tự `receiptRef, commitmentRef`. |
-| 4 | `DELIVERY_RECORDED` · payload v1 có `deliveryId`, `campaignId`, `deliveryRef`, `handedOverAt`, lines và `evidenceVersionIds`. Scope theo org/case/campaign, đối chiếu `outcome = DELIVERED`, `deliveryRef` bằng `deliveries.delivery_ref` của V16 và evidence snapshot theo version. | `recordDelivery` · `0x2df45447` · thêm `deliveryRef`. | `DeliveryRecorded` · 160 bytes data, word cuối là `deliveryRef`. Business review vẫn `PENDING`. |
+| 1 | `CASE_VERIFIED`. `verificationId`, `reviewedCaseVersion`, `case_revisions.snapshot_private`. | `recordCaseVerification` | `CaseVerified`, 128 bytes |
+| 2 | `AID_PLEDGED` A. Pledge gốc từ audit v1, ref A từ `contributions.public_ref` theo đúng contribution/campaign/case/org. | `recordAidCommitment` + ref A | `AidCommitted`, 160 bytes |
+| 3 | `AID_PLEDGED` B. Pledge và ref B lấy cùng cách với A, thuộc contribution B. | `recordAidCommitment` + ref B | `AidCommitted`, 160 bytes |
+| 4 | `COMMITMENT_REDUCED` A. Audit v1 giữ lượng hủy theo dòng và `reason`. `event_key` riêng, ref lấy từ pledge A. N−1 là pledge B. | `recordCommitmentReduction` + ref A | `CommitmentReduced`, 160 bytes |
+| 5 | `GOODS_RECEIVED` A1. `receiptRef` A1 từ audit R01. `commitmentRef` trong audit phải khớp pledge A và `goods_receipts.contribution_id`. | `recordGoodsReceipt` + receiptRef A1, ref A | `GoodsReceived`, 192 bytes |
+| 6 | `GOODS_RECEIVED` B1. Receipt riêng thuộc contribution B và phải dùng ref B. | `recordGoodsReceipt` + receiptRef B1, ref B | `GoodsReceived`, 192 bytes |
+| 7 | `GOODS_RECEIVED` A2. ReceiptRef mới của lần nhận thứ hai thuộc cùng pledge A. | `recordGoodsReceipt` + receiptRef A2, ref A | `GoodsReceived`, 192 bytes |
+| 8 | `DELIVERY_RECORDED`. `deliveryRef` trong audit phải bằng `deliveries.delivery_ref` V16. So các dòng, thời điểm và evidence versions với record đã lưu. | `recordDelivery` + deliveryRef | `DeliveryRecorded`, 160 bytes |
 
-Nguồn tạo audit/job: [VerificationOutboxService](../../backend/aidbridge-backend/src/main/java/com/aidbridge/verification/service/VerificationOutboxService.java) · [ContributionOutboxService](../../backend/aidbridge-backend/src/main/java/com/aidbridge/contribution/service/ContributionOutboxService.java) · [DeliveryService](../../backend/aidbridge-backend/src/main/java/com/aidbridge/delivery/service/DeliveryService.java) · [V16](../../backend/aidbridge-backend/src/main/resources/db/migration/V16__add_delivery_ref.sql) · [AidRegistry.sol](../../contracts/contracts/AidRegistry.sol)
+Worker dùng `chain_sequence` đã lưu của từng case. Fixture hồi quy một pledge/một receipt vẫn dùng sequence 1–5 với reduction ở mốc 3. `DELIVERY_CONFIRMED`, dispute và VOID là operation riêng ngoài local gate Task #7. `FAILED` delivery chỉ có audit nghiệp vụ.
 
-**Tùy chọn sau khi bốn mốc pass:** `DELIVERY_CONFIRMED` → `confirmDelivery` (`0xa9967f54`) → `DeliveryConfirmed` (160 bytes, thêm `deliveryRef`). D02 dùng reviewer khác recorder; payload v1 có `confirmationId`, `deliveryId`, `campaignId`, `deliveryRef`, `decision`, `reviewedAt` và đúng tập `reviewedEvidenceVersionIds`. Khớp ref với delivery gốc và chỉ ký sequence 5 khi sequence 4 đã `CONFIRMED`. B10 đã ghi outbox; Dũng và Khoa quyết định đưa vào demo sau khi kiểm thử. Cancel/`COMMITMENT_REDUCED`, dispute và VOID nằm ngoài đường chain demo bốn mốc của bản thiết kế này; không thay đổi D49/D55/D56.
+## Worker và verifier hiện có
 
-Các SQL UUID và snapshot mẫu là dữ liệu giả. `auditEventId` là ID dòng audit, `eventKey` là UUID nghiệp vụ, còn `logicalEventId` là bytes32 của job, dùng làm ABI `eventId`. Trong JSON, `privateFixture`, `auditPayload` và `privateSource` chỉ dùng đối chiếu ở backend. ABI chỉ dùng refs opaque, envelope và event data đã định nghĩa trong contract. Commitment trong fixture là hằng bytes32 **placeholder** để encode/decode. Test runtime tính commitment từ manifest và salt thực của job test. Salt, manifest, evidence, quantities và UUID nội bộ nằm ngoài chain. Mọi trường `observed` đang trống.
+- [BlockchainJobRepository](../../backend/aidbridge-backend/src/main/java/com/aidbridge/blockchain/repository/BlockchainJobRepository.java) claim/poll cả năm loại trên Hardhat `31337`. Với N > 1, worker kiểm N−1 `CONFIRMED` cùng case, chain và registry trước khi ký. Reduction và receipt còn kiểm pledge gốc của chính contribution trên deployment đó.
+- [Manifest builder](../../backend/aidbridge-backend/src/main/java/com/aidbridge/blockchain/worker/CaseVerifiedManifestBuilder.java) đọc snapshot v1, đối chiếu nguồn V14/V16, dùng `CanonicalJson` và lưu manifest, encrypted salt, commitment một lần. Quantities, private IDs, evidence contents và URLs nằm ngoài chain. Khoa còn review vector canonical goods.
+- [Worker](../../backend/aidbridge-backend/src/main/java/com/aidbridge/blockchain/worker/CaseVerifiedWorker.java) giữ signer session lock, nonce journal và một open attempt mỗi signer. Signed bytes và tx hash lưu trước broadcast. Restart trong cùng deployment dùng attempt đã lưu. RPC chạy ngoài SQL transaction.
+- [Receipt verifier](../../backend/aidbridge-backend/src/main/java/com/aidbridge/blockchain/worker/CaseVerifiedReceiptVerifier.java) so chain qua worker, registry, signer, tx hash, canonical block, topic, event ID, org/case refs, sequence, commitment, schema và refs của operation. Receipt vắng hoặc timeout giữ `SUBMITTED` và API `PENDING_ON_CHAIN`. Chỉ receipt đúng context mới có thể được ghi `CONFIRMED` hoặc kết luận `TX_REVERTED` khi status 0. Proof lưu đủ context Task #6.
 
-## Thiết kế Java cho ngày 16/11
+## Ma trận nghiệm thu Task #7
 
-1. **Giữ một vòng đời worker.** Bắt đầu với `AID_PLEDGED`, rồi thêm receipt và delivery. Tái dùng scheduler, adapter Web3j, `SignerSessionLock`, leases, journal và transaction boundaries của C05. Mỗi operation chỉ cần định nghĩa scoped snapshot loader, các refs theo thứ tự ABI, cách encode calldata và expected log. Chọn allowlist operation chung cho cả claim và poll. Retain regression C05 trên artifact C03 và chạy lại mốc đó trên C06.
-2. **Gate thứ tự trước khi ký.** Query hiện loại job còn predecessor nhỏ hơn chưa `CONFIRMED`, nhưng lỗ hổng do thiếu hẳn N−1 vẫn có thể lọt khi mở rộng. Giữ guard hiện có và với N > 1 yêu cầu job N−1 tồn tại cùng case/chain, `CONFIRMED` và có attempt `CONFIRMED` gắn đúng registry đang chạy. Kiểm/khoá job theo `FOR UPDATE … SKIP LOCKED`. Đề xuất reason có giới hạn cho job được hỗ trợ: `PREDECESSOR_MISSING`, `PREDECESSOR_NOT_CONFIRMED`, `PREDECESSOR_OUT_OF_SCOPE`, `PREDECESSOR_REGISTRY_MISMATCH`. Ghi reason và thời điểm kiểm lại, giữ trạng thái chờ và không ký. Xử lý job bị chắn với lần kiểm riêng có giới hạn để các case khác vẫn tiến. `COMMITMENT_REDUCED` hiện vẫn có outbox B07; nếu đứng trước một mốc demo, dừng case đó, giữ nguyên sequence và job. `CASE_VERIFIED` vẫn chỉ được ký sequence 1.
-3. **Đóng băng dữ liệu dự kiến.** Trong transaction ngắn, kiểm audit/job cùng case, org `APPROVED`, relayer binding, `payloadVersion = 1`, `schemaVersion = 1`, định danh và refs đúng shape/scope, quantities nguyên dương, evidence links bất biến. Payload sai phiên bản hoặc refs sai thì fail trước lúc ký và lưu reason đã chuẩn hóa. Đề xuất canonical manifest riêng cho mốc hàng hóa dựa trên snapshot v1, chuẩn hóa thứ tự dòng theo ID và biểu diễn UTC một lần; Khoa review vector Java/JS. Tái dùng canonicalization và công thức commitment C01/D49 ràng buộc chain/registry; lưu manifest, salt mã hóa và commitment theo mẫu C05. Cố định các fields dùng để dựng expected log từ preparation đã lưu khi poll/retry, dù aggregate nghiệp vụ đã thay đổi. Dùng `logical_event_id` và `chain_sequence` đang có; digest phía contract gồm selector, envelope trừ `eventId`, và refs bổ sung theo ABI.
-4. **Ghi attempt rồi broadcast.** Giữ lock session theo chain/signer, V13 one open attempt/signer và one open attempt/job, nonce journal và fencing của C07. RPC kiểm chain, lấy nonce/gas, gửi và poll ở ngoài SQL transaction. Lưu attempt `PREPARED` gồm chain, registry, signer, nonce, hash và signed bytes mã hóa trước broadcast. Khi restart hoặc timeout, kiểm lại binding và hash rồi phát lại chính bytes đó nếu đến hạn, hoặc poll attempt gốc. Các worker dùng chung signer phải dùng chung DB/lock. Khi đổi deployment, xử lý hết nghĩa vụ signer ở DB cũ và dừng worker cũ trước khi bật worker mới. Signed bytes và commitment gắn deployment cũ chỉ dùng để hoàn tất đối chiếu deployment đó.
-5. **Xác minh receipt theo operation.** Worker so RPC chain với chain đã ghim, verifier so from/to/hash với attempt và block number/hash với canonical block. Status 1 cần đúng một log chưa bị removed từ registry, đúng chữ ký event ở `topic0`, đủ bốn topics, đúng data length và các ABI word hợp lệ. So đủ org/case/event ID/sequence/schema/commitment/refs, kiểm kiểu của timestamp và log index. Script độc lập so timestamp với canonical block và đọc lại event record. Receipt vắng/RPC timeout giữ `SUBMITTED` và API `PENDING_ON_CHAIN`. Proof sai không xác nhận. Chỉ kết luận `TX_REVERTED` sau khi status 0 và context khớp. Với mốc hàng hóa, C06 revert `EventAlreadyRecorded` nếu cùng event ID/digest, hoặc `EventIdConflict` nếu digest đổi. Đối chiếu original hash/receipt/log trước khi xử lý chênh lệch. Cập nhật job và attempt trong cùng transaction, giữ nguyên delivery, evidence và quantities.
-
-Nguồn worker hiện tại: [CaseVerifiedWorker](../../backend/aidbridge-backend/src/main/java/com/aidbridge/blockchain/worker/CaseVerifiedWorker.java) · [Receipt verifier](../../backend/aidbridge-backend/src/main/java/com/aidbridge/blockchain/worker/CaseVerifiedReceiptVerifier.java) · [V12 sequence](../../backend/aidbridge-backend/src/main/resources/db/migration/V12__link_blockchain_jobs_to_case.sql) · [C07 safety](C07_WORKER_SAFETY_REVIEW.md) · [C08 recovery](C08_DUNG_RECOVERY_2026_11_13.md). C08 từng kiểm receipt polling/restart; full log replay vẫn thiếu bằng chứng riêng.
-
-## Ma trận kiểm thử
-
-| Lượt | Ca ưu tiên và điều kiện pass | Trạng thái 15/11 |
+| Ca | Điều kiện nghiệm thu | Kết quả quan sát |
 | --- | --- | --- |
-| 1 · Unit/ABI | Java và ethers từ artifact C06 khớp toàn bộ calldata, topic/data/refs, payload digest và vector commitment. Test refs riêng sai từng vị trí, đảo hai refs của receipt, thiếu/trùng/removed log, sai registry/signer/hash/chain, block chưa canonical, revert đúng/sai context, ABI data hỏng, wrong schema và payload sai version. Chạy lại `CaseVerifiedReceiptVerifierTest` và `GoldenVectorParityTest`. | **Pass** cho đối chiếu tĩnh artifact + encode/decode fixture bằng ethers. **Not Run** cho Java/ABI parity và unit C10. |
-| 2 · PostgreSQL/retry | N dừng trước sign khi N−1 pending, failed, thiếu, khác registry hoặc là job ngoài scope chưa xử lý. Sau khi predecessor đúng được confirm, N tiếp tục; case khác vẫn tiến. Thử hai worker chung signer, restart sau persist `PREPARED` và ở `SUBMITTED`, RPC timeout rồi nhận proof. Assert cùng event ID/nonce/hash/signed bytes và một attempt trong các kịch bản reuse; không có duplicate audit/job/stock. So aggregate và số dòng trước/sau. Hồi quy `CaseVerifiedWorkerIT` và `BlockchainTransactionPersistenceIT`. | **Not Run** |
-| 3 · Hardhat 31337 | Tái dùng harness `CaseVerifiedHardhatE2EIT`. Chạy riêng hồi quy C03 hiện có, rồi deploy đúng C06 local, đăng ký org/relayer test và tạo case hai mặt hàng qua HTTP. Mỗi job confirm đúng log/attempt/registry; DB và `getEventRecord` khớp digest, `getCaseSummary` kết thúc ở sequence 4. Idempotent retry giữ nguyên hàng; receipt status 1 chưa đủ để pass. | **Not Run** |
-| Fuji | Local pass cả ba lượt, không skip, Dũng duyệt và Khoa xác nhận artifact + redeploy. | **Not Run**, chờ local gate và Khoa xác nhận. |
+| Unit/verifier | Hồi quy C05, reduction sai ref, receipt đảo ref, delivery sai ref. | **PASS** 11 tests, 0 failures/errors/skipped trong report trước khi bổ sung harness multi-commitment. |
+| PostgreSQL worker | Job chờ khi predecessor chưa confirm. Reduction kiểm pledge gốc khi N−1 là pledge khác. Fixture năm mốc kiểm refs, stock và replay. | **PASS** 3 tests, 0 failures/errors/skipped trong report trước khi bổ sung harness multi-commitment. |
+| Hardhat C03 và C06 một pledge | Artifact C06 đã ghim, sequence 1–5 và mỗi job/attempt `CONFIRMED`. Restart ở reduction, cùng bytes, nonce và hash. Đối chiếu calldata, log, `getEventRecord`, `getCaseSummary` và stock. | **PASS** 2 tests, 0 failures/errors/skipped ngày 16/11. Report trước patch mở rộng, nền `b1a59a6` + working tree Task #7. Local registry `0x5fbdb2315678afecb367f032d93f642f64180aa3`. Mốc 5 tx `0x020f5aae767ff927afdc9ae762c2b53ccd29dedf08130752ce4cb4ecdbb22e9b`. |
+| Hardhat C06 hai pledge và ba receipt | Sequence 1–8 theo job đã lưu. A1 và A2 khác receiptRef nhưng cùng ref A. B1 dùng ref B. Reduction A đứng sau pledge B. Restart theo operation reduction, một attempt/job, tổng từng item giữ nguyên, case summary sequence 8. | **Not Run**. Ca hồi quy bổ sung. Nếu Khoa xác nhận ca này thuộc gate Task #7, Dũng chạy harness và bàn giao proof mới. |
+| Fuji | Redeploy/cutover ở task riêng khi có approval. | **Not Run**. |
 
-Tên test C10 dự kiến là `GoodsMilestoneAbiParityTest`, `GoodsMilestoneReceiptVerifierTest`, `GoodsMilestoneWorkerIT` và `GoodsMilestonesHardhatE2EIT`. Các tên này là checklist triển khai cho Dũng, chưa có test classes tương ứng. [Test Strategy IT10–IT14](../quality/TEST_STRATEGY.md) · [Harness C05](../../backend/aidbridge-backend/src/test/java/com/aidbridge/casefile/CaseVerifiedHardhatE2EIT.java) · [Workflow C07](../../.github/workflows/c07-worker-safety.yml)
+## Bàn giao kết quả local cho Khoa
 
-Khi đã có code test, dùng JDK 21, PostgreSQL test `aidbridge_test` ở loopback port `5432`, tài khoản test `aidbridge_app` và cung cấp `AIDBRIDGE_TEST_DATABASE_URL`, `AIDBRIDGE_TEST_DATABASE_USERNAME`, `AIDBRIDGE_TEST_DATABASE_PASSWORD` qua cấu hình môi trường test. Harness tạo schema riêng và Flyway chạy đến latest, gồm V16 và cả V17/V18 trên cây hiện tại. Với outbox hiện mặc định `chain_id = 43113`, harness C10 cần chọn đúng bốn job từ các `auditEventId` HTTP vừa tạo và đặt `chain_id = 31337` trong schema test, khi các job còn `PENDING` và chưa có attempt. Automated scheduler tắt; test tự tạo worker local. Đây là setup của harness tương tự C05.
+**Task #7 · Local PASS · Pending Review**, ngày 16/11/2026. Dũng chạy `mvnw.cmd -B -ntp '-Dit.test=CaseVerifiedHardhatE2EIT' verify` với Hardhat `31337` và PostgreSQL `aidbridge_test`. Failsafe ghi **2 tests, 0 failures, 0 errors, 0 skipped** cho hồi quy C03 và C06 năm mốc. Lượt này dùng SHA nền `b1a59a63f2e3ba2cd00dcfdf8556fae580ec6d8c` cùng patch Task #7 trước khi thêm ca tám mốc.
 
-PowerShell 1, Hardhat từ thư mục contracts:
+Artifact C06 có build ID `solc-0_8_28-6d69e2cf1ddbaa7f61c90daac742b8efd4cf518a` và SHA-256 `976825c365d0dd99c2097e90b0bbced2d36556524fcb785de4ac19367499c592`. Mọi dòng dưới đây dùng registry `0x5fbdb2315678afecb367f032d93f642f64180aa3`, `logIndex=0`, job và attempt đều `CONFIRMED`.
+
+| Sequence | Operation | Logical event ID | Tx hash | Block |
+| ---: | --- | --- | --- | ---: |
+| 1 | `CASE_VERIFIED` | `0x6d7f574f58bc3be206481a815b5d4d29e8239e2f4cf8ac3b9c4140dc8b4bc55e` | `0xfacb5dd91620dc390247cbffc5f0cb2fb0e66cb258dd2a5e157f313c44b71e77` | 3 |
+| 2 | `AID_PLEDGED` | `0x57abcb91e748e3a4b46bb5d12f4f38bad4941af7087dd78f30d731053fd61e52` | `0x6a221929b1ad1cdd13630a0a01a97f0c389050e759e389893a2f4eb761f52c8f` | 4 |
+| 3 | `COMMITMENT_REDUCED` | `0xb10cff15cce09eb6cd771564a1f64e3670cd124487b5650388ef7ac1d766947a` | `0x98a29725213f9d585a5eb49a51db81da9baf3074d0c059e9ad0b9129fb75ada6` | 5 |
+| 4 | `GOODS_RECEIVED` | `0xeedc51817a24910c98c973f328415762dc6e64ce45de7f4222a26989fe01d31a` | `0xa86a505f3aefbfe8659bb3f7c6b41a961fc4c980fda760d307658cc6992ffa34` | 6 |
+| 5 | `DELIVERY_RECORDED` | `0x514af415a9457ed6359081b1e0e6e15e412303bdc289ba128651dd8a765f43be` | `0x020f5aae767ff927afdc9ae762c2b53ccd29dedf08130752ce4cb4ecdbb22e9b` | 7 |
+
+Report xác nhận mỗi job có một attempt, restart ở sequence 3 giữ `nonce=2` và `signedBytesReused=true`, số lượng từng mặt hàng giữ nguyên. Nguồn là phần trích `C06_E2E` từ `backend/aidbridge-backend/target/failsafe-reports/TEST-com.aidbridge.casefile.CaseVerifiedHardhatE2EIT.xml`.
+
+Khoa review ABI, registry và receipt/log proof, rồi xác nhận ca tám mốc có thuộc gate hay không. Dũng cung cấp phần trích report và chạy lại trên SHA bàn giao khi cần gắn bằng chứng với một commit duy nhất. Ca tám mốc và Fuji **Not Run**. Fuji redeploy và cutover thuộc task riêng.
+
+## Chạy và bàn giao
+
+Dùng JDK 21, PostgreSQL `aidbridge_test` trên loopback port `5432`, user test `aidbridge_app`. Đặt `AIDBRIDGE_TEST_DATABASE_URL`, `AIDBRIDGE_TEST_DATABASE_USERNAME` và `AIDBRIDGE_TEST_DATABASE_PASSWORD` trong PowerShell chạy Maven. Schema riêng do harness tạo. Với outbox mặc định `43113`, test chỉ chuyển các job `PENDING` chưa có attempt của case vừa tạo sang `31337`.
+
+PowerShell 1
 
 ```powershell
 cd 'D:\thi\UniHack2026\AidBridge\contracts'
 node node_modules/hardhat/dist/src/cli.js node --hostname 127.0.0.1
 ```
 
-PowerShell 2, sau khi có biến DB test, code test và artifact đúng hash:
+PowerShell 2
 
 ```powershell
 cd 'D:\thi\UniHack2026\AidBridge\backend\aidbridge-backend'
 $env:BLOCKCHAIN_ENABLED = 'false'
 $env:AIDBRIDGE_E2E_HARDHAT_RPC_URL = 'http://127.0.0.1:8545'
-.\mvnw.cmd -B -ntp '-Dtest=CaseVerifiedReceiptVerifierTest,GoldenVectorParityTest,GoodsMilestoneAbiParityTest,GoodsMilestoneReceiptVerifierTest' test
-.\mvnw.cmd -B -ntp '-Dit.test=CaseVerifiedWorkerIT,BlockchainTransactionPersistenceIT,GoodsMilestoneWorkerIT' verify
-.\mvnw.cmd -B -ntp '-Dit.test=CaseVerifiedHardhatE2EIT,GoodsMilestonesHardhatE2EIT' verify
+.\mvnw.cmd -B -ntp '-Dit.test=CaseVerifiedHardhatE2EIT' verify
+Select-String -Path '.\target\failsafe-reports\TEST-com.aidbridge.casefile.CaseVerifiedHardhatE2EIT.xml' -Pattern 'C06_E2E'
 ```
 
-Đọc cả `target/surefire-reports` và `target/failsafe-reports` theo lượt chạy. Các suite yêu cầu phải xuất hiện với số test > 0 và 0 skip/error/failure. Hai lệnh `verify` dùng lựa chọn Failsafe riêng; Maven vẫn có thể chạy unit suite theo phase mặc định. Các lệnh Maven/Hardhat ở trên đều **Not Run** trong Task 9 ngày 15/11.
+Lệnh trên chạy cả ca hồi quy mở rộng. Khi xác minh ca này, kỳ vọng ba Hardhat tests, 0 failures/errors/skipped. Kiểm dòng `C06_E2E PASS confirmedJobs=8` và tám dòng bằng chứng liền trước thuộc cùng registry. Bàn giao phần trích `C06_E2E` cho Khoa cùng test counts và SHA hoặc SHA nền + diff.
 
 ## Đối chiếu fixture offline
 
-Từ thư mục `contracts`, chạy đoạn dưới với artifact và dependency ethers đã có. Nó dựng calldata và event từ hai nửa của fixture bằng ABI rồi kiểm lại từng value. Đây là phần kiểm tĩnh tái lập được cho ngày 15/11.
+Từ thư mục `contracts`, đoạn dưới dùng artifact C06 và ethers để đối chiếu calldata/log của fixture giả lập. Kết quả thuộc phạm vi ABI theo fixture. Các trường `observed` vẫn để trống cho đến khi có bằng chứng runtime riêng.
 
 ```powershell
 @'
@@ -109,6 +126,10 @@ for (const { auditType, expected: e } of fixture.milestones) {
 '@ | node --input-type=module
 ```
 
+## Lịch sử Task #9 · Đối chiếu ABI offline bốn mốc
+
+Kết quả dưới đây lấy từ fixture Task #9 trên `origin/dung` trước khi bổ sung `COMMITMENT_REDUCED` vào Task #7. Lượt này chỉ kiểm tra encode/decode ABI offline. Bằng chứng Hardhat của luồng năm mốc nằm ở mục bàn giao kết quả local phía trên.
+
 ```text
 PASS CASE_VERIFIED sequence=1 selector=0x1bd1fadf eventDataBytes=128
 PASS AID_PLEDGED sequence=2 selector=0x89f8809e eventDataBytes=160
@@ -116,7 +137,7 @@ PASS GOODS_RECEIVED sequence=3 selector=0x73a5f8b9 eventDataBytes=192
 PASS DELIVERY_RECORDED sequence=4 selector=0x2df45447 eventDataBytes=160
 ```
 
-## Gói bàn giao cho Khoa
+### Gói bàn giao cho Khoa
 
 - **Phiên bản ABI xuất phát:** source C06 `6944fff`; artifact local `contracts/artifacts/contracts/AidRegistry.sol/AidRegistry.json`, build `solc-0_8_28-6d69e2cf1ddbaa7f61c90daac742b8efd4cf518a`, Solidity 0.8.28, Paris, optimizer 200. SHA-256 artifact `976825c365d0dd99c2097e90b0bbced2d36556524fcb785de4ac19367499c592`; runtime Keccak-256 `0x525314d10311e01e01a61a6f9e75ee432f59ca09ff3aa27445aed3962e09011e`. Đã đối chiếu source với build input sau chuẩn hóa line endings và ABI/bytecode với build output bằng Node, exit 0. Khoa xác nhận artifact dùng để deploy và script độc lập. [Review C06](C06_PART2_D55_REVIEW.md)
 - **Dữ liệu chạy thực tế:** sau local run, điền mỗi hàng `observed` với chain ID, registry, tx hash, block number/hash, log index, logicalEventId, sequence và raw public log (address/topics/data). Ghi thêm artifact SHA, commit/working tree, lệnh, kết quả và số test skipped trong báo cáo. Khoa dùng tx input, canonical block, raw log, `getEventRecord` tại block receipt và `getCaseSummary` tại block mốc cuối. Kết quả offline hôm nay chỉ có ABI fixture; toàn bộ runtime fields để trống.

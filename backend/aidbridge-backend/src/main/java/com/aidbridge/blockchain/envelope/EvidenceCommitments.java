@@ -87,7 +87,7 @@ public final class EvidenceCommitments {
         return Hash.sha3(Numeric.hexStringToByteArray(encoded));
     }
 
-    static byte[] requireNonZeroBytes32(byte[] value, String name) {
+    public static byte[] requireNonZeroBytes32(byte[] value, String name) {
         if (value == null || value.length != 32) {
             throw new IllegalArgumentException(name + " must be exactly 32 bytes");
         }

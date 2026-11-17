@@ -56,4 +56,69 @@ public final class AidRegistryAbi {
         }
         return calldata;
     }
+
+    public enum Operation {
+        CASE_VERIFIED("recordCaseVerification", "CaseVerified", 0),
+        AID_PLEDGED("recordAidCommitment", "AidCommitted", 1),
+        COMMITMENT_REDUCED("recordCommitmentReduction", "CommitmentReduced", 1),
+        GOODS_RECEIVED("recordGoodsReceipt", "GoodsReceived", 2),
+        DELIVERY_RECORDED("recordDelivery", "DeliveryRecorded", 1);
+
+        private final String functionName;
+        private final String eventName;
+        private final int refCount;
+
+        Operation(String functionName, String eventName, int refCount) {
+            this.functionName = functionName;
+            this.eventName = eventName;
+            this.refCount = refCount;
+        }
+
+        public String functionSignature() {
+            return functionName + "(bytes32,bytes32,bytes32,uint64,bytes32,uint16"
+                    + ",bytes32".repeat(refCount) + ")";
+        }
+
+        public String topic0() {
+            return Hash.sha3String(eventName + "(bytes32,bytes32,bytes32,uint64,bytes32,uint16,uint64"
+                    + ",bytes32".repeat(refCount) + ")");
+        }
+
+        public int dataBytes() {
+            return CASE_VERIFIED_DATA_BYTES + 32 * refCount;
+        }
+
+        public void validateRefs(List<Bytes32> refs) {
+            if (refs.size() != refCount) {
+                throw new IllegalArgumentException("INVALID_OPERATION_REF_COUNT");
+            }
+            for (Bytes32 ref : refs) {
+                EvidenceCommitments.requireNonZeroBytes32(ref.getValue(), "operationRef");
+            }
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    public static String encode(Operation operation, CaseVerifiedEnvelope envelope, List<Bytes32> refs) {
+        operation.validateRefs(refs);
+        if (operation == Operation.CASE_VERIFIED) {
+            return encodeRecordCaseVerification(envelope);
+        }
+
+        List<Type> inputs = new java.util.ArrayList<>();
+        inputs.add(new Bytes32(envelope.orgRef()));
+        inputs.add(new Bytes32(envelope.caseRef()));
+        inputs.add(new Bytes32(envelope.eventId()));
+        inputs.add(new Uint64(BigInteger.valueOf(envelope.chainSequence())));
+        inputs.add(new Bytes32(envelope.evidenceCommitment()));
+        inputs.add(new Uint16(BigInteger.valueOf(envelope.schemaVersion())));
+        inputs.addAll(refs);
+
+        String calldata = FunctionEncoder.encode(
+                new Function(operation.functionName, inputs, Collections.emptyList()));
+        if (!calldata.startsWith(Numeric.toHexString(selector(operation.functionSignature())))) {
+            throw new IllegalStateException("ABI_SELECTOR_MISMATCH");
+        }
+        return calldata;
+    }
 }
