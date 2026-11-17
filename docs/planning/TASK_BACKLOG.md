@@ -467,6 +467,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### C10 - Goods-to-chain integration
 
+- **Khoa Task3 17/11 — local gate NEEDS FIX:** PR33 f85d390 đã có source fix receipt7context và reduction/multi-commitment harness; F1/F2 source addressed nhưng runtime acceptance OPEN. Chain guard CASE_VERIFIED trước ký/rebroadcast còn thiếu trên remote; patch/test Dũng báo chưa commit. Không có XML mới để bind3testsPASS với PRhead; review Task6 cũ PASS source, regression runtime chưa nghiệm thu. Chưa deploy/cutover, không đánh Task7 DONE. [Bằng chứng/findings](../reviews/C10_LOCAL_GATE_REVIEW_2026_11_17.md).
+
 - **Handoff Khoa16/11:** #3 review DONE/PASS WITH NOTES; #4 review DONE, F1/F2 OPEN chờ Dũng Task7; #5 review DONE, D15 PROPOSED; #8 preparation DONE WITH GATES, C06 chưa deploy/cutover. Interim PASS WITH NOTES. Review #6 CHƯA THỰC HIỆN; không đánh Task7 DONE. Xem báo cáo interim và từng task bên dưới.
 
 - **Interim Khoa16/11 — trạng thái hiện hành:** design/review đã thực hiện; Task3 PASS WITH NOTES; Task4 NEEDS FIX F1/F2 (bổ sung reduction và fixtures nhiều commitments/receipts), Dũng xử lý trong Task7. Worker/verifier đa operation, Java parity/DB retry/Hardhat full-chain và Fuji goods chưa có bằng chứng; không đánh C10 Done hoặc runtime PASS. Evidence15/11 bên dưới là lịch sử của thiết kế bốn mốc, không thay thế gate năm operations16/11; tham chiếu D57 trong evidence đó không phải quyết định đã được phê duyệt (giữ D49/D56). Artifact C06 consistency đã PASS offline sau Task8; freeze/approval/runner/cutover vẫn pending. [Interim review](../reviews/KHOA_INTERIM_REVIEW_2026_11_16.md).

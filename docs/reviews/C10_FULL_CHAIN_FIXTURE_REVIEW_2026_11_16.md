@@ -2,6 +2,10 @@
 
 **NEEDS FIX (thiết kế/fixture cho gate Task #7 mới).** Không phát hiện lỗi ABI/contract hoặc Critical/High mới. Bản bốn mốc hợp lệ trong phạm vi cũ nhưng chưa đáp ứng chuỗi bắt buộc có COMMITMENT_REDUCED và coverage nhiều commitments/receipts hôm nay. Dũng có thể bắt đầu triển khai phần nền đã rõ; phải điều chỉnh thiết kế và acceptance trước khi nghiệm thu Task #7. Không kết luận worker/runtime FAIL khi chưa triển khai.
 
+## Re-review ngày17/11 — PR33 f85d390
+
+F1/F2 đã được addressed ở source/design: reduction có trong loader/encoder/verifier; fixture/harness đã có8operations,2commitments,3receipts. **Hai findings vẫn OPEN ở cấp nghiệm thu runtime**, không giữ nhận định “chưa có implementation” cho head mới. Gate NEEDS FIX chain guard CASE_VERIFIED chưa push và thiếu XML/provenance trên committed candidate. Các findings dưới đây là snapshot16/11. Xem [gate review17/11](C10_LOCAL_GATE_REVIEW_2026_11_17.md).
+
 ## Snapshot / phạm vi
 
 Fetch main `15bcba4ec5cce8bf07b929353e68d26b006a0668`, dung `c288f4409023e9f2352082ff91428f324d7445bb`, local khoa `e98ac9d`. Giữ review PR30 `cda5360` và Task3 `e98ac9d`; không merge remote vào khoa. Đọc fixture và thiết kế C10 từ **origin/main** (không lấy bản local cũ thiếu sửa D49). Căn cứ D49/D53/D55/D56; tái sử dụng [PR30 review](PR30_HIGH_CODE_REVIEW_2026_11_16.md) và [Task3](GOODS_RECEIVED_REVIEW_2026_11_16.md), không review lại B08 hoặc proof-writer Task6. Phân công hiện hành: Dũng worker/verifier, Khoa semantics/parity/C10 review. Không triển khai hoặc sửa tài liệu của Dũng trong lượt này.
