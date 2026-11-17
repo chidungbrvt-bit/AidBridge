@@ -1067,6 +1067,65 @@ class CaseVerifiedWorkerIT extends AbstractCampaignHttpIT {
     }
 
     @Test
+    void keepsPreparedCaseVerificationWhileRpcReportsWrongChain() throws Exception {
+        UUID jobId = newLocalCaseVerifiedJob();
+        var interruptedNode = new FakeBlockchainAdapter(properties) {
+            @Override
+            public String broadcastRawTransaction(String rawTransactionHex) {
+                throw new IllegalStateException("TEST_STOP_BEFORE_BROADCAST");
+            }
+        };
+        interruptedNode.pendingNonce = node.pendingNonce;
+        var interruptedWorker = new CaseVerifiedWorker(new TransactionTemplate(transactionManager), jobs, attempts,
+                new CaseVerifiedManifestBuilder(json), interruptedNode, cipher, properties, Clock.systemUTC(),
+                new SignerSessionLock(jdbc.getDataSource()));
+        assertThatThrownBy(interruptedWorker::processNextJob).hasMessage("TEST_STOP_BEFORE_BROADCAST");
+        assertThat(interruptedNode.broadcasts).isEmpty();
+
+        var prepared = receiptState(jobId);
+        assertThat(prepared).containsEntry("job_status", "PROCESSING").containsEntry("attempt_status", "PREPARED");
+        var identity = Map.of("attempt_id", prepared.get("attempt_id"), "event_id", prepared.get("event_id"),
+                "nonce", prepared.get("nonce"), "tx_hash", prepared.get("tx_hash"));
+        String ciphertextSql = "SELECT signed_tx_ciphertext FROM blockchain_transactions WHERE id = ?";
+        byte[] originalCiphertext = jdbc.queryForObject(ciphertextSql, byte[].class, identity.get("attempt_id"));
+        String originalRaw = Numeric.toHexString(cipher.decrypt(originalCiphertext,
+                JobSecretCipher.associatedData(jobId, "signed-tx")));
+        assertThat(jdbc.update("UPDATE blockchain_jobs SET lease_until = now() - interval '1 second' WHERE id = ?",
+                jobId)).isEqualTo(1);
+
+        node.beforeSign = () -> { throw new AssertionError("Recovery must not sign a replacement transaction"); };
+        var originalPendingNonce = node.pendingNonce;
+        node.chainId = 43113;
+
+        assertThat(worker.processNextJob().orElseThrow()).isEqualTo(new CaseVerifiedWorker.Result(
+                jobId, CaseVerifiedWorker.Outcome.RETRY_SCHEDULED, "INVALID_CHAIN_ID"));
+        assertThat(node.broadcasts).isEmpty();
+        assertThat(node.pendingNonce).isEqualTo(originalPendingNonce);
+        assertThat(count("blockchain_transactions", "blockchain_job_id", jobId)).isEqualTo(1);
+        assertThat(receiptState(jobId)).containsAllEntriesOf(identity)
+                .containsEntry("job_status", "PROCESSING").containsEntry("attempt_status", "PREPARED")
+                .containsEntry("last_error", "INVALID_CHAIN_ID");
+        var retry = jdbc.queryForMap("SELECT lease_until, next_retry_at FROM blockchain_jobs WHERE id = ?", jobId);
+        assertThat(retry).containsEntry("lease_until", null);
+        assertThat(retry.get("next_retry_at")).isNotNull();
+        byte[] preservedCiphertext = jdbc.queryForObject(ciphertextSql, byte[].class, identity.get("attempt_id"));
+        assertThat(java.util.Arrays.equals(originalCiphertext, preservedCiphertext))
+                .as("the persisted ciphertext is unchanged").isTrue();
+
+        node.chainId = 31337;
+        assertThat(jdbc.update("UPDATE blockchain_jobs SET next_retry_at = NULL WHERE id = ?", jobId)).isEqualTo(1);
+
+        assertThat(worker.processNextJob().orElseThrow()).isEqualTo(new CaseVerifiedWorker.Result(
+                jobId, CaseVerifiedWorker.Outcome.REBROADCAST, null));
+        assertThat(node.broadcasts).hasSize(1);
+        assertThat(originalRaw.equals(node.broadcasts.getFirst()))
+                .as("recovery broadcasts the original signed bytes").isTrue();
+        assertThat(count("blockchain_transactions", "blockchain_job_id", jobId)).isEqualTo(1);
+        assertThat(receiptState(jobId)).containsAllEntriesOf(identity)
+                .containsEntry("job_status", "SUBMITTED").containsEntry("attempt_status", "SUBMITTED");
+    }
+
+    @Test
     void doesNotPrepareCaseVerificationWhileRpcReportsWrongChain() throws Exception {
         UUID jobId = newLocalCaseVerifiedJob();
         String originalEventId = jdbc.queryForObject(
