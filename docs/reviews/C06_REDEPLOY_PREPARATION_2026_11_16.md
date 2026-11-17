@@ -1,5 +1,7 @@
 # Task #8 — C06 redeploy preparation / offline dry-run, 16/11/2026
 
+**KẾT LUẬN HIỆN HÀNH17/11 — Task4: READY FOR HANDOFF TO TASK #5.** Phần readiness/preparation của Khoa đã hoàn tất, Task3 local PASS WITH NOTES. **Chưa READY FOR DEPLOY APPROVAL; chưa có quyền deploy/cutover.** Các nhãn BLOCKED ở snapshot cũ bên dưới mô tả execution gates tại thời điểm đó, không còn là trạng thái handoff Task4. Xem mục “Chốt acceptance Task4” cuối tài liệu.
+
 **DONE WITH GATES.** Chuẩn bị của Khoa hoàn tất; **BLOCKED BY WORKER / C06 RUNNER / FREEZE-APPROVAL** trước deployment. Artifact consistency kỹ thuật đã PASS sau compile, chưa phải approved release artifact. **C06 NOT DEPLOYED; CUTOVER NOT EXECUTED.** Tài liệu này không cấp phép deploy, đăng ký org, chuyển cấu hình hoặc bật worker. Deploy và cutover cần hai approval riêng.
 
 ## 1. Baseline / C03 lịch sử
@@ -158,3 +160,50 @@ Sau khi Task3 đủ artifacts để PASS/PASS WITH NOTES, vẫn phải freeze re
 **Task4 vẫn BLOCKED để READY FOR DEPLOY APPROVAL** do runner/journalC06riêng,formal freeze,current roles/gas/nonce preflight và combined PREPARED+wrong-chain regression chưa hoàn tất/được chứng minh. Local acceptance gate đã gỡ; deployment/cutover approvals vẫn riêng và chưa cấp.
 
 Dũng có thể tiếp tục Task5 inventory/disposition plan. Comment báo2B05transactions đúngC03/noopenattempt nhưng còn3PENDINGjobs ởDBcũ: cần record job/registry ownership và phương án được duyệt (drain/park/reconcile theo deployment), không tự chuyển3jobs sangC06. Đây là author summary chưa đối chiếu raw DBreadback. Chưa chạy Task6Fuji trước actual deployment/readback + DB/worker cutover được phép; không dùng Hardhat address0x610178… làm registryFuji. Không deploy/cutover ở lượt evidence.
+
+## Chốt acceptance Task4 — READY FOR HANDOFF TO TASK #5 (17/11)
+
+**Phạm vi DONE của Khoa:** candidate/release identity, ABI/constructor/chain verification, offline preparation tool, C03/C06 separation, DB disposition proposal, ownership/approvals và go/no-go checklist đã đủ để Dũng làm phần Task5. Không giữ readiness handoff BLOCKED vì chưa có DB mutation/approval hoặc chưa deploy. **Task3 đã PASS WITH NOTES**, evidence excerpt đã inspected, không review/chạy lại.
+
+### A. Candidate + công cụ offline đã hoàn thiện
+
+- Source/ABI/artifact/compiler pins phần2 đã đối chiếu lại, vẫn maina870577/PR34head406d5d8; PR34 không sửa Solidity. Candidate fullC06/source6944fff và build6d69e2cf… khớp các hashes đã ghi. Constructor proposed public admin0x131DD6…601E, schema1, chain43113; relayer0x95a956…61f55 khác admin. Public addresses là proposed/historical binding chờ current preflight, không phải quyền hiện hành đã được verify lại.
+- **Công cụ mới:** `node contracts/scripts/prepare-c06.mjs` từ repo root, hoặc `node scripts/prepare-c06.mjs` từ contracts. Tool chỉ đọc source/artifact/build-info/full committed ABI/public C03manifest; assert exact SHA/Keccak/compiler input-output,8functions/9events/constructor, encode unsigned constructor không signer/provider. Không đọc env/keystore, không tạo files, không sign/broadcast/RPC. Kết quả **OFFLINE_CANDIDATE_VERIFIED_NOT_APPROVED**.
+- Kết quả thực chạy: helper PASS, node syntax PASS, negative invocation `--broadcast` bị reject trước mọi operation (OFFLINE_ONLY_NO_ARGUMENTS). Không compile hoặc chạy lại Task3/Java/DB/Hardhat. Deployment calldata Keccak256 constructor proposed `0xd39ed189b3ce2791278307261b137affd847dcba8af46bb3e8a66a2d51836373`.
+- C06 public journal namespace dự kiến `contracts/deployment/c06-fuji-deployment.public.json`, encrypted recovery `contracts/deployment/c06-fuji-recovery.private.clixml`; **chỉ reserved names, chưa tạo journal**. Không dùng/ghi đè C03fuji-deployment.json hoặc recovery cũ. New helper là **verification/preparation tool, không phải broadcast executor**; `deployment.mjs/deploy.mjs` cũ vẫn C03 và không sửa.
+- **Để freeze còn thiếu chính xác:** người có thẩm quyền xác nhận final source/release commit/tree (gồm worker406d5d8 nếu dùng), build input/dependencies/compiler/settings và fingerprints phần2, constructor/public org-relayer binding được chọn, approval record của candidate. Các hash đã kiểm đủ để review, không còn mystery artifact mismatch; chưa có quyết định freeze nên không gắn APPROVED.
+
+### B. Phương án handoff DB — đề xuất, KHÔNG áp dụng
+
+Nguồn inventory do người dùng chuyển xác nhận Dũng, không phải SQL do Khoa chạy: aidbridge_demo có2/2B05tx khớpC03,0openattempt,3PENDING chưa gắn registry; aidbridge_demo_v16 có5PENDINGseq1–5,0attempt; cutoverNOTRUN.
+
+**Đề xuất mặc định cho3PENDINGcũ:** giữ nguyên tại DBcũ, giữ C03 lane và worker cũ tắt; chưa đổi status/ref/sequence/registry hoặc tạo attempt. Đây là trạng thái vận hành cô lập (park by disabling worker), không tự thêm statusPARKED hoặc markFAILED. Không dùng config C06 mới quét DBcũ. Bảo toàn2B05proof, C03manifest, AES/recovery/noncejournal và khả năng đọc API lịch sử.
+
+Dũng lập **disposition ledger** cho từng job: job/audit/case/type/chain/sequence, nguồn tạo/lý do tồn tại, preparation/manifest/commitment có hay không, original deployment/ABI, predecessor cùngcase/registry, attemptcount/signedobligation. Nếu prefix/capabilityC03 hợp lệ và nhóm duyệt drain thì xử lý bằng đúng C03 binding; C03 không có goods functions nên job goods không được thử gửi C03. Nếu không phù hợp thì tiếp tục cô lập chờ disposition được duyệt; không rebind sang C06, xóa/gộp, resetseq hoặc copyproof để “drain”. Xử lý/migration/replay trường hợp cũ là quyết định riêng, không tự cho phép bởi Task4.
+
+**5PENDINGstaging:** chỉ là inventory candidate, không suy chúng đã đủ5operations hoặc cùngcase/source/phù hợpC06 vì mới biết count/seq, chưa biết types/refs/preparation. Dũng kiểm case/org/publicrefs, exact types và predecessor; đủrequiredprefix córeduction, persistedschema/snapshots. **0attempt không chứng minh chưa pin deployment**: manifest_private/salt/evidence_commitment có thể đã chuẩn bị trước attempt; nếu domain gắn registry cũ, dừng/reconcile, không tùy tiện xóa preparation. Ưu tiên case/job mới sạch trên C06 sau approval, hoặc chỉ dùng staging jobs nếu chứng minh đúng domain/prefix và kế hoạch được duyệt. Không gửi CASE_VERIFIEDseq>1 hoặc resetstate của C03 để tận dụng staging.
+
+**Điều kiện nghiệm thu Task5 thuộc Dũng:** inventory theo thời điểm/window có rawreadback tối thiểu khôngPII; staging5jobtypes/prefix/refs/preparation rõ;3legacyjob códisposition được duyệt; các workers/signer sessions cũ dừng; signed/noncejournal không có nghĩa vụ mơ hồ; schema/seed/current binding phù hợp và recovery/drain procedure. Các thao tác DB/config/seed/cutover chỉ được làm trong quyền riêng đã cấp cho Dũng, không xuất phát từ checklist Khoa.
+
+### C. Ma trận owner / thời điểm — không gộp handoff, deployment và cutover
+
+| Việc | Owner | Gate / hiện trạng |
+|---|---|---|
+| Readiness hồ sơ + offline preparation | Khoa | **DONE**, đủ bàn giao Task5, không approval execution |
+| Local5operations/F1F2/receipt7context | Dũng/Khoa | Task3 **PASS WITH NOTES** theo inspectedexcerpts; không phải Fuji proof |
+| Combined PREPARED+wrong-chain | Dũng | Một targeted regression trước deploy/cutover, không blockerlocal/handoff mới;0sign/newattempt/broadcast khi sai chain, giữ bytes/nonce/hash rồi recover đúngchain; chưa claimPASS |
+|3C03pending disposition +5stagingjob qualification | Dũng; nhóm duyệt phương án | Có thể bắt đầu ngay bằng inventory/plan; actual mutation/routing còn cần quyền tương ứng |
+| Release freeze / finalcandidate chọn | Nhóm/người phê duyệt; Khoa cung cấp pins | **PENDING DECISION**, không phải thiếu hash |
+| C06 broadcast executor review | Khoa trước authorized execution | **PENDING execution tooling**: sau chọn release/plan, chuẩn bị/review entrypoint riêng với pins/journals ởA, fee/gas caps và unknownoutcome recovery. Không có broadcast path ở helper; không dùng C03executor. Đây là gate trước xin executionapproval, không giả executor đã sẵn sàng chỉ vì handoffDONE |
+| Current read-only preflight | Owner deployment cùng Khoa | RPC43113, publicadmin/relayer/currentnonce/balance, gasestimate/capsC06, plan/setupauthority; chưa chạy, không đọc keys. Vai trò/gas cũ không đủ |
+| Deployment/setup approval | Người dùng/nhóm | Chỉ khi candidate/tooling/gates đã reviewed; chưa cấp; không gồm cutover |
+| Cutover approval +switch | Nhóm duyệt; Dũng vận hành | Task5readback/disposition đạt, registryC06 thật đã deploy+verify, activationgoods43113 đượcreview, gateprefix/signernonce đạt; approval riêng; chưa thực hiện |
+| Fuji pilot Task6 | Dũng sau gates | Chỉ sau deploy/readback và cutover hợp lệ; chưa được mở bằng handoff này |
+
+**Khi nào READY FOR DEPLOY APPROVAL?** Localgate accepted + combinedregression đạt + finalrelease freeze record + C06executiontooling được review + current preflight/gas plan/pins đúng + preservation/cutover plan đủ. Hiện helper và hồ sơreadiness đầy đủ, nhưng các gates trên còn PENDING; không tự tuyên bố trạng thái này.
+
+**Khi nào go-cutover?** Sau approved deployment/readback, Task5 inventory/disposition/seed/pinning/recovery đạt và quyền cutover riêng được cấp. Unknownnonce/attempt, prefix sai deployment, domain preparation cũ hoặc chưa có phương án3legacyjobs → abort giữ worker tắt. Sau broadcast không rollback blockchain; giữ journal/bytes/proof và reconcile đúnglane, không redirect sangregistrykhác.
+
+### D. Bàn giao dứt điểm
+
+**Task4 READY FOR HANDOFF TO TASK #5**; không còn việc khảo sát/document/offline verifier nào cần Dũng chờ Khoa trong phạm vi readiness hiện tại. Dũng bắt đầu ngay inventory/disposition/stagingqualification và đề xuất DB/binding plan theoB. Các execution tooling/preflight/gates/approval được liệt kê hữu hạn theoowner để đi tới deployment, không coi là đã hoàn thành hoặc gộp trách nhiệm Task5 vào Task4. Không thay DB/worker/backendconfig/registry, không giữ Task4handoff BLOCKED vì approval chưa cấp.

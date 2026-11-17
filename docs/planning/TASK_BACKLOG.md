@@ -385,6 +385,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### C06 - Full milestone contract
 
+- **Khoa Task4 17/11 — READY FOR HANDOFF TO TASK5 (hiện hành):** Task3local PASS WITH NOTES. Candidate fullC06/hashes/build/ABI/constructor kiểm offline PASS; helper prepare-c06.mjs khôngRPC/sign/write/broadcast, reject--broadcast. Hồ sơreadiness/disposition3C03pending/qualification5stagingpending đã bàn giao. Dũng bắt đầu inventory/plan ngay; không cần migration mới từ Khoa. Chưa READY FOR DEPLOY APPROVAL: formalfreeze/combinedregression/C06executiontooling/currentpreflight/approval cònmở theoowner, deployment vàcutoverriêng. Các nhãnBLOCKED trong snapshotcũ là executionreadiness, không giữ handoffBLOCKED. [Runbook/chốtacceptance](../reviews/C06_REDEPLOY_PREPARATION_2026_11_16.md).
+
 - **Interim16/11:** Khoa review C06/D55 đã có ở C06_PART2_D55_REVIEW.md; các ghi chú “chờ Khoa review/Not Run review” trong evidence11–12/11 bên dưới là lịch sử. Compile/artifact consistency16/11 PASS offline, không thay kết quả runtime Java/VOID hoặc trạng thái chưa redeploy/cutover.
 
 - **Khoa Task8 16/11 — preparation DONE WITH GATES:** compile/full C06 artifact consistency + unsigned constructor encoding PASS offline; khớp hash C10 sau rebuild artifact stale. Chưa deploy/cutover, chưa chạy worker/E2E. Cần Task6/7, runner C06 riêng, freeze/approval và queue reconciliation; không đổi trạng thái runtime. [Runbook](../reviews/C06_REDEPLOY_PREPARATION_2026_11_16.md).
