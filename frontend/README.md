@@ -60,7 +60,7 @@ Real mode dùng cùng màn hình với B06 P01–P04. Smoke dành cho một case
 npm run test:e2e -- --project=real campaign-real.spec.ts
 ```
 
-**Audit preview** trong workspace trình bày ba trạng thái fixture, gồm proof Fuji độc lập từ C05. Đây là màn minh họa; T01/T02 và chain status sống vẫn chờ backend.
+**Audit preview** trong workspace trình bày ba trạng thái fixture, gồm proof Fuji độc lập từ C05. Đây là màn minh họa. Real mode đã đọc T01/T02 qua backend chia sẻ; trạng thái Goods Fuji và việc nghiệm thu deployment/pilot vẫn theo bàn giao của Dũng/Khoa.
 
 Xem [bàn giao F05/F06](../docs/handoffs/MINH_F05_F06_2026-11-12.md) và [bàn giao F03/F04](../docs/handoffs/MINH_F03_F04_2026-11-12.md).
 
@@ -80,3 +80,19 @@ Trong real mode, đăng nhập bằng ORG_ADMIN sở hữu hồ sơ. Mở case d
 Mở **Goods demo · MOCK** trong mock mode. Load S2, ghi D01 thành công bằng actor Field volunteer và chọn evidence. Trong **Delivery confirmation and disputes**, chọn D02 và tick đúng toàn bộ evidence version. Actor Independent delivery confirmer có thể xác nhận hoặc yêu cầu xem xét. Actor Delivery recorder with confirmer role bị chặn tự xác nhận.
 
 S01 mở tranh chấp cấp hồ sơ hoặc gắn một delivery. S03 dùng actor Platform admin để Uphold hoặc Void delivery. Giữ nguyên dữ liệu nhận hàng khi void, UI tính lại số đã giao và đã xác nhận. Hàng chờ xác nhận và timeline dùng dữ liệu trả về từ fixture D01. Xem [bàn giao R01/F09 và trạng thái tích hợp](../docs/handoffs/MINH_F08_F09_2026-11-14.md).
+
+## F09 real B10 và F05 — candidate PR #31
+
+Dùng candidate đủ `reviewCampaign` và hai route đọc dispute/evidence; staging chỉ có PR #30 sẽ thiếu các phần này. Account phải riêng biệt: ORG_ADMIN nhận hàng từng phần, VOLUNTEER ghi delivery, DELIVERY_CONFIRMER khác người ghi xem số lượng/evidence của đúng delivery rồi xác nhận. Sau 201/200 UI đọc lại dữ liệu nghiệp vụ. S01 đang OPEN chặn P05; S03 giải quyết tranh chấp rồi đọc lại totals. PLATFORM_ADMIN test chỉ dùng review snapshot đúng dispute; không có quyền evidence toàn cục.
+
+T01 là `/api/cases/{id}/audit-trail` cho staff đúng tổ chức. T02 canonical là `/api/public/cases/{publicCaseRef}/audit`; `/audit/{publicCaseRef}` là trang công khai không cần đăng nhập. Mở **Public audit trail** ở campaign: link chia sẻ chỉ bật sau khi đọc T02 thành công. **Refresh audit** đọc lại trạng thái mới; lỗi đọc không giữ link/proof cũ. Hash hoặc quyết định CONFIRMED của D02 không tự thành `CONFIRMED_ON_CHAIN`.
+
+Workflow **F07 real backend E2E** hiện yêu cầu 10 ca browser thật, 0 failure/error/skip. Trong `DonorUiE2EIT`, Java host dựng fixture giả lập, build Next và chạy project `donor-real` với PostgreSQL test riêng. Hai ca mới kiểm nhận hai đợt → giao → xác nhận độc lập và public audit anonymous/privacy; các ca retry/self-confirm/dispute/close và login direct dispute vẫn được giữ. HTTP fixtures chỉ kiểm cách hiển thị, không chứng minh Fuji.
+
+Xem [bàn giao F05/F09/F10 hiện hành, JUnit và giới hạn](../docs/handoffs/MINH_F05_F09_F10_2026-11-18.md).
+
+## F10 — pin API origin trước production build
+
+`API_INTERNAL_BASE_URL` được Next ghi vào rewrite của bản build. Đặt đúng origin backend **trước `npm run build`**; chỉ đổi biến lúc `npm start` không đổi đích rewrite đã build. Khi đổi backend origin/port, build lại rồi smoke `/api/auth/csrf`, login, `/me`, T01/T02 trước khi dùng. Không dùng nguyên build trỏ port ngẫu nhiên của E2E cho một backend khác.
+
+F10 local dùng DB giả lập riêng, worker tắt và HTTPS loopback với CA test riêng. Public hosting cần target, phê duyệt, kiểm chi phí, HTTPS/cookie/CSRF, private networking và recovery trên deployment thật. Không xem local PASS là public hosting hoặc Goods Fuji PASS; không rollback sang bản B09 chưa xử lý delivery void.

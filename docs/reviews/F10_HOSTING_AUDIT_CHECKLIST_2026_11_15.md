@@ -193,3 +193,25 @@ Trên SHA `af7528a`, các lớp `CampaignCloseIT` (5), `DeliveryApiIT` (7), `Del
 - Lúc D02 đang gửi hoặc chưa rõ kết quả, khóa Sign out, chuyển tổ chức và điều hướng trong workspace. Payload và Idempotency-Key giữ trong bộ nhớ của tab, gắn với ID tài khoản. Sau 401, đăng nhập lại bằng cùng tài khoản trên trang ứng dụng đã chuyển tới để quay về hồ sơ và dùng **Retry same request**. Nếu dùng tài khoản khác hoặc đã mất quyền vào hồ sơ, attempt không được mở lại. Tải mới hoặc đóng hẳn tab sẽ xóa bộ nhớ. Trình duyệt có thể nhắc trước khi rời tab khi request đang chờ. Khi tab đã đóng, kiểm tra lại quyết định ở C03/T01 trước khi tạo yêu cầu khác.
 - Ca Playwright để Spring lưu D02 và trả 200 rồi thay response phía trình duyệt thành 504. Sau khi xóa cookie test, lần thử lại nhận 401 thật từ `/api/auth/me`. Đăng nhập lại cùng tài khoản, request gửi đúng body và key ban đầu, Spring trả 200 với `Idempotent-Replayed: true`, và PostgreSQL có đúng một dòng confirmation cho delivery đó.
 - Trên `3090519`, bài Playwright đầu tự gọi `goto('/login')` khi đã ở trang đăng nhập và tải mới tab, làm mất attempt trong bộ nhớ. Đã sửa test để đăng nhập trên trang hiện tại. Kết quả cuối: Playwright real **6 pass, 0 fail, 0 skip** trong 55,1 giây. Maven verify **1 DonorUiE2EIT pass**, 9 validation test pass, 0 fail/error/skip. Frontend **77 unit pass**, typecheck và Webpack build pass. Dùng cùng lệnh và cấu hình DB test ở mục H.
+
+## J. Tiếp kế hoạch 17/11 — kết quả Minh ngày 18/11/2026
+
+Đã fetch các refs mới trước khi làm; `minh` chứa `main@fbf8c3e` và `dung@9f29b76`. Đọc C09/readiness C06 trên `khoa@5267e99`, không merge tooling deploy hoặc thay worker/DB chia sẻ. Các mục A–I giữ ngữ cảnh lịch sử; bảng dưới là kết quả kiểm chứng mới, không tự đóng gate của Khoa/Dũng.
+
+| Checklist | Kết quả | Bằng chứng / giới hạn / owner tiếp nhận |
+| --- | --- | --- |
+| F09: nhận từng phần → giao → xác nhận độc lập | PASS local | Hai mặt hàng, hai R01, D01 3/2, D02 bằng tài khoản khác; DB đúng hai receipt/một confirmation, reload đúng totals. |
+| F09: self-confirm, dispute/void/close, retry, direct login | PASS local | 10 browser real pass tổng cộng, 0 fail/error/skip trên `3f1a773`. Chờ Dũng review quyền evidence/reviewCampaign, merge PR #31 và kiểm cùng candidate trên staging. |
+| F05: T01/T02, URL và public privacy | PASS local | D49 API và trang Next tách rõ. T02 anonymous, opaque IDs/role labels, không private fields; T01 cần staff scope. 7 Java audit tests pass; ca browser API thật không hiện proof/link confirmed khi worker tắt. |
+| F05: refresh/status/failed/missing proof | PASS HTTP fixtures | Audit 2/2 và delivery 4/4 trên `08477dc`; không giữ dữ liệu/link cũ sau lỗi đọc. Confirmed trong fixture không là bằng chứng Fuji. |
+| HTTPS/session/CSRF/evidence scope | PASS local | Secure/HttpOnly/SameSite=Lax, đổi session ID, CSRF 403, logout 204/me 401; anonymous 401 và cross-org 404 cho T01/evidence. T02 không mở cross-origin credentials. |
+| Backup/restore | PASS local | Snapshot synthetic IT trước đó, archive 244.720 byte; dump 0,48s/restore 1,16s, count+fingerprint 12 bảng khớp, Flyway V18 và health UP. Không backup/restore DB demo chia sẻ. |
+| Restart candidate | PASS local, worker tắt | P04/T02 và fingerprint 12 bảng giữ nguyên. Không phải recovery signer/nonce/journal hoặc proof replay. |
+| Pin build/API origin | Đã ghi runbook | Build E2E trỏ port ngẫu nhiên không dùng nguyên cho môi trường khác. Đặt API_INTERNAL_BASE_URL trước build. Build local cuối dùng CIRCLE_NODE_TOTAL=2 (một worker) và retry EPERM; không sửa source config hay quyền Windows. |
+| Rollback bản trước B10 | Chưa chạy lại | Kết quả chặn rollback B09 ở mục G vẫn là giới hạn đã biết; cần Dũng xác nhận bản tương thích, không hạ schema hoặc sửa facts. |
+| Public hosting, target HTTPS/network/cost | Blocked / Not Run | Chưa có target/domain/provider/budget và phê duyệt triển khai. Minh chỉ chuẩn bị/diễn tập local; không chọn hoặc mua dịch vụ. |
+| C06, Goods Fuji, cutover và worker/signer recovery | Blocked / Not Run | Inventory Task #5 của Dũng vẫn chưa deploy/pilot. Khoa/Dũng chốt gate/approval/binding/proof thật trước; không bật worker hoặc đổi registry để giữ lịch. |
+
+Lượt Java đầu có audit 7 pass nhưng host fail ở build EPERM, browser Not Run. Rerun riêng host pass 10/10 browser. Diễn tập F10 đã qua restore/HTTPS/restart nhưng harness tổng exit 1 ở hai assertion delivery cũ; đã sửa để cho phép C03 read của panel B10 đúng scope rồi chạy lại cả sáu HTTP fixtures đạt 6/6. Giữ provenance hai lượt này, không ghi harness exit 1 là toàn bộ lượt pass.
+
+[Bàn giao hiện hành và lệnh kiểm tra](../handoffs/MINH_F05_F09_F10_2026-11-18.md) · [JUnit real](evidence/minh-plan-2026-11-18/donor-real.junit.xml) · [JUnit audit/backend host](evidence/minh-plan-2026-11-18/audit-and-browser-host.junit.xml) · [JUnit HTTP fixtures](evidence/minh-plan-2026-11-18/audit-delivery-fixtures.junit.xml) · [Run summary](evidence/minh-plan-2026-11-18/run-summary.json).

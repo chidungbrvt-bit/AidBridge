@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites failures="0" tests="8" errors="0" skipped="0">
+  <testsuite name="com.aidbridge.casefile.AuditTrailApiIT" tests="3" failures="0" errors="0" skipped="0" time="49.281">
+    <properties>
+      <property name="blockchainEnabled" value="false" />
+      <property name="sourceReportSha256" value="1bf3421165fe3757f9bed679a5351fd54381d0af6be7f914fd581747dd766c7a" />
+      <property name="mode" value="REAL_SPRING_POSTGRES" />
+      <property name="testedSha" value="3f1a77345b07299636712e3a289d6a846721d538" />
+    </properties>
+    <testcase name="pagesAreStableAndBounded" classname="com.aidbridge.casefile.AuditTrailApiIT" time="7.634" />
+    <testcase name="onlyMembersOfTheOwningOrganizationCanRead" classname="com.aidbridge.casefile.AuditTrailApiIT" time="2.962" />
+    <testcase name="everyChainStateIsReportedHonestly" classname="com.aidbridge.casefile.AuditTrailApiIT" time="2.875" />
+  </testsuite>
+  <testsuite name="com.aidbridge.casefile.PublicAuditTrailIT" tests="4" failures="0" errors="0" skipped="0" time="22.268">
+    <properties>
+      <property name="blockchainEnabled" value="false" />
+      <property name="sourceReportSha256" value="f02b535db21e8b7ebde8ef4baa19ef6c02d8827ede1157209ee9f7c4723db6d5" />
+      <property name="mode" value="REAL_SPRING_POSTGRES" />
+      <property name="testedSha" value="3f1a77345b07299636712e3a289d6a846721d538" />
+    </properties>
+    <testcase name="publicTrailShowsAllowListedEventsWithHonestChainStatusAndNoPrivateData" classname="com.aidbridge.casefile.PublicAuditTrailIT" time="5.224" />
+    <testcase name="chainSequenceOverridesTimestampAndPublicIdsAreOpaque" classname="com.aidbridge.casefile.PublicAuditTrailIT" time="3.519" />
+    <testcase name="onlyPublishedCampaignsOfApprovedOrganizationsAreVisible" classname="com.aidbridge.casefile.PublicAuditTrailIT" time="3.708" />
+    <testcase name="publicPagesAreStableAndBounded" classname="com.aidbridge.casefile.PublicAuditTrailIT" time="3.415" />
+  </testsuite>
+  <testsuite name="com.aidbridge.casefile.DonorUiE2EIT" tests="1" failures="0" errors="0" skipped="0" time="173.953">
+    <properties>
+      <property name="blockchainEnabled" value="false" />
+      <property name="sourceReportSha256" value="a858f3bc419995e88002f955278ffa268e6be633e3fb6df5a42eaa51d7ca7c87" />
+      <property name="mode" value="REAL_SPRING_POSTGRES" />
+      <property name="testedSha" value="3f1a77345b07299636712e3a289d6a846721d538" />
+    </properties>
+    <testcase name="donorRoutesUseRealBackendAndPersistTheirResults" classname="com.aidbridge.casefile.DonorUiE2EIT" time="140.059" />
+  </testsuite>
+</testsuites>

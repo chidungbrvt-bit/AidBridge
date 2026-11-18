@@ -1,5 +1,18 @@
 # F05 — Bảng trạng thái audit kỳ vọng cho timeline (12/11/2026)
 
+## 0. Trạng thái hiện hành — Minh đối chiếu ngày 18/11/2026
+
+Các mục 1–6 bên dưới giữ lịch sử chuẩn bị ngày 12–15/11. Các nhận định “API chưa có”, “chưa merge”, “chỉ fixture” và chính sách timeout ở phần lịch sử không còn là trạng thái triển khai hiện tại.
+
+- T01 `/api/cases/{id}/audit-trail` và T02 **duy nhất** `/api/public/cases/{publicCaseRef}/audit` đã có trong backend chia sẻ qua PR #30, D49. Route campaign `/api/campaigns/{id}/audit-trail` ở mục 3 là URI lịch sử đã được thay thế; không tạo alias hoặc dùng lại ở FE. `/audit/{publicCaseRef}` là trang Next đọc T02, không phải endpoint API thứ hai.
+- FE candidate PR #31 đọc T01/T02, phân trang và làm mới timeline. Chỉ bật liên kết chia sẻ sau khi đọc T02 thành công; khi đọc lại lỗi thì bỏ dữ liệu/link cũ và hiển thị lỗi/retry. Không fallback fixture trong real mode.
+- `CONFIRMED_ON_CHAIN` do backend kiểm persisted proof/context. FE chỉ trình bày projection; hash một mình không đủ. Link explorer chỉ hiện khi status confirmed, chain 43113, hash/block/registry hợp lệ và URL Snowtrace testnet khớp hash. PENDING, FAILED, NOT_APPLICABLE và thiếu proof có cách hiển thị riêng; không thay business/review status.
+- T01 giữ quyền staff đúng tổ chức. T02 anonymous dùng opaque `audit_...` IDs, nhãn vai trò; không actor identity, evidence, consent, payload private hoặc errorCode. Allowlist hiện có sáu loại: CASE_VERIFIED, CAMPAIGN_PUBLISHED, AID_PLEDGED, COMMITMENT_REDUCED, GOODS_RECEIVED, DELIVERY_RECORDED. Không gọi T02 là toàn bộ lịch sử D02/S01/S03; các bước nội bộ đọc T01.
+- Worker local và receipt proof-context đã được Dũng/Khoa bàn giao riêng. Inventory Task #5 ngày 18/11 ghi C06 chưa deploy, staging có job PENDING, worker tắt; không chuyển kết quả local/Hardhat thành Goods Fuji PASS. Proof CASE_VERIFIED C03 lịch sử vẫn tách khỏi các job hàng hóa.
+- T03 retry/operator và SQL statement counts không được coi đã nghiệm thu. Các capture API/chain thật phải theo checklist C09 của Khoa trên `origin/khoa` tại `5267e99`, file `C09_FUJI_PROOF_ACCEPTANCE_2026_11_17.md`; phần cutover theo [Task #5 của Dũng](C06_TASK5_DB_CUTOVER_2026_11_18.md).
+
+Kết quả lượt kiểm thử hiện hành và giới hạn F09/F10 được ghi tại [bàn giao Minh ngày 18/11](../handoffs/MINH_F05_F09_F10_2026-11-18.md). F05 vẫn **In Review**, còn gate proof/pilot Fuji và review chéo.
+
 Owner F05: Minh (F). Tài liệu này là phần hỗ trợ 1h của Dũng (B): đối chiếu `blockchainStatus`/tx hash mà API trả với bằng chứng C05 và lập bảng trạng thái kỳ vọng để Minh ghép timeline. Chỉ là tài liệu đối chiếu: không sửa backend, frontend hay contract. **F05 chưa Done** — cần Minh ghép UI và Khoa xác nhận chain status.
 
 Nguồn đã đọc/grep: `API_SPECIFICATION.md` (DTO dictionary, T01–T03), `BUSINESS_WORKFLOWS.md`, `BLOCKCHAIN_ARCHITECTURE.md` (Java worker algorithm, Receipt verification), `docs/fixtures/f02/`, `VerificationController`, `VerificationService`, `LocalAuditService`, `ContributionMapper`, `BlockchainJob`, `CaseVerifiedWorker`, `CaseVerifiedReceiptVerifier`, migrations V5, V9.

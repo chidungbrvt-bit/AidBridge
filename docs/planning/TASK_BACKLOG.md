@@ -54,12 +54,12 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 | F02 | Design | Minh (F) | Dũng / Khoa | M | 4 | B01 | 2026-11-05 | 2026-11-05 | In Review |
 | F03 | P0-01 | Minh (F) | Dũng / Khoa | M | 4 | F02, B03 | 2026-11-06 | 2026-11-06 | In Review |
 | F04 | P0-02/P0-03 | Minh (F) | Dũng / Khoa | L | 6 | F03, B04, B05 | 2026-11-08 | 2026-11-08 | In Review |
-| F05 | P0-06 | Minh (F) | Dũng / Khoa | L | 4 | F04, C05 | 2026-11-09 | 2026-11-08 | In Review (fixture) |
+| F05 | P0-06 | Minh (F) | Dũng / Khoa | L | 4 | F04, C05 | 2026-11-09 | 2026-11-08 | In Review (API local) |
 | F06 | P0-04 | Minh (F) | Dũng / Khoa | M | 6 | F02, B06 | 2026-11-11 | 2026-11-11 | In Review |
 | F07 | P0-04 | Minh (F) | Dũng / Khoa | M | 5 | F06, B07 | 2026-11-13 | 2026-11-13 | In Review |
 | F08 | P0-05 | Minh (F) | Dũng / Khoa | M | 5 | F04, B08, B09 | 2026-11-15 | 2026-11-15 | In Review |
-| F09 | P0-05/P0-06 | Minh (F) | Dũng / Khoa | L | 5 | F08, B10, C09 | 2026-11-18 | 2026-11-17 | In Review (fixture) |
-| F10 | Deployment | Minh (F) | Dũng / Khoa | L | 4 | F09, C10 | 2026-11-18 | 2026-11-18 | Not Started |
+| F09 | P0-05/P0-06 | Minh (F) | Dũng / Khoa | L | 5 | F08, B10, C09 | 2026-11-18 | 2026-11-17 | In Review (API local) |
+| F10 | Deployment | Minh (F) | Dũng / Khoa | L | 4 | F09, C10 | 2026-11-18 | 2026-11-18 | In Progress |
 | F11 | Quality | Minh (F) | Dũng / Khoa | L | 6 | F10, B11, C11 | 2026-11-20 | 2026-11-20 | Not Started |
 | F12 | Submission | Minh (F) | Dũng / Khoa | L | 5 | F11 | 2026-11-22 | 2026-11-22 | Not Started |
 
@@ -574,6 +574,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### F05 - Audit vertical slice UI
 
+- **Minh 18/11, In Review:** T01/T02 và trang public D49 kiểm qua API local thật; có Refresh audit, giữ phân biệt business/review/chain, không giữ share link/proof cũ sau lỗi đọc. 7 test audit backend và ca browser anonymous/privacy pass trên `3f1a773`; audit HTTP fixtures 2/2 pass trong bộ 6/6 trên `08477dc`. Không biến status fixture hoặc Hardhat thành Goods Fuji proof. [Bàn giao, JUnit và giới hạn](../handoffs/MINH_F05_F09_F10_2026-11-18.md).
+
 - **Minh 15/11, In Review:** UI real mode đọc T01/T02 theo DTO của PR #28 và D49/D56. Có phân trang, txHash, blockNumber và link Fuji khi đủ proof. Playwright HTTP fixtures pass. T01/T02 trên backend cùng V16 và đối chiếu Fuji còn Not Run. [Bàn giao](../handoffs/MINH_F05_F09_F10_2026-11-15.md).
 
 - **Feature / priority:** P0-06 / P0.
@@ -582,7 +584,7 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Dependencies:** F04, C05; mock prework allowed, integrated acceptance waits.
 - **Schedule:** allocated 2026-11-08 through 2026-11-08; deadline 2026-11-09, Asia/Bangkok.
 - **Description / expected behavior:** Audit vertical slice UI; implement only interfaces and state/quantity rules in API Specification and Business Workflows.
-- **Output:** AuditTimeline và ba badge fixture tại `/audit-preview`; test trong `campaign-audit.spec.ts`. ExplorerLink cho live proof chờ T01/T02.
+- **Output:** AuditFeed đọc T01/T02, phân trang/refresh, public page D49 và explorer theo projection hợp lệ. AuditTimeline/ba badge fixture tại `/audit-preview` giữ nhãn minh họa. Proof pilot Fuji và deployment context chờ Khoa/Dũng, không lấy fixture thay proof.
 - **Acceptance criteria:** Hash alone not confirmed; exact backend proof shown; business verification distinct from pending/reverted/mismatch; actual Fuji link.
 - **Required tests:** BR10-P/N; E2E05; honest record-integrity wording.
 - **Definition of Done:** behavior + allowed/forbidden paths + persisted DB/audit/job effects + validation/error UI + relevant passing tests + cross-owner review + integration evidence + affected docs updated. Blockchain tasks also actual verified Fuji proof where specified.
@@ -641,6 +643,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### F09 - Confirmation/dispute/full timeline
 
+- **Minh 18/11, tiếp kế hoạch 17/11:** `main@fbf8c3e` và `dung@9f29b76` đã có trên `minh`, không còn merge mới cần áp. Mở rộng E2E real lên **10 pass, 0 fail/error/skip** trên `3f1a773`, thêm nhận hai đợt hàng → giao nhiều mặt hàng → xác nhận độc lập, và audit anonymous/privacy. Giữ self-confirm 403, dispute chặn close, resolve/void/reload, retry cùng payload/key và direct dispute login. 77 unit, 9 Java validation, typecheck/build PASS; In Review, chờ Dũng review/merge PR #31. [Bằng chứng và bước còn chờ](../handoffs/MINH_F05_F09_F10_2026-11-18.md).
+
 - **Minh 18/11, In Review:** Đồng bộ `main@fbf8c3e` và `dung@9f29b76`. D02 hiển thị số lượng từng mặt hàng của delivery đang chọn theo `campaignItemId`; truy cập dispute chưa đăng nhập quay lại đúng `/disputes/{id}` sau login. SHA `667147f` chạy 77 frontend unit, 8 Playwright real (gồm hai ca mới), 9 Java validation và 1 Java browser host: 0 fail/error/skip; typecheck/build PASS. [Bàn giao và JUnit](../handoffs/MINH_F09_2026-11-18.md). Candidate local có API bổ sung PR #31, worker tắt; staging/Fuji chưa chạy. Dũng tiếp tục review quyền evidence và `reviewCampaign`.
 
 - **Minh 17/11, In Review:** Đóng campaign tự cập nhật COMPLETED trên trang đang mở. D02 giữ payload/key qua mất response và 401, chỉ khôi phục với cùng tài khoản. Playwright real 6 pass, 0 fail/skip trên `a2de59e`. [Kết quả review PR #31](../reviews/F10_HOSTING_AUDIT_CHECKLIST_2026_11_15.md#i-sửa-review-pr-31-ngày-17112026).
@@ -664,6 +668,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Status / evidence:** In Review. Dũng review contract và quyền evidence của PLATFORM_ADMIN. Fuji chưa chạy ở lượt này. Xem kiểm thử local tại [bàn giao F09 sau PR #30](../reviews/F10_HOSTING_AUDIT_CHECKLIST_2026_11_15.md#h-f09-sau-khi-pr-30-merge).
 
 ### F10 - Public hosting/recovery
+
+- **Minh 18/11, In Progress:** Diễn tập candidate local `3f1a773`: dump/restore snapshot IT giả lập, so khớp 12 bảng, Flyway V18; HTTPS/session/CSRF/audit/evidence/cross-org và restart P04/T02 PASS. Sửa assertion fixtures cho read C03 hợp lệ của panel B10 ở `08477dc`, chạy lại 6/6 pass. README ghi API origin phải đặt trước build. Các build EPERM và harness exit 1 trước lượt chạy lại được ghi riêng. Public hosting/cost, staging candidate, cutover/recovery signer/worker và Goods Fuji chưa chạy; không Done. [Bàn giao/checklist từng mục](../handoffs/MINH_F05_F09_F10_2026-11-18.md).
 
 - **Minh 16/11, In Progress:** Smoke HTTPS, cookie/CSRF, T01/T02 và phân quyền evidence chạy local. Restore PostgreSQL lên V18 và chạy lại B10 khớp 12 bảng. Rollback về B09 bị chặn vì P04 tính cả delivery đã void. Public hosting, chi phí và worker/Fuji chưa xác minh. [Checklist kết quả từng mục](../reviews/F10_HOSTING_AUDIT_CHECKLIST_2026_11_15.md#f-kết-quả-minh-ngày-16112026).
 

@@ -1,0 +1,80 @@
+{
+  "checkedAt": "2026-11-18",
+  "branch": "minh",
+  "appAndRealTestsSha": "3f1a77345b07299636712e3a289d6a846721d538",
+  "httpFixtureTestsSha": "08477dc5b97bf07b8fe2df9101f710537d496e43",
+  "mainRef": "fbf8c3e",
+  "dungRef": "9f29b76",
+  "khoaReadOnlyRef": "5267e99",
+  "mode": "REAL_NEXT_SPRING_POSTGRES",
+  "blockchainEnabled": false,
+  "testResults": {
+    "httpFixtures": {
+      "skip": 0,
+      "fail": 0,
+      "pass": 6
+    },
+    "typecheck": "PASS",
+    "auditBackend": {
+      "skip": 0,
+      "fail": 0,
+      "pass": 7
+    },
+    "browserReal": {
+      "skip": 0,
+      "fail": 0,
+      "pass": 10
+    },
+    "frontendUnit": {
+      "skip": 0,
+      "fail": 0,
+      "pass": 77
+    },
+    "javaBrowserHost": {
+      "skip": 0,
+      "fail": 0,
+      "pass": 1
+    },
+    "javaValidation": {
+      "skip": 0,
+      "fail": 0,
+      "pass": 9
+    },
+    "productionBuild": "PASS"
+  },
+  "f10ObservedLocalChecks": {
+    "healthAndLogin": "PASS",
+    "restoreSeconds": 1.16,
+    "snapshot": "Previously seeded disposable IT schema, not the shared demo DB",
+    "dumpBytes": 244720,
+    "httpsSessionCsrf": "PASS",
+    "crossOrg404": "PASS",
+    "aggregateHarnessExit": 1,
+    "candidateRestartP04T02AndFingerprints": "PASS",
+    "buildApiOrigin": "http://127.0.0.1:18081",
+    "matchingTableCount": 12,
+    "nextBuildEnvironment": {
+      "CIRCLE_NODE_TOTAL": "2"
+    },
+    "dumpSha256": "7d060b9d3d695d1f1db6038f6b8bf151f730993e24e1fe464bdd669e5af75a02",
+    "dumpSeconds": 0.48,
+    "aggregateHarnessExitReason": "Four fixture cases passed and two obsolete D01 read-count assertions failed; corrected fixtures independently reran 6/6. Individual restore/HTTPS/restart checks passed before that fixture stage.",
+    "auditEvidenceAuthorization": "PASS",
+    "flywayVersion": 18,
+    "publicAuditAnonymous": "PASS"
+  },
+  "notRun": [
+    "Public hosting and target HTTPS/cost checks",
+    "Shared staging candidate E2E",
+    "New GitHub Actions run",
+    "Goods Fuji pilot and API proof reconciliation",
+    "Worker/signer cutover or recovery",
+    "Prior-release rollback in this run"
+  ],
+  "limitations": [
+    "Initial E2E host build hit Windows EPERM; clean retry passed all ten browser cases.",
+    "F10 first used an E2E build with a stale random backend port; rebuilt for the F10 origin.",
+    "F10 production build needed a Windows EPERM retry with one page-generation worker; no source config was changed.",
+    "Real tests use synthetic accounts and worker-disabled PostgreSQL; HTTP fixture proof statuses are presentation checks, not new Fuji evidence."
+  ]
+}
