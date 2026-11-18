@@ -164,11 +164,24 @@ public class CaseService {
         var ids = memberships.stream().filter(m -> !m.getRoles().isEmpty()).map(m -> m.getOrganization().getId()).toList();
         var stored = evidence.scoped(versionId, ids).orElseThrow(BusinessException::missing);
         Access access = scoped(auth,stored.caseId(),false);
+        return readContent(stored, access.actor(), Map.of("evidenceVersionId", versionId));
+    }
+
+    @Transactional
+    public Content contentForDispute(UUID organizationId, UUID caseId, UUID actorId, UUID disputeId, UUID versionId) {
+        var stored = evidence.scoped(versionId, List.of(organizationId))
+                .filter(version -> caseId.equals(version.caseId()))
+                .orElseThrow(BusinessException::missing);
+        return readContent(stored, actorId, Map.of("evidenceVersionId", versionId, "disputeId", disputeId));
+    }
+
+    private Content readContent(EvidenceRepository.StoredVersion stored, UUID actorId, Map<String, UUID> context) {
+        UUID versionId = stored.metadata().id();
         if (stored.fixtureKey() == null) throw BusinessException.missing();
         var fixture = fixtures.resolve(stored.orgId(), stored.fixtureKey());
         if (!fixture.hash().equals(stored.metadata().sha256()) || fixture.bytes().length != stored.metadata().byteSize())
             throw new BusinessException(HttpStatus.SERVICE_UNAVAILABLE,"DEPENDENCY_UNAVAILABLE","Evidence content is unavailable");
-        audit.append(stored.orgId(),stored.caseId(),access.actor(),versionId,"EVIDENCE_CONTENT_READ",Map.of("evidenceVersionId",versionId));
+        audit.append(stored.orgId(),stored.caseId(),actorId,versionId,"EVIDENCE_CONTENT_READ",context);
         return new Content(fixture.bytes(),"evidence-"+versionId+".txt",stored.metadata().mimeType());
     }
 

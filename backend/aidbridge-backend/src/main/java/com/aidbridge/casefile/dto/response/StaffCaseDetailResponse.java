@@ -12,6 +12,7 @@ import java.util.UUID;
 public record StaffCaseDetailResponse(
         @JsonUnwrapped CaseDetailResponse caseDetail,
         UUID campaignId,
+        ReviewCampaign reviewCampaign,
         List<OutstandingCommitment> outstandingCommitments,
         List<ConfirmationResponse.GoodsTotal> goodsTotals,
         List<DeliveryReviewResponse> deliveries,
@@ -23,6 +24,8 @@ public record StaffCaseDetailResponse(
         deliveries = List.copyOf(deliveries);
         disputes = List.copyOf(disputes);
     }
+
+    public record ReviewCampaign(UUID id, String status) { }
 
     public record OutstandingCommitment(
             UUID contributionId,

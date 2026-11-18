@@ -4,6 +4,7 @@ import com.aidbridge.delivery.dto.request.DisputeRequest;
 import com.aidbridge.delivery.dto.request.DonorDisputeRequest;
 import com.aidbridge.delivery.dto.request.ResolveDisputeRequest;
 import com.aidbridge.delivery.dto.response.DisputeResponse;
+import com.aidbridge.delivery.dto.response.DisputeReviewResponse;
 import com.aidbridge.delivery.dto.response.DonorDisputeResponse;
 import com.aidbridge.delivery.service.DisputeService;
 import jakarta.validation.Valid;
@@ -11,8 +12,12 @@ import java.net.URI;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -62,6 +67,26 @@ public class DisputeController {
         }
 
         return response.body(result.body());
+    }
+
+    @GetMapping("/api/disputes/{id}/review")
+    public ResponseEntity<DisputeReviewResponse> review(Authentication authentication, @PathVariable("id") UUID disputeId) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(disputes.review(authentication, disputeId));
+    }
+
+    @GetMapping("/api/disputes/{id}/review/evidence-versions/{versionId}/content")
+    public ResponseEntity<byte[]> reviewEvidence(
+            Authentication authentication, @PathVariable("id") UUID disputeId,
+            @PathVariable("versionId") UUID versionId
+    ) {
+        var content = disputes.reviewEvidenceContent(authentication, disputeId, versionId);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment().filename(content.filename()).build().toString())
+                .header("X-Content-Type-Options", "nosniff")
+                .contentType(MediaType.parseMediaType(content.mimeType()))
+                .contentLength(content.bytes().length)
+                .body(content.bytes());
     }
 
     @PostMapping("/api/disputes/{id}/resolve")

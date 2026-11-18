@@ -8,16 +8,19 @@ import com.aidbridge.campaign.repository.CampaignItemRepository;
 import com.aidbridge.campaign.repository.CampaignRepository;
 import com.aidbridge.casefile.entity.AidCase;
 import com.aidbridge.casefile.repository.AidCaseRepository;
+import com.aidbridge.casefile.service.CaseService;
 import com.aidbridge.contribution.repository.ContributionRepository;
 import com.aidbridge.delivery.dto.request.DisputeRequest;
 import com.aidbridge.delivery.dto.request.DonorDisputeRequest;
 import com.aidbridge.delivery.dto.request.ResolveDisputeRequest;
 import com.aidbridge.delivery.dto.response.DisputeResponse;
+import com.aidbridge.delivery.dto.response.DisputeReviewResponse;
 import com.aidbridge.delivery.dto.response.DonorDisputeResponse;
 import com.aidbridge.delivery.entity.Delivery;
 import com.aidbridge.delivery.entity.DeliveryVoid;
 import com.aidbridge.delivery.entity.Dispute;
 import com.aidbridge.delivery.repository.DeliveryEvidenceLinkRepository;
+import com.aidbridge.delivery.repository.DeliveryItemRepository;
 import com.aidbridge.delivery.repository.DeliveryRepository;
 import com.aidbridge.delivery.repository.DeliveryVoidRepository;
 import com.aidbridge.delivery.repository.DisputeRepository;
@@ -40,6 +43,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
@@ -60,6 +64,8 @@ public class DisputeService {
     private final CampaignItemRepository campaignItems;
     private final DeliveryEvidenceLinkRepository evidenceLinks;
     private final GoodsTotalsQueryService goodsTotals;
+    private final DeliveryItemRepository deliveryItems;
+    private final CaseService caseService;
 
     @Transactional
     public Result<DisputeResponse> open(
@@ -255,6 +261,61 @@ public class DisputeService {
         }
     }
 
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public DisputeReviewResponse review(Authentication authentication, UUID disputeId) {
+        requirePlatformAdmin(authentication);
+        var scope = openReviewScope(disputeId);
+        var dispute = scope.dispute();
+        DisputeReviewResponse.Delivery delivery = null;
+        if (dispute.getDeliveryId() != null) {
+            var stored = deliveries.findByIdAndCaseId(dispute.getDeliveryId(), dispute.getCaseId())
+                    .orElseThrow(BusinessException::missing);
+            var items = deliveryItems.findReviewItems(stored.getId(), scope.organizationId()).stream()
+                    .map(item -> new DisputeReviewResponse.Item(
+                            item.getCampaignItemId(), item.getItemName(), item.getUnit(), item.getQuantity()))
+                    .toList();
+            delivery = new DisputeReviewResponse.Delivery(stored.getId(), stored.getRecordedAt(),
+                    items, reviewEvidence(scope));
+        }
+        return new DisputeReviewResponse(dispute.getId(), dispute.getCaseId(), dispute.getStatus().name(),
+                dispute.getReason(), dispute.getCreatedAt(), delivery);
+    }
+
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    public CaseService.Content reviewEvidenceContent(Authentication authentication, UUID disputeId, UUID versionId) {
+        UUID actorId = requirePlatformAdmin(authentication);
+        var scope = openReviewScope(disputeId);
+        if (scope.dispute().getDeliveryId() == null || !reviewEvidence(scope).contains(versionId)) {
+            throw BusinessException.missing();
+        }
+        return caseService.contentForDispute(scope.organizationId(), scope.dispute().getCaseId(),
+                actorId, disputeId, versionId);
+    }
+
+    private record ReviewScope(Dispute dispute, UUID organizationId) { }
+
+    private ReviewScope openReviewScope(UUID disputeId) {
+        var reference = disputes.findRefForResolution(disputeId).orElseThrow(BusinessException::missing);
+        var dispute = disputes.findScoped(reference.getOrganizationId(), disputeId)
+                .filter(candidate -> reference.getCaseId().equals(candidate.getCaseId()))
+                .filter(candidate -> candidate.getStatus() == Dispute.Status.OPEN)
+                .orElseThrow(BusinessException::missing);
+        return new ReviewScope(dispute, reference.getOrganizationId());
+    }
+
+    private List<UUID> reviewEvidence(ReviewScope scope) {
+        return evidenceLinks.findSnapshotVersionIdsScoped(
+                scope.dispute().getDeliveryId(), scope.dispute().getCaseId(), scope.organizationId());
+    }
+
+    private UUID requirePlatformAdmin(Authentication authentication) {
+        var actor = organizations.currentUser(authentication);
+        if (actor.getPlatformRole() != PlatformRole.PLATFORM_ADMIN) {
+            throw new AccessDeniedException("Access is denied");
+        }
+        return actor.getId();
+    }
+
     @Transactional
     public Result<DisputeResponse> resolve(
             Authentication authentication,
@@ -262,10 +323,7 @@ public class DisputeService {
             String key,
             ResolveDisputeRequest request
     ) {
-        var actor = organizations.currentUser(authentication);
-        if (actor.getPlatformRole() != PlatformRole.PLATFORM_ADMIN) {
-            throw new AccessDeniedException("Access is denied");
-        }
+        UUID actorId = requirePlatformAdmin(authentication);
 
         var reference = disputes.findRefForResolution(disputeId)
                 .orElseThrow(BusinessException::missing);
@@ -275,13 +333,13 @@ public class DisputeService {
                 .orElseThrow(BusinessException::missing);
 
         return idempotency.execute(
-                actor.getId(),
+                actorId,
                 organizationId,
                 "POST:/api/disputes/" + disputeId + "/resolve",
                 key,
                 request,
                 DisputeResponse.class,
-                () -> resolveNew(aidCase, organizationId, actor.getId(), disputeId, request)
+                () -> resolveNew(aidCase, organizationId, actorId, disputeId, request)
         );
     }
 

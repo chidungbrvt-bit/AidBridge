@@ -4,16 +4,23 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { activeMemberships, ApiError } from '@/lib/api-client';
 import { useSession } from '@/components/session-provider';
+import { disputeReturnPath } from '@/lib/login-return';
 
 export default function LoginPage() {
-  const { user, login, notice, mode, loading, error: sessionError, refreshUser } = useSession();
+  const { user, login, notice, mode, loading, error: sessionError, refreshUser, goodsReview } = useSession();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const errorRef = useRef<HTMLParagraphElement>(null);
-  useEffect(() => { if (user) router.replace(user.donorEnabled && activeMemberships(user).length === 0 ? '/campaigns' : '/cases'); }, [user, router]);
+  useEffect(() => {
+    if (user) {
+      const returnTo = disputeReturnPath(new URLSearchParams(window.location.search).get('returnTo'));
+      router.replace(goodsReview?.route ?? returnTo ??
+        (user.donorEnabled && activeMemberships(user).length === 0 ? '/campaigns' : '/cases'));
+    }
+  }, [user, router, goodsReview]);
   useEffect(() => { if (error) errorRef.current?.focus(); }, [error]);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(''); setBusy(true);

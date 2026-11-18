@@ -1,0 +1,64 @@
+<testsuites id="" name="" tests="10" failures="0" skipped="0" errors="0" time="68.09921899999999">
+<testsuite name="donor-real.spec.ts" timestamp="2026-11-18T01:43:30.583Z" hostname="donor-real" tests="10" failures="0" skipped="0" time="64.92" errors="0">
+<testcase name="real G01/G02/G03: multi-item pledge, own history, partial cancellation and persisted audit/outbox" classname="donor-real.spec.ts" time="5.334">
+<properties>
+<property name="serial" value="">
+</property>
+</properties>
+</testcase>
+<testcase name="real R01 receipt feeds D01 delivery and blocks stale donor cancellation" classname="donor-real.spec.ts" time="9.823">
+<properties>
+<property name="serial" value="">
+</property>
+</properties>
+</testcase>
+<testcase name="real G01 commit then lost504: exact request/key replay creates one DB contribution" classname="donor-real.spec.ts" time="3.587">
+<properties>
+<property name="serial" value="">
+</property>
+</properties>
+</testcase>
+<testcase name="real G03 commit then lost504: original 1 unit cancellation is stored exactly once" classname="donor-real.spec.ts" time="4.042">
+<properties>
+<property name="serial" value="">
+</property>
+</properties>
+</testcase>
+<testcase name="real HTTP CSRF403 and validation400 leave PostgreSQL unchanged" classname="donor-real.spec.ts" time="3.151">
+<properties>
+<property name="serial" value="">
+</property>
+</properties>
+</testcase>
+<testcase name="real F09: independent confirmation, dispute guard, void, reload and close" classname="donor-real.spec.ts" time="16.001">
+<properties>
+<property name="serial" value="">
+</property>
+</properties>
+</testcase>
+<testcase name="real F09 D02 shows quantities for the selected delivery by campaign item ID" classname="donor-real.spec.ts" time="6.175">
+<properties>
+<property name="serial" value="">
+</property>
+</properties>
+</testcase>
+<testcase name="real F09 returns an unauthenticated direct dispute link after login" classname="donor-real.spec.ts" time="6.281">
+<properties>
+<property name="serial" value="">
+</property>
+</properties>
+</testcase>
+<testcase name="real F09 partial receipts feed a multi-item delivery and independent confirmation" classname="donor-real.spec.ts" time="7.58">
+<properties>
+<property name="serial" value="">
+</property>
+</properties>
+</testcase>
+<testcase name="real F05 canonical public audit is anonymous, sanitized and separate from staff audit" classname="donor-real.spec.ts" time="2.946">
+<properties>
+<property name="serial" value="">
+</property>
+</properties>
+</testcase>
+</testsuite>
+</testsuites>

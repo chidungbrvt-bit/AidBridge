@@ -1,6 +1,6 @@
 import type { CampaignResponse } from '../../features/donor/model';
 import type { CreateCampaignRequest } from './campaign';
-import type { DeliveryRequest, ReceiptRequest } from './goods';
+import type { DeliveryRequest, GoodsReviewAction, ReceiptRequest } from './goods';
 import type { CreateCaseRequest } from './types';
 
 export type PendingWrite<T> = {
@@ -16,6 +16,12 @@ export type CampaignWork = {
 };
 
 export type ReceiptAttempt = PendingWrite<ReceiptRequest> & { commitmentId: string };
+
+export type GoodsReviewAttempt = PendingWrite<GoodsReviewAction> & {
+  actorId: string;
+  route: string;
+  organizationId?: string;
+};
 
 export function createSessionWork() {
   const caseCreates = new Map<string, PendingWrite<CreateCaseRequest>>();

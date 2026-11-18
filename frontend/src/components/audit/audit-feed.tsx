@@ -44,7 +44,12 @@ export function AuditFeed({ scope, revision = 0 }: { scope: AuditScope; revision
   }, [api, caseId, publicUrl, publicRef, page, retry, revision]);
 
   return <section className="stack" aria-labelledby={headingId}>
-    <h2 id={headingId}>{caseId ? "Case audit timeline" : "Public audit timeline"}</h2>
+    <div className="toolbar">
+      <h2 id={headingId}>{caseId ? "Case audit timeline" : "Public audit timeline"}</h2>
+      {(caseId || publicRef) && <button type="button" className="button secondary" disabled={loading}
+        onClick={() => setRetry(value => value + 1)}>Refresh audit</button>}
+    </div>
+    <p className="muted">On-chain status describes record integrity. Physical delivery is confirmed separately.</p>
     {!caseId && !publicRef ? <p>Public audit is unavailable for this campaign.</p> : <>
       {loading && <p role="status">Loading audit events…</p>}
       {error && <><ErrorNotice error={error} /><button type="button" className="button secondary" onClick={() => setRetry(value => value + 1)}>Retry audit</button></>}

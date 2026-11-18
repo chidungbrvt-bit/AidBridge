@@ -9,6 +9,26 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface DeliveryItemRepository extends JpaRepository<DeliveryItem, UUID> {
+    interface ReviewItem {
+        UUID getCampaignItemId();
+        String getItemName();
+        String getUnit();
+        int getQuantity();
+    }
+
+    @Query("""
+        select item.campaignItemId as campaignItemId, campaignItem.itemName as itemName,
+               campaignItem.unit as unit, item.quantity as quantity
+        from DeliveryItem item, CampaignItem campaignItem
+        where item.deliveryId = :deliveryId
+          and campaignItem.id = item.campaignItemId
+          and campaignItem.campaign.id = item.campaignId
+          and campaignItem.organizationId = :organizationId
+        order by item.campaignItemId
+        """)
+    List<ReviewItem> findReviewItems(
+            @Param("deliveryId") UUID deliveryId, @Param("organizationId") UUID organizationId);
+
     @Query("""
         select item
         from DeliveryItem item
