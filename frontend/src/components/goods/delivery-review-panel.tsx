@@ -7,6 +7,7 @@ import { useSession } from "@/components/session-provider";
 import { canConfirmDelivery, canManageCampaigns, canOpenCaseDispute } from "@/lib/api-client";
 import type { CaseDetailResponse } from "@/lib/types";
 import type { StaffCaseDetail } from "@/lib/goods";
+import { formatUtc } from "@/lib/display";
 import { useGoodsReviewWrite } from "./goods-review-write";
 
 export function DeliveryReviewPanel({ detail, revision, onSaved }: {
@@ -76,8 +77,8 @@ export function DeliveryReviewPanel({ detail, revision, onSaved }: {
           setReviewed(false);
         }}>
           <option value="">Select a delivery</option>
-          {deliveries.filter(row => row.outcome === "DELIVERED").map(row =>
-            <option key={row.id} value={row.id}>{row.id} · {row.reviewStatus.replaceAll("_", " ")}</option>)}
+          {deliveries.filter(row => row.outcome === "DELIVERED").map((row, index) =>
+            <option key={row.id} value={row.id}>Delivery {index + 1} · {formatUtc(row.recordedAt)} · {row.reviewStatus.replaceAll("_", " ")}</option>)}
         </select>
       </label>}
       {selected && <>
@@ -88,7 +89,7 @@ export function DeliveryReviewPanel({ detail, revision, onSaved }: {
           <tbody>{selected.items.map(item => {
             const metadata = totals.find(total => total.campaignItemId === item.campaignItemId);
             return <tr key={item.campaignItemId}>
-              <th scope="row">{metadata?.itemName ?? item.campaignItemId}</th>
+              <th scope="row">{metadata?.itemName ?? "Unknown item"}</th>
               <td>{metadata?.unit ?? "Unavailable"}</td><td>{item.quantity}</td>
             </tr>;
           })}</tbody>
@@ -116,9 +117,9 @@ export function DeliveryReviewPanel({ detail, revision, onSaved }: {
           <button className="button secondary" type="button" disabled={write.disabled || campaign.status !== "FULFILLED" || openCount !== 0}
             onClick={() => write.start({ action: "close", id: campaign.id })}>Close campaign</button>}
       </div>
-      {!!disputes.length && <ul className="evidence-list">{disputes.map(dispute => <li key={dispute.id}>
+      {!!disputes.length && <ul className="evidence-list">{disputes.map((dispute, index) => <li key={dispute.id}>
         <p><StatusBadge status={dispute.status} /> {dispute.reason}</p>
-        {dispute.status === "OPEN" && <Link href={`/disputes/${encodeURIComponent(dispute.id)}`}>Dispute review · {dispute.id}</Link>}
+        {dispute.status === "OPEN" && <Link href={`/disputes/${encodeURIComponent(dispute.id)}`}>Review dispute {index + 1}</Link>}
       </li>)}</ul>}
     </>}
   </section>;

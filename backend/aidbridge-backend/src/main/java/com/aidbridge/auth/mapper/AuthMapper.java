@@ -34,6 +34,7 @@ public class AuthMapper {
                 .sorted().toList();
         return new MeResponse.MembershipResponse(
                 membership.getOrganization().getId(),
+                membership.getOrganization().getName(),
                 roles,
                 membership.getStatus().name()
         );

@@ -122,7 +122,7 @@ test('real R01 receipt feeds D01 delivery and blocks stale donor cancellation',a
     expect(response.headers()['x-aidbridge-mock']).toBeUndefined();
     const receipt=await response.json();
     expect(receipt).toMatchObject({contributionId:saved.id,recorderId:recorder,items:[{contributionItemId:line.id,quantity:2}],blockchainStatus:'PENDING_ON_CHAIN'});
-    await expect(receiptPanel.getByText(`Receipt ID: ${receipt.id}`)).toBeVisible();
+    await expect(receiptPanel.locator(`[data-receipt-id="${receipt.id}"]`)).toBeVisible();
     await expect(receiptPanel.getByLabel('Outstanding commitment')).toHaveValue(saved.id);
     await expect(outstanding).toHaveCount(0);
     expect(Number(sql(`SELECT count(*) FROM goods_receipts r JOIN goods_receipt_items i ON i.goods_receipt_id=r.id
@@ -172,7 +172,7 @@ test('real R01 receipt feeds D01 delivery and blocks stale donor cancellation',a
       items: [{ campaignItemId: before.id, quantity: 1 }],
       evidenceVersionIds: [version.id], blockchainStatus: 'PENDING_ON_CHAIN',
     });
-    await expect(deliveryPanel.getByText(`Delivery ID: ${delivery.id}`)).toBeVisible();
+    await expect(deliveryPanel.locator(`[data-delivery-id="${delivery.id}"]`)).toBeVisible();
     const after = await campaignFood(field);
     expect(after).toMatchObject({
       receivedQty: before.receivedQty, deliveredQty: before.deliveredQty + 1, confirmedQty: before.confirmedQty,
@@ -621,7 +621,7 @@ test('real F09 partial receipts feed a multi-item delivery and independent confi
       expect(response.status()).toBe(201);
       const receipt = await response.json();
       receiptIds.push(id(receipt.id));
-      await expect(receiptPanel.getByText(`Receipt ID: ${receipt.id}`, { exact: true })).toBeVisible();
+      await expect(receiptPanel.locator(`[data-receipt-id="${receipt.id}"]`)).toBeVisible();
       if (receiptIds.length === 1) {
         await expect(receiptPanel.getByTestId(`outstanding-${foodLine.id}`)).toHaveText('Outstanding: 2');
         await expect(receiptPanel.getByTestId(`outstanding-${hygieneLine.id}`)).toHaveText('Outstanding: 1');
@@ -644,7 +644,7 @@ test('real F09 partial receipts feed a multi-item delivery and independent confi
     expect(deliveryResponse.status()).toBe(201);
     const delivery: DeliveryResponse = await deliveryResponse.json();
     expect(delivery).toMatchObject({ reviewStatus: 'PENDING', blockchainStatus: 'PENDING_ON_CHAIN', recorderId: volunteer });
-    await expect(deliveryPanel.getByText(`Delivery ID: ${delivery.id}`, { exact: true })).toBeVisible();
+    await expect(deliveryPanel.locator(`[data-delivery-id="${delivery.id}"]`)).toBeVisible();
     await staff.getByRole('button', { name: 'Sign out', exact: true }).click();
     await expect(staff).toHaveURL(/\/login$/);
     await signInStaff(staff, process.env.F09_E2E_CONFIRMER_EMAIL!);

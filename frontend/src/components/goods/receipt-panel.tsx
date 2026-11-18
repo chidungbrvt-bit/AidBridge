@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useSession } from "@/components/session-provider";
 import { canManageCampaigns } from "@/lib/api-client";
+import { formatUtc } from "@/lib/display";
 import type { OutstandingCommitment, ReceiptRequest, ReceiptResponse } from "@/lib/goods";
 import type { ReceiptAttempt } from "@/lib/session-work";
 import type { CaseDetailResponse } from "@/lib/types";
@@ -133,8 +134,8 @@ function StaffReceipt({ caseId, organizationId, actorId, onRecorded }: {
 
   return <section className="card stack" aria-label="Goods receipt">
     <div><h2>Record goods receipt</h2><p className="muted">Select the commitment and quantities received by your organization.</p></div>
-    {result && <div className="notice success" role="status">
-      <strong>Receipt recorded</strong><p className="mono">Receipt ID: {result.id}</p>
+    {result && <div className="notice success" role="status" data-receipt-id={result.id}>
+      <strong>Receipt recorded</strong>
       <p>Blockchain sync: <StatusBadge status={result.blockchainStatus} /></p>
     </div>}
     <ErrorNotice error={writeError} />
@@ -147,7 +148,7 @@ function StaffReceipt({ caseId, organizationId, actorId, onRecorded }: {
       <fieldset className="form-fieldset stack" disabled={locked}>
         <label className="field">Outstanding commitment
           <select value={commitment.contributionId} onChange={event => { setCommitmentId(event.target.value); setQuantities({}); setWriteError(null); }}>
-            {commitments.map(row => <option key={row.contributionId} value={row.contributionId}>{row.status} · {row.contributionId}</option>)}
+            {commitments.map((row, index) => <option key={row.contributionId} value={row.contributionId}>Pledge {index + 1} · {formatUtc(row.pledgedAt)} · {row.status.replaceAll("_", " ")}</option>)}
           </select>
         </label>
         {commitment.items.map(row => {

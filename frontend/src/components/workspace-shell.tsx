@@ -44,8 +44,8 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
       <div className="workspace-label">{donorPath ? "DONOR WORKSPACE" : "ORGANIZATION WORKSPACE"}</div>
       {memberships.length > 0 && <><label className="org-label" htmlFor="organization">Active organization</label>
       <select id="organization" value={organizationId} disabled={navigationLocked} onChange={event => session.setOrganizationId(event.target.value)}>
-        {memberships.map(item => <option key={item.organizationId} value={item.organizationId}>
-          {mode === 'mock' && item.organizationId.endsWith('0001') ? 'Riverlight Aid' : mode === 'mock' && item.organizationId.endsWith('0002') ? 'Harbor Relief' : item.organizationId}
+        {memberships.map((item, index) => <option key={item.organizationId} value={item.organizationId}>
+          {item.organizationName || (mode === 'mock' && item.organizationId.endsWith('0001') ? 'Riverlight Aid' : mode === 'mock' && item.organizationId.endsWith('0002') ? 'Harbor Relief' : `Organization ${index + 1}`)}
         </option>)}
       </select></>}
       <nav aria-label="Workspace navigation">
