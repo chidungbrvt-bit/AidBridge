@@ -1066,4 +1066,38 @@ class CaseVerifiedWorkerIT extends AbstractCampaignHttpIT {
         assertThat(node.broadcasts).hasSize(1);
     }
 
+    @Test
+    void doesNotPrepareCaseVerificationWhileRpcReportsWrongChain() throws Exception {
+        UUID jobId = newLocalCaseVerifiedJob();
+        String originalEventId = jdbc.queryForObject(
+                "SELECT encode(logical_event_id, 'hex') FROM blockchain_jobs WHERE id = ?",
+                String.class, jobId);
+        node.chainId = 43113;
+
+        assertThat(worker.processNextJob().orElseThrow()).isEqualTo(
+                new CaseVerifiedWorker.Result(
+                        jobId, CaseVerifiedWorker.Outcome.RETRY_SCHEDULED, "INVALID_CHAIN_ID"));
+        assertThat(jdbc.queryForMap(
+                "SELECT status, last_error, lease_until FROM blockchain_jobs WHERE id = ?", jobId))
+                .containsEntry("status", "PROCESSING")
+                .containsEntry("last_error", "INVALID_CHAIN_ID")
+                .containsEntry("lease_until", null);
+        assertThat(jdbc.queryForObject(
+                "SELECT count(*) FROM blockchain_transactions WHERE blockchain_job_id = ?",
+                Long.class, jobId)).isZero();
+        assertThat(node.broadcasts).isEmpty();
+
+        node.chainId = 31337;
+        jdbc.update("UPDATE blockchain_jobs SET next_retry_at = NULL WHERE id = ?", jobId);
+
+        assertThat(worker.processNextJob().orElseThrow()).isEqualTo(
+                new CaseVerifiedWorker.Result(jobId, CaseVerifiedWorker.Outcome.SUBMITTED, null));
+        assertThat(node.broadcasts).hasSize(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT count(*) FROM blockchain_transactions WHERE blockchain_job_id = ? AND status = 'SUBMITTED'",
+                Long.class, jobId)).isEqualTo(1L);
+        assertThat(jdbc.queryForObject(
+                "SELECT encode(logical_event_id, 'hex') FROM blockchain_jobs WHERE id = ?",
+                String.class, jobId)).isEqualTo(originalEventId);
+    }
 }

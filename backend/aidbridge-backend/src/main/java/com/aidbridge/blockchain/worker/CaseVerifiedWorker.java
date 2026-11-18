@@ -95,14 +95,12 @@ public class CaseVerifiedWorker {
         }
         Claim claim = (Claim) claimed;
 
-        if (claim.operation() != AidRegistryAbi.Operation.CASE_VERIFIED) {
-            try {
-                if (adapter.readChainId() != properties.chainId()) {
-                    return Optional.of(retry(claim.jobId(), "INVALID_CHAIN_ID", guard));
-                }
-            } catch (BlockchainRpcException e) {
-                return Optional.of(retry(claim.jobId(), e.code(), guard));
+        try {
+            if (adapter.readChainId() != properties.chainId()) {
+                return Optional.of(retry(claim.jobId(), "INVALID_CHAIN_ID", guard));
             }
+        } catch (BlockchainRpcException e) {
+            return Optional.of(retry(claim.jobId(), e.code(), guard));
         }
 
         String rawTransaction;
