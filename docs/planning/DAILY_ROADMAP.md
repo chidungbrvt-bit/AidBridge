@@ -386,6 +386,7 @@ Feature-complete18/11 gồm all P0 integrated, feature tests/reviews, real Fuji 
 
 - **Main objective:** Complete goods/confirmation integration.
 - **Dũng — Backend:** B10 2h, B11 0.5h.
+- **Task #1 · Kết quả đối chiếu** — Đã chuẩn bị bàn giao B10, F09, C10 và DB staging để review. Ảnh SQL ghi 5 tài khoản, 5 job, 0 attempt. Dũng xác nhận 5 job staging đều `PENDING`. XML Failsafe xác nhận hồi quy receipt proof và ca Hardhat tám sự kiện pass trên `f85d390`. Còn chờ Khoa duyệt cổng local, Dũng đối chiếu registry và inventory DB cũ, Minh sửa hai điểm F09. Mốc hiện hành là P0 tích hợp 18/11, demo/video/hồ sơ 19/11, hoàn tất 20/11, nộp 21/11.
 - **Khoa — Blockchain:** C10 2h, C11 0.5h.
 - **Minh — Frontend/Product:** F09 1h, F10 1.5h.
 - **Prerequisites:** B03, B04, B05, B06, B07, B08, B09, B10, C06, C07, C08, C09, C10, F08, F09; mock prework not integrated Done.
