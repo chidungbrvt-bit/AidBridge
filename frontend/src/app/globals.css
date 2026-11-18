@@ -17,3 +17,5 @@
 .language-toggle button:focus-visible { outline: 2px solid var(--green-dark); outline-offset: -2px; }
 .topbar-actions { display: inline-flex; align-items: center; gap: 12px; }
 .public-audit-header { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+/* Georgia lacks Vietnamese stacked diacritics (ồ, ầ, ắ…): use a serif that has them. */
+html[lang="vi"] .story-content h1, html[lang="vi"] .avatar { font-family: 'Times New Roman', 'Noto Serif', 'Tinos', serif; }
