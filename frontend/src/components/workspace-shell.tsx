@@ -5,16 +5,26 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { activeMemberships, canCreateCases, canReadCases, canReviewCases } from '@/lib/api-client';
 import { useSession } from './session-provider';
+import { disputeReturnPath } from '@/lib/login-return';
 
 export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const session = useSession();
-  const { user, loading, organizationId, mode, generation, navigationLocked } = session;
+  const { user, loading, organizationId, mode, generation, navigationLocked, goodsReview } = session;
   const router = useRouter();
   const pathname = usePathname();
   const donorPath = pathname === '/campaigns' || pathname.startsWith('/campaigns/') || pathname === '/me/commitments';
+  const platformDispute = mode === "real" && user?.platformRole === "PLATFORM_ADMIN" && pathname.startsWith("/disputes/");
   const [actionError, setActionError] = useState('');
   const [busy, setBusy] = useState(false);
-  useEffect(() => { if (!loading && !user && !session.checkingFailed) router.replace('/login'); }, [loading, user, session.checkingFailed, router]);
+  useEffect(() => {
+    if (!loading && !user && !session.checkingFailed) {
+      const returnTo = disputeReturnPath(pathname);
+      router.replace(returnTo ? `/login?returnTo=${encodeURIComponent(returnTo)}` : '/login');
+    }
+  }, [loading, user, session.checkingFailed, pathname, router]);
+  useEffect(() => {
+    if (goodsReview && pathname !== goodsReview.route) router.replace(goodsReview.route);
+  }, [goodsReview, pathname, router]);
   if (session.checkingFailed && !user) return <main className="center-state"><div className="card stack"><p role="alert">{session.error}</p><button className="button" onClick={() => void session.refreshUser()}>Check session again</button></div></main>;
   if (loading || !user) return <main className="center-state" aria-live="polite">Opening your workspace…</main>;
   const memberships = activeMemberships(user);
@@ -34,8 +44,8 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
       <div className="workspace-label">{donorPath ? "DONOR WORKSPACE" : "ORGANIZATION WORKSPACE"}</div>
       {memberships.length > 0 && <><label className="org-label" htmlFor="organization">Active organization</label>
       <select id="organization" value={organizationId} disabled={navigationLocked} onChange={event => session.setOrganizationId(event.target.value)}>
-        {memberships.map(item => <option key={item.organizationId} value={item.organizationId}>
-          {mode === 'mock' && item.organizationId.endsWith('0001') ? 'Riverlight Aid' : mode === 'mock' && item.organizationId.endsWith('0002') ? 'Harbor Relief' : item.organizationId}
+        {memberships.map((item, index) => <option key={item.organizationId} value={item.organizationId}>
+          {item.organizationName || (mode === 'mock' && item.organizationId.endsWith('0001') ? 'Riverlight Aid' : mode === 'mock' && item.organizationId.endsWith('0002') ? 'Harbor Relief' : `Organization ${index + 1}`)}
         </option>)}
       </select></>}
       <nav aria-label="Workspace navigation">
@@ -56,7 +66,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
       <main className="main-content" key={contextKey}>
         {navigationLocked && <p className="notice" role="status">Resolve the current submission before leaving this page or switching organization.</p>}
         {actionError && <p className="notice error" role="alert">{actionError}</p>}
-        {memberships.length || donorPath ? children : <section className="card"><h1>No active organization membership</h1><p>Your account has no active staff membership. Ask the organization administrator to check access.</p></section>}
+        {memberships.length || donorPath || platformDispute ? children : <section className="card"><h1>No active organization membership</h1><p>Your account has no active staff membership. Ask the organization administrator to check access.</p></section>}
       </main>
       {mode === 'mock' && <div className="demo-tools"><details><summary>Mock test controls</summary><p>Local simulation only. These controls do not exist in real mode.</p><div className="actions"><button className="button secondary" onClick={async () => { try { await session.api.mockControl('expire-session'); await session.refreshUser(); } catch { setActionError('Mock control failed.'); } }}>Expire session</button><button className="button secondary" onClick={async () => { try { await session.api.mockControl('next-error'); setActionError('Next case read will return 503. Open Cases or refresh the case.'); } catch { setActionError('Mock control failed.'); } }}>Fail next read</button><button className="button secondary" onClick={async () => { try { await session.api.mockControl('lose-next-response'); setActionError('Next write will commit but its response will be lost. Retry with the same key.'); } catch { setActionError('Mock control failed.'); } }}>Lose next write response</button></div></details></div>}
     </div>

@@ -18,6 +18,57 @@ import tools.jackson.databind.JsonNode;
 class DisputeResolveIT extends AbstractDeliveryHttpIT {
 
     @Test
+    void exposesOnlyTheOpenDisputesOwnEvidenceToAPlatformAdmin() throws Exception {
+        Stock stock = stockedCase(actor(ORG_A, "ORG_ADMIN", false));
+        UUID evidenceId = stock.evidenceIds().getFirst();
+        var recorded = deliver(volunteer, stock.caseId(),
+                delivered(List.of(evidenceId), stock.rice(), 2), newKey());
+        status(recorded, 201);
+        UUID deliveryId = id(node(recorded));
+        UUID disputeId = open(verifier, stock.caseId(), deliveryId);
+        String review = "/api/disputes/" + disputeId + "/review";
+        String evidencePath = review + "/evidence-versions/" + evidenceId + "/content";
+
+        var context = admin.browser().send("GET", review, null, null, false);
+        status(context, 200);
+        assertThat(context.headers().firstValue("Cache-Control")).contains("no-store");
+        var body = node(context);
+        assertThat(body.path("caseId").asText()).isEqualTo(stock.caseId().toString());
+        assertThat(body.path("status").asText()).isEqualTo("OPEN");
+        assertThat(body.path("delivery").path("id").asText()).isEqualTo(deliveryId.toString());
+        var item = body.path("delivery").path("items").get(0);
+        assertThat(item.path("campaignItemId").asText()).isEqualTo(stock.rice().toString());
+        assertThat(item.path("itemName").asText()).isEqualTo("Rice");
+        assertThat(item.path("unit").asText()).isNotBlank();
+        assertThat(item.path("quantity").asInt()).isEqualTo(2);
+        var evidenceIds = body.path("delivery").path("evidenceVersionIds");
+        assertThat(evidenceIds.size()).isEqualTo(1);
+        assertThat(evidenceIds.get(0).asText()).isEqualTo(evidenceId.toString());
+        assertThat(context.body()).doesNotContain("beneficiary", "storageKey", "fixtureKey", "recorderId");
+
+        problem(new Browser().send("GET", review, null, null, false), 401, "UNAUTHENTICATED");
+        problem(verifier.browser().send("GET", review, null, null, false), 403, "FORBIDDEN");
+        problem(verifier.browser().send("GET", evidencePath, null, null, false), 403, "FORBIDDEN");
+        problem(admin.browser().send("GET", "/api/cases/" + stock.caseId() + "/audit-trail",
+                null, null, false), 404, "RESOURCE_NOT_FOUND");
+        problem(admin.browser().send("GET", review + "/evidence-versions/" + stock.evidenceIds().get(1) + "/content",
+                null, null, false), 404, "RESOURCE_NOT_FOUND");
+        var content = admin.browser().send("GET", evidencePath, null, null, false);
+        status(content, 200);
+        assertThat(content.headers().firstValue("Content-Disposition").orElseThrow()).startsWith("attachment");
+        assertThat(content.headers().firstValue("Cache-Control")).contains("no-store");
+        assertThat(content.body()).isNotBlank();
+        assertThat(jdbc.queryForObject("""
+                SELECT count(*) FROM audit_events
+                WHERE aid_case_id = ? AND actor_user_id = ? AND entity_id = ? AND event_type = 'EVIDENCE_CONTENT_READ'
+                """, Long.class, stock.caseId(), admin.id(), evidenceId)).isEqualTo(1L);
+
+        status(resolve(admin, disputeId, decision("UPHOLD", List.of(evidenceId)), newKey()), 200);
+        problem(admin.browser().send("GET", review, null, null, false), 404, "RESOURCE_NOT_FOUND");
+        problem(admin.browser().send("GET", evidencePath, null, null, false), 404, "RESOURCE_NOT_FOUND");
+    }
+
+    @Test
     void upholdsCaseDisputeAndReplaysOnlyForACurrentPlatformAdmin() throws Exception {
         UUID caseId = verifiedCase();
         UUID disputeId = open(verifier, caseId, null);

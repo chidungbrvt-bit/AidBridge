@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites tests="1" failures="0" errors="0" skipped="0">
+  <testsuite name="Day18 same-case P0 business journey" tests="1" failures="0" errors="0" skipped="0" time="7.791">
+    <properties>
+      <property name="mode" value="REAL_NEXT_SPRING_POSTGRES" />
+      <property name="blockchainEnabled" value="false" />
+      <property name="sourceReportSha256" value="5da81255837aaedaa819a0751f62139fd6dac6c4cb9854d953377b670dc0b72f" />
+      <property name="testedSha" value="1578ddfb61d117eb8132218cb10d3455dbfee89e" />
+    </properties>
+    <testcase name="real P0 same-case journey: create, verify, publish, pledge, partial receipts, deliver, confirm and audit" classname="donor-real.spec.ts" time="7.791">
+      <properties>
+        <property name="serial" value="" />
+      </properties>
+    </testcase>
+  </testsuite>
+</testsuites>

@@ -1,0 +1,70 @@
+{
+  "mode": "REAL_NEXT_SPRING_POSTGRES",
+  "blockchainEnabled": false,
+  "backendFixture": "AbstractCampaignHttpIT",
+  "receiptWrite": "B08 R01 via the staff UI",
+  "deliveryWrite": "B09 D01 via the volunteer UI",
+  "expectedScenarios": 11,
+  "passedScenarios": 11,
+  "scenarios": [
+    {
+      "scenario": "multi-item-history-partial-cancel-outbox",
+      "contributionId": "bf813eac-392d-4488-b872-dd9e4a6eb7df",
+      "databaseVerified": true
+    },
+    {
+      "scenario": "real-r01-d01-stale-donor409",
+      "contributionId": "872f3272-c125-4854-9696-88c162fb8420",
+      "deliveryId": "2025511d-b0a7-431a-bda1-45456d1905eb",
+      "databaseVerified": true
+    },
+    {
+      "scenario": "real-pledge-commit504-exact-replay",
+      "contributionId": "cb939fd4-1c79-4907-9b8c-d8c9403ce52d",
+      "databaseVerified": true
+    },
+    {
+      "scenario": "real-cancel-commit504-exact-replay",
+      "contributionId": "ed236818-4e34-46b9-a39d-2155b744e9b9",
+      "databaseVerified": true
+    },
+    {
+      "scenario": "real-csrf403-validation400-revoked-grant-no-write",
+      "databaseVerified": true
+    },
+    {
+      "scenario": "f09-independent-confirm-void-close-timeline",
+      "contributionId": "2e2ca95a-1d12-4e7a-834e-757461073aac",
+      "deliveryId": "d6f47645-fe72-4fbb-bdb8-827d6a775d53",
+      "databaseVerified": true
+    },
+    {
+      "scenario": "f09-selected-delivery-quantities",
+      "contributionId": "ed4ccb28-e78b-42ff-a412-86a10a15fc1c",
+      "deliveryId": "9478ddbf-2d2b-431e-bceb-06e747093ec3",
+      "databaseVerified": true
+    },
+    {
+      "scenario": "f09-direct-dispute-login-return",
+      "databaseVerified": true
+    },
+    {
+      "scenario": "f09-partial-receipts-delivery-independent-confirmation",
+      "contributionId": "f59ee828-5ebb-4343-be28-2cee692f976b",
+      "deliveryId": "034e12e9-2a94-4c4e-8de7-48e70a4d3517",
+      "databaseVerified": true
+    },
+    {
+      "scenario": "f05-anonymous-canonical-audit-no-false-chain-proof",
+      "databaseVerified": true
+    },
+    {
+      "scenario": "p0-same-case-created-through-full-ui-lifecycle",
+      "caseId": "30075d07-f4ac-4bc4-9784-9870b2f237b8",
+      "campaignId": "9967e5e3-9a0a-4197-be55-0cf9702425fb",
+      "contributionId": "8187263c-069c-423f-8c62-e4fdedc76eff",
+      "deliveryId": "50622277-adc8-4335-96bb-adcf55450e79",
+      "databaseVerified": true
+    }
+  ]
+}

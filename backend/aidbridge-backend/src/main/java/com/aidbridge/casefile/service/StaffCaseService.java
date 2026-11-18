@@ -5,6 +5,7 @@ import com.aidbridge.campaign.repository.CampaignRepository;
 import com.aidbridge.casefile.dto.response.StaffCaseDetailResponse;
 import com.aidbridge.casefile.dto.response.StaffCaseDetailResponse.Item;
 import com.aidbridge.casefile.dto.response.StaffCaseDetailResponse.OutstandingCommitment;
+import com.aidbridge.casefile.dto.response.StaffCaseDetailResponse.ReviewCampaign;
 import com.aidbridge.contribution.entity.Contribution;
 import com.aidbridge.contribution.repository.ContributionItemRepository;
 import com.aidbridge.delivery.dto.response.ConfirmationResponse;
@@ -77,22 +78,14 @@ public class StaffCaseService {
             ));
         }
 
-        UUID publishedCampaignId = campaigns.findScopedCampaignId(
-                        caseId, detail.organizationId(), Campaign.Status.PUBLISHED)
-                .orElse(null);
-
-        var goodsCampaignId = campaigns.findIdByCaseAndOrganization(
-                caseId,
-                organizationId
-        );
-
-        List<ConfirmationResponse.GoodsTotal> totals =
-                goodsCampaignId.isPresent()
-                        ? goodsTotals.readForAuthorizedCampaign(
-                        organizationId,
-                        goodsCampaignId.get()
-                )
-                        : List.of();
+        var campaign = campaigns.findStaffCampaign(caseId, organizationId);
+        UUID publishedCampaignId = campaign.filter(entry -> entry.getStatus() == Campaign.Status.PUBLISHED)
+                .map(CampaignRepository.StaffCampaign::getId).orElse(null);
+        var reviewCampaign = campaign.filter(entry -> entry.getStatus() != Campaign.Status.DRAFT)
+                .map(entry -> new ReviewCampaign(entry.getId(), entry.getStatus().name())).orElse(null);
+        List<ConfirmationResponse.GoodsTotal> totals = campaign
+                .map(entry -> goodsTotals.readForAuthorizedCampaign(organizationId, entry.getId()))
+                .orElseGet(List::of);
 
         var reviewSnapshot = deliveryReviews.readForAuthorizedCase(
                 caseId,
@@ -102,6 +95,7 @@ public class StaffCaseService {
         return new StaffCaseDetailResponse(
                 detail,
                 publishedCampaignId,
+                reviewCampaign,
                 new ArrayList<>(outstanding.values()),
                 totals,
                 reviewSnapshot.deliveries(),

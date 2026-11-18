@@ -1,0 +1,18 @@
+<testsuites id="" name="" tests="6" failures="0" skipped="0" errors="0" time="7.0432250000000005">
+<testsuite name="delivery-api.spec.ts" timestamp="2026-11-18T02:37:44.533Z" hostname="delivery-api" tests="4" failures="0" skipped="0" time="2.734" errors="0">
+<testcase name="D01 refreshes stock after a conflict and replays a lost success with the same evidence and key" classname="delivery-api.spec.ts" time="1.159">
+</testcase>
+<testcase name="D01 FAILED sends a reason and empty arrays and keeps stock unchanged" classname="delivery-api.spec.ts" time="0.639">
+</testcase>
+<testcase name="D01 keeps the form unavailable for a same-org verifier" classname="delivery-api.spec.ts" time="0.494">
+</testcase>
+<testcase name="D01 keeps the form unavailable for a volunteer from another organization" classname="delivery-api.spec.ts" time="0.442">
+</testcase>
+</testsuite>
+<testsuite name="audit-api.spec.ts" timestamp="2026-11-18T02:37:44.533Z" hostname="audit-api" tests="2" failures="0" skipped="0" time="1.926" errors="0">
+<testcase name="T01 staff timeline paginates and leaves incomplete or pending proof unconfirmed" classname="audit-api.spec.ts" time="0.798">
+</testcase>
+<testcase name="T02 campaign waits for read success before sharing the timeline and renders public fields only" classname="audit-api.spec.ts" time="1.128">
+</testcase>
+</testsuite>
+</testsuites>

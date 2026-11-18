@@ -1,0 +1,52 @@
+<testsuites id="" name="" tests="8" failures="0" skipped="0" errors="0" time="57.185937">
+<testsuite name="donor-real.spec.ts" timestamp="2026-11-18T01:01:29.733Z" hostname="donor-real" tests="8" failures="0" skipped="0" time="54.205" errors="0">
+<testcase name="real G01/G02/G03: multi-item pledge, own history, partial cancellation and persisted audit/outbox" classname="donor-real.spec.ts" time="4.927">
+<properties>
+<property name="serial" value="">
+</property>
+</properties>
+</testcase>
+<testcase name="real R01 receipt feeds D01 delivery and blocks stale donor cancellation" classname="donor-real.spec.ts" time="9.188">
+<properties>
+<property name="serial" value="">
+</property>
+</properties>
+</testcase>
+<testcase name="real G01 commit then lost504: exact request/key replay creates one DB contribution" classname="donor-real.spec.ts" time="3.315">
+<properties>
+<property name="serial" value="">
+</property>
+</properties>
+</testcase>
+<testcase name="real G03 commit then lost504: original 1 unit cancellation is stored exactly once" classname="donor-real.spec.ts" time="3.72">
+<properties>
+<property name="serial" value="">
+</property>
+</properties>
+</testcase>
+<testcase name="real HTTP CSRF403 and validation400 leave PostgreSQL unchanged" classname="donor-real.spec.ts" time="3.094">
+<properties>
+<property name="serial" value="">
+</property>
+</properties>
+</testcase>
+<testcase name="real F09: independent confirmation, dispute guard, void, reload and close" classname="donor-real.spec.ts" time="16.964">
+<properties>
+<property name="serial" value="">
+</property>
+</properties>
+</testcase>
+<testcase name="real F09 D02 shows quantities for the selected delivery by campaign item ID" classname="donor-real.spec.ts" time="6.527">
+<properties>
+<property name="serial" value="">
+</property>
+</properties>
+</testcase>
+<testcase name="real F09 returns an unauthenticated direct dispute link after login" classname="donor-real.spec.ts" time="6.47">
+<properties>
+<property name="serial" value="">
+</property>
+</properties>
+</testcase>
+</testsuite>
+</testsuites>

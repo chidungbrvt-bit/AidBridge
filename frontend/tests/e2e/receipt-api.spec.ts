@@ -70,7 +70,7 @@ test('R01 replays the same receipt after a lost response and refreshes D01 stock
   await expect(retry).toBeVisible();
   await expect(quantity).toBeDisabled();
   await retry.click();
-  await expect(receipt.getByText(`Receipt ID: ${receiptId}`)).toBeVisible();
+  await expect(receipt.locator(`[data-receipt-id="${receiptId}"]`)).toBeVisible();
   await expect(receipt.getByText('Outstanding: 1')).toBeVisible();
   await expect(delivery.getByText('Available: 2')).toBeVisible();
   expect(writes).toHaveLength(2);

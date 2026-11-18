@@ -160,9 +160,8 @@ function StaffDelivery({ caseId, organizationId, actorId, receiptRevision, onRec
   return <section className="card stack" aria-label="Goods delivery">
     <h2>Record goods delivery</h2>
     <button className="button secondary" type="button" disabled={busy || loading || !!pending} onClick={() => void refresh()}>Refresh delivery stock</button>
-    {result && <div className="notice success" role="status">
+    {result && <div className="notice success" role="status" data-delivery-id={result.id}>
       <strong>{result.outcome === "DELIVERED" ? "Delivery recorded" : "Failed attempt recorded"}</strong>
-      <p className="mono">Delivery ID: {result.id}</p>
       <p>Review: <StatusBadge status={result.reviewStatus} /></p>
       <p>Blockchain sync: <StatusBadge status={result.blockchainStatus} /></p>
     </div>}

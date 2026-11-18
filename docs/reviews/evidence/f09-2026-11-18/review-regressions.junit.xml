@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites tests="2" errors="0" time="12.997" failures="0" skipped="0">
+  <testsuite tests="2" errors="0" time="12.997" failures="0" skipped="0" name="F09 review regressions 2026-11-18" timestamp="2026-11-18T01:01:29.733Z">
+    <properties>
+      <property name="testedSha" value="667147f1368c8353b8899a71988e77755d665846" />
+      <property name="sourceTests" value="8" />
+      <property name="blockchainEnabled" value="false" />
+      <property name="mode" value="REAL_NEXT_SPRING_POSTGRES" />
+    </properties>
+    <testcase name="real F09 D02 shows quantities for the selected delivery by campaign item ID" classname="donor-real.spec.ts" time="6.527">
+      <properties>
+        <property name="serial" value="" />
+      </properties>
+    </testcase>
+    <testcase name="real F09 returns an unauthenticated direct dispute link after login" classname="donor-real.spec.ts" time="6.47">
+      <properties>
+        <property name="serial" value="" />
+      </properties>
+    </testcase>
+  </testsuite>
+</testsuites>

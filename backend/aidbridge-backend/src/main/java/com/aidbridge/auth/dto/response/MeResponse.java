@@ -15,6 +15,7 @@ public record MeResponse (
 ) {
     public record MembershipResponse(
             UUID organizationId,
+            String organizationName,
             List<String> roles,
             String status
     ) {

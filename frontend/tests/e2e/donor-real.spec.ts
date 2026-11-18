@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -15,7 +15,7 @@ const donor=process.env.F07_E2E_DONOR_ID ?? '';
 const recorder=process.env.F07_E2E_RECORDER_ID ?? '';
 const volunteer=process.env.F07_E2E_VOLUNTEER_ID ?? '';
 const caseId=process.env.F07_E2E_CASE_ID ?? '';
-const evidence: {scenario:string;contributionId?:string;deliveryId?:string;databaseVerified:boolean}[]=[];
+const evidence: {scenario:string;caseId?:string;campaignId?:string;contributionId?:string;deliveryId?:string;databaseVerified:boolean}[]=[];
 function id(value:string){expect(value).toMatch(/^[0-9a-f-]{36}$/i);return value;}
 function sql(query:string):string {
   if(process.env.CI!=='true' || process.env.PGHOST!=='127.0.0.1' || process.env.PGDATABASE!=='aidbridge_test'
@@ -76,7 +76,7 @@ test.beforeEach(async({page})=>{expect(sql('SELECT current_database()')).toBe('a
 test.afterAll(()=>{
   mkdirSync('test-results',{recursive:true});
   writeFileSync('test-results/f07-real-evidence.json',JSON.stringify({mode:'REAL_NEXT_SPRING_POSTGRES',blockchainEnabled:false,
-    backendFixture:'AbstractCampaignHttpIT',receiptWrite:'B08 R01 via the staff UI',deliveryWrite:'B09 D01 via the volunteer UI',expectedScenarios:5,
+    backendFixture:'AbstractCampaignHttpIT',receiptWrite:'B08 R01 via the staff UI',deliveryWrite:'B09 D01 via the volunteer UI',expectedScenarios:11,
     passedScenarios:evidence.length,scenarios:evidence},null,2));
 });
 
@@ -110,7 +110,7 @@ test('real R01 receipt feeds D01 delivery and blocks stale donor cancellation',a
     expect(recorder).not.toBe(donor);
     await staff.goto(`/cases/${id(caseId)}`);
     const receiptPanel=staff.getByRole('region',{name:'Goods receipt'});
-    await receiptPanel.getByLabel('Outstanding commitment').selectOption(saved.id);
+    await receiptPanel.getByLabel('Outstanding commitment').selectOption(saved.id, { timeout: 10_000 });
     const outstanding=receiptPanel.getByTestId(`outstanding-${line.id}`);
     await expect(outstanding).toHaveText('Outstanding: 2');
     const path=`/api/commitments/${saved.id}/receipts`;
@@ -122,7 +122,7 @@ test('real R01 receipt feeds D01 delivery and blocks stale donor cancellation',a
     expect(response.headers()['x-aidbridge-mock']).toBeUndefined();
     const receipt=await response.json();
     expect(receipt).toMatchObject({contributionId:saved.id,recorderId:recorder,items:[{contributionItemId:line.id,quantity:2}],blockchainStatus:'PENDING_ON_CHAIN'});
-    await expect(receiptPanel.getByText(`Receipt ID: ${receipt.id}`)).toBeVisible();
+    await expect(receiptPanel.locator(`[data-receipt-id="${receipt.id}"]`)).toBeVisible();
     await expect(receiptPanel.getByLabel('Outstanding commitment')).toHaveValue(saved.id);
     await expect(outstanding).toHaveCount(0);
     expect(Number(sql(`SELECT count(*) FROM goods_receipts r JOIN goods_receipt_items i ON i.goods_receipt_id=r.id
@@ -172,7 +172,7 @@ test('real R01 receipt feeds D01 delivery and blocks stale donor cancellation',a
       items: [{ campaignItemId: before.id, quantity: 1 }],
       evidenceVersionIds: [version.id], blockchainStatus: 'PENDING_ON_CHAIN',
     });
-    await expect(deliveryPanel.getByText(`Delivery ID: ${delivery.id}`)).toBeVisible();
+    await expect(deliveryPanel.locator(`[data-delivery-id="${delivery.id}"]`)).toBeVisible();
     const after = await campaignFood(field);
     expect(after).toMatchObject({
       receivedQty: before.receivedQty, deliveredQty: before.deliveredQty + 1, confirmedQty: before.confirmedQty,
@@ -242,4 +242,599 @@ test('real HTTP CSRF403 and validation400 leave PostgreSQL unchanged',async({pag
     expect((await page.request.get('/api/me/commitments?page=0&size=20')).status()).toBe(403);expect(count()).toBe(before);
   } finally { sql(`UPDATE users SET donor_enabled=true WHERE id='${id(donor)}'`); }
   evidence.push({scenario:'real-csrf403-validation400-revoked-grant-no-write',databaseVerified:true});
+});
+
+
+// This separate small campaign reaches FULFILLED and exercises the full B10 workflow.
+test('real F09: independent confirmation, dispute guard, void, reload and close', async ({ page, browser }) => {
+  test.setTimeout(120_000);
+  const reviewCase = id(process.env.F09_E2E_CASE_ID ?? '');
+  const reviewCampaign = id(process.env.F09_E2E_CAMPAIGN_ID ?? '');
+  const orgCase = `/cases/${reviewCase}`;
+  const p04 = `/api/campaigns/${reviewCampaign}`;
+  const baseURL = new URL(page.url()).origin;
+  const contexts: BrowserContext[] = [];
+  async function signIn(view: Page, email: string) {
+    await view.getByLabel('Email address').fill(email);
+    await view.getByLabel('Password', { exact: true }).fill(process.env.F07_E2E_DONOR_PASSWORD!);
+    await view.getByRole('button', { name: /Sign in/ }).click();
+    await expect(view).not.toHaveURL(/\/login$/);
+  }
+  async function actor(email: string) {
+    const context = await browser.newContext({ baseURL });
+    contexts.push(context);
+    const view = await context.newPage();
+    await view.goto('/login');
+    await signIn(view, email);
+    return view;
+  }
+  async function clickWrite(view: Page, path: string, click: () => Promise<void>, status: number) {
+    const pending = view.waitForResponse(r => new URL(r.url()).pathname === path && r.request().method() === 'POST');
+    await click();
+    const response = await pending;
+    const body = await response.json();
+    expect(response.status(), `${path}: ${body.code ?? ''} ${body.detail ?? ''}`).toBe(status);
+    expect(response.headers()['x-aidbridge-mock']).toBeUndefined();
+    return body;
+  }
+  async function post(view: Page, path: string, data: unknown, status: number, code: string) {
+    const csrf = await (await view.request.get('/api/auth/csrf')).json();
+    const response = await view.request.post(path, { data, headers: { [csrf.headerName]: csrf.token, 'Idempotency-Key': randomUUID() } });
+    const body = await response.json();
+    expect(response.status(), `${path}: ${body.code} ${body.detail}`).toBe(status);
+    expect(body.code).toBe(code);
+  }
+  const reviewPanel = (view: Page) => view.getByRole('region', { name: 'Delivery review', exact: true });
+  async function assertTotals(view: Page, received: number, delivered: number, confirmed: number, status: string) {
+    const area = reviewPanel(view);
+    await expect(area.getByRole('row').filter({ hasText: 'Rice (BAG)' }).getByRole('cell'))
+      .toHaveText(['2', String(received), String(delivered), String(confirmed)]);
+    await expect(area.getByText(status, { exact: true })).toBeVisible();
+    const response = await view.request.get(p04);
+    expect(response.status()).toBe(200);
+    const detail: CampaignResponse = await response.json();
+    expect(detail.status).toBe(status);
+    expect(detail.items.find(item => item.name === 'Rice')).toMatchObject({ receivedQty: received, deliveredQty: delivered, confirmedQty: confirmed });
+    expect(detail.items.find(item => item.name === 'Water')).toMatchObject({ receivedQty: received ? 1 : 0, deliveredQty: delivered ? 1 : 0, confirmedQty: confirmed ? 1 : 0 });
+  }
+  try {
+    const staff = await actor(process.env.F07_E2E_RECORDER_EMAIL!);
+    const recorderPage = await actor(process.env.F07_E2E_VOLUNTEER_EMAIL!);
+    const confirmerPage = await actor(process.env.F09_E2E_CONFIRMER_EMAIL!);
+    const platformPage = await actor(process.env.F09_E2E_PLATFORM_EMAIL!);
+    const confirmerId = (await (await confirmerPage.request.get('/api/auth/me')).json()).userId;
+    const recorderSession = await (await recorderPage.request.get('/api/auth/me')).json();
+    expect(recorderSession.userId).toBe(volunteer);
+    expect(confirmerId).not.toBe(volunteer);
+    expect(recorderSession.memberships[0].roles).toContain('DELIVERY_CONFIRMER');
+
+    const commitmentId = await test.step('G01 and R01 receive both items through Next on real PostgreSQL', async () => {
+      const body: CampaignResponse = await (await page.request.get(p04)).json();
+      const csrf = await (await page.request.get('/api/auth/csrf')).json();
+      const pledge = await page.request.post(`${p04}/commitments`, {
+        headers: { [csrf.headerName]: csrf.token, 'Idempotency-Key': randomUUID() },
+        data: { items: body.items.map(item => ({ campaignItemId: item.id, quantity: item.targetQty })) },
+      });
+      expect(pledge.status()).toBe(201);
+      const commitment: CommitmentResponse = await pledge.json();
+      await staff.goto(orgCase);
+      const panel = staff.getByRole('region', { name: 'Goods receipt' });
+      await panel.getByLabel('Outstanding commitment').selectOption(commitment.id);
+      await panel.getByLabel('Rice receipt quantity (BAG)', { exact: true }).fill('2');
+      await panel.getByLabel('Water receipt quantity (BOX)', { exact: true }).fill('1');
+      await clickWrite(staff, `/api/commitments/${commitment.id}/receipts`,
+        () => panel.getByRole('button', { name: 'Record receipt', exact: true }).click(), 201);
+      await assertTotals(staff, 2, 0, 0, 'PUBLISHED');
+      return commitment.id;
+    });
+
+    async function deliver(): Promise<DeliveryResponse> {
+      await recorderPage.goto(orgCase);
+      const panel = recorderPage.getByRole('region', { name: 'Goods delivery' });
+      await panel.getByLabel('Rice delivery quantity (BAG)', { exact: true }).fill('2');
+      await panel.getByLabel('Water delivery quantity (BOX)', { exact: true }).fill('1');
+      await panel.getByRole('checkbox', { name: /Evidence 1 / }).check();
+      return clickWrite(recorderPage, `/api/cases/${reviewCase}/deliveries`,
+        () => panel.getByRole('button', { name: 'Record delivery', exact: true }).click(), 201);
+    }
+    async function confirm(delivery: DeliveryResponse, loseResponse = false) {
+      await confirmerPage.goto(orgCase);
+      const panel = reviewPanel(confirmerPage);
+      await panel.getByRole('combobox', { name: 'Delivery to review', exact: true }).selectOption(delivery.id, { timeout: 10_000 });
+      await panel.getByLabel('I reviewed the delivery evidence').check();
+      const path = `/api/deliveries/${delivery.id}/confirm`;
+      const click = () => panel.getByRole('button', { name: 'Confirm delivery', exact: true }).click();
+      const requests: { key?: string; body: string | null }[] = [];
+      let replayed = false;
+      const routePattern = `**${path}`;
+      if (loseResponse) await confirmerPage.route(routePattern, async route => {
+        const request = route.request();
+        requests.push({ key: request.headers()['idempotency-key'], body: request.postData() });
+        const actual = await route.fetch();
+        expect(actual.status()).toBe(200);
+        if (requests.length === 1) {
+          // Let Spring commit to PostgreSQL before discarding the successful response.
+          await route.fulfill({ status: 504, json: { code: 'DEPENDENCY_UNAVAILABLE' } });
+        } else {
+          replayed = actual.headers()['idempotent-replayed'] === 'true';
+          await route.fulfill({ response: actual });
+        }
+      });
+      try {
+        if (loseResponse) {
+          await clickWrite(confirmerPage, path, click, 504);
+          const retry = panel.getByRole('button', { name: 'Retry same request' });
+          await expect(retry).toBeVisible();
+          await expect(confirmerPage.getByRole('button', { name: 'Sign out' })).toBeDisabled();
+          await expect(confirmerPage.getByRole('combobox', { name: 'Active organization' })).toBeDisabled();
+          await confirmerPage.getByRole('navigation').getByRole('link', { name: 'Campaigns' }).click();
+          expect(new URL(confirmerPage.url()).pathname).toBe(orgCase);
+          await confirmerPage.context().clearCookies();
+          const expired = confirmerPage.waitForResponse(r => new URL(r.url()).pathname === '/api/auth/me' && r.status() === 401);
+          await retry.click();
+          await expired;
+          await expect(confirmerPage).toHaveURL(/\/login$/);
+          await expect(confirmerPage.getByText(/same account to check the pending decision/)).toBeVisible();
+          await signIn(confirmerPage, process.env.F09_E2E_CONFIRMER_EMAIL!);
+          await expect.poll(() => new URL(confirmerPage.url()).pathname).toBe(orgCase);
+          const result = await clickWrite(confirmerPage, path, () => retry.click(), 200);
+          expect(result).toMatchObject({ reviewerId: confirmerId, decision: 'CONFIRMED', blockchainStatus: 'PENDING_ON_CHAIN' });
+          expect(requests).toHaveLength(2);
+          expect(requests[0].key).toBeTruthy();
+          expect(requests[1]).toEqual(requests[0]);
+          expect(replayed).toBe(true);
+          expect(Number(sql(`SELECT count(*) FROM delivery_confirmations WHERE delivery_id='${id(delivery.id)}'`))).toBe(1);
+          await expect(confirmerPage.getByRole('button', { name: 'Sign out' })).toBeEnabled();
+        } else {
+          const response = await clickWrite(confirmerPage, path, click, 200);
+          expect(response).toMatchObject({ reviewerId: confirmerId, decision: 'CONFIRMED', blockchainStatus: 'PENDING_ON_CHAIN' });
+        }
+      } finally {
+        if (loseResponse) await confirmerPage.unroute(routePattern);
+      }
+    }
+    const delivery = await test.step('D01 records a delivery and own D02 is rejected', async () => {
+      const saved = await deliver();
+      expect(saved).toMatchObject({ recorderId: volunteer, reviewStatus: 'PENDING' });
+      const detail = await recorderPage.request.get(`/api/org/cases/${reviewCase}`);
+      const snapshot = await detail.json();
+      expect(detail.status(), JSON.stringify({ code: snapshot.code, detail: snapshot.detail })).toBe(200);
+      expect(snapshot.deliveries).toEqual(expect.arrayContaining([expect.objectContaining({ id: saved.id, reviewStatus: 'PENDING' })]));
+      await recorderPage.reload();
+      const panel = reviewPanel(recorderPage);
+      await panel.getByRole('combobox', { name: 'Delivery to review', exact: true }).selectOption(saved.id, { timeout: 10_000 });
+      await expect(panel.getByText('You recorded this delivery. Another account must confirm it.')).toBeVisible();
+      await expect(panel.getByRole('button', { name: 'Confirm delivery', exact: true })).toHaveCount(0);
+      await post(recorderPage, `/api/deliveries/${saved.id}/confirm`,
+        { decision: 'CONFIRMED', reviewedEvidenceVersionIds: saved.evidenceVersionIds }, 403, 'SELF_CONFIRMATION');
+      return saved;
+    });
+    await test.step('D02 replays an ambiguous result after reauthentication and reaches FULFILLED', async () => {
+      await confirm(delivery, true);
+      await staff.reload();
+      await assertTotals(staff, 2, 2, 2, 'FULFILLED');
+    });
+    const dispute = await test.step('S01 OPEN disables P05 and backend returns DISPUTE_OPEN', async () => {
+      const panel = reviewPanel(staff);
+      await panel.getByRole('combobox', { name: 'Delivery to review', exact: true }).selectOption(delivery.id, { timeout: 10_000 });
+      await panel.getByLabel('Dispute or review reason').fill('Simulated discrepancy in handover.');
+      const saved = await clickWrite(staff, `/api/cases/${reviewCase}/disputes`,
+        () => panel.getByRole('button', { name: 'Open dispute', exact: true }).click(), 201);
+      await expect(panel.getByText('Open disputes: 1')).toBeVisible();
+      await expect(panel.getByRole('button', { name: 'Close campaign' })).toBeDisabled();
+      await post(staff, `${p04}/close`, {}, 409, 'DISPUTE_OPEN');
+      return saved;
+    });
+    await test.step('S03 can read only the private snapshot and VOID restores stock after reload', async () => {
+      const path = `/api/disputes/${dispute.id}/review`;
+      const evidencePath = `${path}/evidence-versions/${delivery.evidenceVersionIds[0]}/content`;
+      expect((await staff.request.get(path)).status()).toBe(403);
+      expect((await staff.request.get(evidencePath)).status()).toBe(403);
+      await platformPage.goto(`/disputes/${dispute.id}`);
+      await expect(platformPage.getByRole('heading', { name: 'Delivery snapshot' })).toBeVisible();
+      const content = await platformPage.request.get(evidencePath);
+      expect(content.status()).toBe(200);
+      expect(content.headers()['cache-control']).toContain('no-store');
+      expect((await platformPage.request.get(`${path}/evidence-versions/${randomUUID()}/content`)).status()).toBe(404);
+      await platformPage.getByLabel('Reviewed evidence 1').check();
+      await platformPage.getByLabel('Resolution reason').fill('Simulated delivery invalidated after review.');
+      const resolved = await clickWrite(platformPage, `/api/disputes/${dispute.id}/resolve`,
+        () => platformPage.getByRole('button', { name: 'Void delivery' }).click(), 200);
+      expect(resolved.resolution).toBe('VOID_DELIVERY');
+      expect((await platformPage.request.get(evidencePath)).status()).toBe(404);
+      await staff.reload();
+      await assertTotals(staff, 2, 0, 0, 'PUBLISHED');
+      await expect(reviewPanel(staff).getByText('Open disputes: 0')).toBeVisible();
+    });
+    await test.step('New delivery confirms, P05 closes and timeline refreshes', async () => {
+      const corrected = await deliver();
+      await confirm(corrected);
+      await staff.reload();
+      const panel = reviewPanel(staff);
+      await assertTotals(staff, 2, 2, 2, 'FULFILLED');
+      const closed = await clickWrite(staff, `${p04}/close`,
+        () => panel.getByRole('button', { name: 'Close campaign' }).click(), 200);
+      expect(closed.status).toBe('CLOSED');
+      await assertTotals(staff, 2, 2, 2, 'CLOSED');
+      await expect(staff.getByText('COMPLETED', { exact: true })).toBeVisible();
+      await staff.getByText('Case audit trail', { exact: true }).click();
+      const timeline = staff.getByRole('region', { name: 'Case audit timeline' });
+      await expect(timeline.getByRole('heading', { name: 'CASE COMPLETED', exact: true })).toBeVisible();
+      await expect(timeline.getByRole('heading', { name: 'DELIVERY CONFIRMED', exact: true }).first()).toBeVisible();
+      expect(Number(sql(`SELECT count(*) FROM delivery_voids WHERE delivery_id='${id(delivery.id)}'`))).toBe(1);
+      expect(Number(sql(`SELECT count(*) FROM audit_events WHERE aid_case_id='${reviewCase}' AND event_type='CASE_COMPLETED'`))).toBe(1);
+    });
+    evidence.push({ scenario: 'f09-independent-confirm-void-close-timeline', contributionId: commitmentId, deliveryId: delivery.id, databaseVerified: true });
+  } finally {
+    await Promise.all(contexts.map(context => context.close()));
+  }
+});
+
+async function signInStaff(page: Page, email: string) {
+  await page.getByLabel('Email address').fill(email);
+  await page.getByLabel('Password', { exact: true }).fill(process.env.F07_E2E_DONOR_PASSWORD!);
+  await page.getByRole('button', { name: 'Sign in →', exact: true }).click();
+  await expect.poll(() => new URL(page.url()).pathname).not.toBe('/login');
+}
+
+async function realWrite(page: Page, path: string, body: unknown, status: number) {
+  const csrfResponse = await page.request.get('/api/auth/csrf');
+  expect(csrfResponse.status()).toBe(200);
+  const csrf = await csrfResponse.json();
+  const response = await page.request.post(path, {
+    data: body, headers: { [csrf.headerName]: csrf.token, 'Idempotency-Key': randomUUID() },
+  });
+  expect(response.headers()['x-aidbridge-mock']).toBeUndefined();
+  expect(response.status(), `${path}: ${response.status()}`).toBe(status);
+  return response.json();
+}
+
+test('real F09 D02 shows quantities for the selected delivery by campaign item ID', async ({ page, browser }) => {
+  const context = await browser.newContext({ baseURL: new URL(page.url()).origin });
+  try {
+    const staff = await context.newPage();
+    await staff.goto('/login');
+    await signInStaff(staff, process.env.F07_E2E_RECORDER_EMAIL!);
+    const campaignResponse = await page.request.get(`/api/campaigns/${campaign}`);
+    expect(campaignResponse.status()).toBe(200);
+    const current: CampaignResponse = await campaignResponse.json();
+    const food = current.items.find(item => item.name === 'Food')!;
+    const hygiene = current.items.find(item => item.name === 'Hygiene')!;
+    expect(food).toBeTruthy();
+    expect(hygiene).toBeTruthy();
+    const pledge: CommitmentResponse = await realWrite(page, `/api/campaigns/${campaign}/commitments`,
+      { items: [{ campaignItemId: food.id, quantity: 4 }, { campaignItemId: hygiene.id, quantity: 3 }] }, 201);
+    const foodLine = pledge.items.find(item => item.campaignItemId === food.id)!;
+    const hygieneLine = pledge.items.find(item => item.campaignItemId === hygiene.id)!;
+    await realWrite(staff, `/api/commitments/${pledge.id}/receipts`, {
+      receivedAt: new Date().toISOString(),
+      items: [{ contributionItemId: foodLine.id, quantity: 4 }, { contributionItemId: hygieneLine.id, quantity: 3 }],
+    }, 201);
+    const detailResponse = await staff.request.get(`/api/org/cases/${caseId}`);
+    expect(detailResponse.status()).toBe(200);
+    const detail: CaseDetailResponse = await detailResponse.json();
+    await staff.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await expect(staff).toHaveURL(/\/login$/);
+    await signInStaff(staff, process.env.F07_E2E_VOLUNTEER_EMAIL!);
+    const first: DeliveryResponse = await realWrite(staff, `/api/cases/${caseId}/deliveries`, {
+      outcome: 'DELIVERED', evidenceVersionIds: [detail.evidenceVersions[0].id],
+      items: [{ campaignItemId: food.id, quantity: 1 }, { campaignItemId: hygiene.id, quantity: 2 }],
+    }, 201);
+    const second: DeliveryResponse = await realWrite(staff, `/api/cases/${caseId}/deliveries`, {
+      outcome: 'DELIVERED', evidenceVersionIds: [detail.evidenceVersions[0].id],
+      items: [{ campaignItemId: hygiene.id, quantity: 1 }, { campaignItemId: food.id, quantity: 2 }],
+    }, 201);
+    await staff.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await expect(staff).toHaveURL(/\/login$/);
+    await signInStaff(staff, process.env.F09_E2E_CONFIRMER_EMAIL!);
+    await staff.goto(`/cases/${caseId}`);
+    const panel = staff.getByRole('region', { name: 'Delivery review', exact: true });
+    const select = panel.getByRole('combobox', { name: 'Delivery to review', exact: true });
+    const table = panel.getByRole('table', { name: 'Selected delivery items', exact: true });
+    await select.selectOption(first.id);
+    await expect(table.getByRole('row').filter({ hasText: 'Food' }).getByRole('cell')).toHaveText(['PACKAGE', '1']);
+    await expect(table.getByRole('row').filter({ hasText: 'Hygiene' }).getByRole('cell')).toHaveText(['KIT', '2']);
+    await expect(panel.getByRole('button', { name: 'Confirm delivery', exact: true })).toBeDisabled();
+    await panel.getByLabel('I reviewed the delivery evidence').check();
+    await expect(panel.getByRole('button', { name: 'Confirm delivery', exact: true })).toBeEnabled();
+    await select.selectOption(second.id);
+    await expect(table.getByRole('row').filter({ hasText: 'Food' }).getByRole('cell')).toHaveText(['PACKAGE', '2']);
+    await expect(table.getByRole('row').filter({ hasText: 'Hygiene' }).getByRole('cell')).toHaveText(['KIT', '1']);
+    await expect(panel.getByLabel('I reviewed the delivery evidence')).not.toBeChecked();
+    await expect(panel.getByRole('button', { name: 'Confirm delivery', exact: true })).toBeDisabled();
+    expect(Number(sql(`SELECT count(*) FROM delivery_items WHERE delivery_id IN ('${id(first.id)}','${id(second.id)}')`))).toBe(4);
+    evidence.push({ scenario: 'f09-selected-delivery-quantities', contributionId: pledge.id, deliveryId: second.id, databaseVerified: true });
+  } finally {
+    await context.close();
+  }
+});
+
+test('real F09 returns an unauthenticated direct dispute link after login', async ({ page, browser }) => {
+  const context = await browser.newContext({ baseURL: new URL(page.url()).origin });
+  try {
+    const staff = await context.newPage();
+    await staff.goto('/login');
+    await signInStaff(staff, process.env.F07_E2E_RECORDER_EMAIL!);
+    const caseToReview = id(process.env.F09_E2E_CASE_ID ?? '');
+    const dispute = await realWrite(staff, `/api/cases/${caseToReview}/disputes`, {
+      reason: 'Simulated case-level review for the direct-link regression.',
+    }, 201);
+    const directPath = `/disputes/${id(dispute.id)}`;
+    await staff.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await expect(staff).toHaveURL(/\/login$/);
+    const direct = await context.newPage();
+    await direct.goto(directPath);
+    await expect.poll(() => new URL(direct.url()).pathname).toBe('/login');
+    expect(new URL(direct.url()).searchParams.get('returnTo')).toBe(directPath);
+    // The return path survives a fresh load of the login page, without any prior session state.
+    await direct.reload();
+    await signInStaff(direct, process.env.F09_E2E_PLATFORM_EMAIL!);
+    await expect.poll(() => new URL(direct.url()).pathname).toBe(directPath);
+    await expect(direct.getByRole('heading', { name: 'Dispute review', exact: true })).toBeVisible();
+    await expect(direct.getByText('Simulated case-level review for the direct-link regression.', { exact: true })).toBeVisible();
+    await direct.getByLabel('Resolution reason').fill('Simulated case review upheld.');
+    const saved = direct.waitForResponse(response => new URL(response.url()).pathname === `/api/disputes/${dispute.id}/resolve`
+      && response.request().method() === 'POST');
+    await direct.getByRole('button', { name: 'Uphold dispute decision', exact: true }).click();
+    expect((await saved).status()).toBe(200);
+    await expect(direct.getByText('Dispute resolved. Refresh the case in the organization workspace to see the current totals.')).toBeVisible();
+    expect(sql(`SELECT status FROM disputes WHERE id='${id(dispute.id)}'`)).toBe('RESOLVED');
+    await direct.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await expect.poll(() => new URL(direct.url()).pathname).toBe('/login');
+    await direct.goto('/login?returnTo=https%3A%2F%2Fexample.invalid%2Fdisputes%2F' + dispute.id);
+    await signInStaff(direct, process.env.F09_E2E_PLATFORM_EMAIL!);
+    await expect.poll(() => new URL(direct.url()).pathname).toBe('/cases');
+    expect(new URL(direct.url()).origin).toBe(new URL(page.url()).origin);
+    evidence.push({ scenario: 'f09-direct-dispute-login-return', databaseVerified: true });
+  } finally {
+    await context.close();
+  }
+});
+
+test('real F09 partial receipts feed a multi-item delivery and independent confirmation', async ({ page, browser }) => {
+  const context = await browser.newContext({ baseURL: new URL(page.url()).origin });
+  try {
+    const campaignResponse = await page.request.get(`/api/campaigns/${campaign}`);
+    expect(campaignResponse.status()).toBe(200);
+    const current: CampaignResponse = await campaignResponse.json();
+    const food = current.items.find(item => item.name === 'Food')!;
+    const hygiene = current.items.find(item => item.name === 'Hygiene')!;
+    const saved: CommitmentResponse = await realWrite(page, `/api/campaigns/${campaign}/commitments`, {
+      items: [{ campaignItemId: food.id, quantity: 3 }, { campaignItemId: hygiene.id, quantity: 2 }],
+    }, 201);
+    const foodLine = saved.items.find(item => item.campaignItemId === food.id)!;
+    const hygieneLine = saved.items.find(item => item.campaignItemId === hygiene.id)!;
+    const staff = await context.newPage();
+    await staff.goto('/login');
+    await signInStaff(staff, process.env.F07_E2E_RECORDER_EMAIL!);
+    await staff.goto(`/cases/${caseId}`);
+    const receiptPanel = staff.getByRole('region', { name: 'Goods receipt', exact: true });
+    await receiptPanel.getByLabel('Outstanding commitment').selectOption(saved.id);
+    const receiptIds: string[] = [];
+    for (const [foodQty, hygieneQty] of [[1, 1], [2, 1]]) {
+      await receiptPanel.getByLabel('Food receipt quantity (PACKAGE)', { exact: true }).fill(String(foodQty));
+      await receiptPanel.getByLabel('Hygiene receipt quantity (KIT)', { exact: true }).fill(String(hygieneQty));
+      const received = staff.waitForResponse(response => new URL(response.url()).pathname === `/api/commitments/${saved.id}/receipts`
+        && response.request().method() === 'POST');
+      await receiptPanel.getByRole('button', { name: 'Record receipt', exact: true }).click();
+      const response = await received;
+      expect(response.status()).toBe(201);
+      const receipt = await response.json();
+      receiptIds.push(id(receipt.id));
+      await expect(receiptPanel.locator(`[data-receipt-id="${receipt.id}"]`)).toBeVisible();
+      if (receiptIds.length === 1) {
+        await expect(receiptPanel.getByTestId(`outstanding-${foodLine.id}`)).toHaveText('Outstanding: 2');
+        await expect(receiptPanel.getByTestId(`outstanding-${hygieneLine.id}`)).toHaveText('Outstanding: 1');
+      }
+    }
+    expect(receiptIds[0]).not.toBe(receiptIds[1]);
+    await expect(receiptPanel.getByTestId(`outstanding-${foodLine.id}`)).toHaveCount(0);
+    await staff.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await expect(staff).toHaveURL(/\/login$/);
+    await signInStaff(staff, process.env.F07_E2E_VOLUNTEER_EMAIL!);
+    await staff.goto(`/cases/${caseId}`);
+    const deliveryPanel = staff.getByRole('region', { name: 'Goods delivery', exact: true });
+    await deliveryPanel.getByLabel('Food delivery quantity (PACKAGE)', { exact: true }).fill('3');
+    await deliveryPanel.getByLabel('Hygiene delivery quantity (KIT)', { exact: true }).fill('2');
+    await deliveryPanel.getByRole('checkbox', { name: /Evidence 1 / }).check();
+    const delivered = staff.waitForResponse(response => new URL(response.url()).pathname === `/api/cases/${caseId}/deliveries`
+      && response.request().method() === 'POST');
+    await deliveryPanel.getByRole('button', { name: 'Record delivery', exact: true }).click();
+    const deliveryResponse = await delivered;
+    expect(deliveryResponse.status()).toBe(201);
+    const delivery: DeliveryResponse = await deliveryResponse.json();
+    expect(delivery).toMatchObject({ reviewStatus: 'PENDING', blockchainStatus: 'PENDING_ON_CHAIN', recorderId: volunteer });
+    await expect(deliveryPanel.locator(`[data-delivery-id="${delivery.id}"]`)).toBeVisible();
+    await staff.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await expect(staff).toHaveURL(/\/login$/);
+    await signInStaff(staff, process.env.F09_E2E_CONFIRMER_EMAIL!);
+    await staff.goto(`/cases/${caseId}`);
+    const review = staff.getByRole('region', { name: 'Delivery review', exact: true });
+    await review.getByLabel('Delivery to review', { exact: true }).selectOption(delivery.id);
+    await review.getByLabel('I reviewed the delivery evidence').check();
+    const confirmed = staff.waitForResponse(response => new URL(response.url()).pathname === `/api/deliveries/${delivery.id}/confirm`
+      && response.request().method() === 'POST');
+    await review.getByRole('button', { name: 'Confirm delivery', exact: true }).click();
+    const confirmation = await confirmed;
+    expect(confirmation.status()).toBe(200);
+    expect(await confirmation.json()).toMatchObject({ decision: 'CONFIRMED', blockchainStatus: 'PENDING_ON_CHAIN' });
+    await expect(review.getByText('Decision saved.', { exact: true })).toBeVisible();
+    await staff.reload();
+    await review.getByLabel('Delivery to review', { exact: true }).selectOption(delivery.id);
+    await expect(review.getByText('CONFIRMED', { exact: true })).toBeVisible();
+    const fresh = await page.request.get(`/api/campaigns/${campaign}`);
+    expect(fresh.status()).toBe(200);
+    const after: CampaignResponse = await fresh.json();
+    for (const [before, added] of [[food, 3], [hygiene, 2]] as const) {
+      expect(after.items.find(item => item.id === before.id)).toMatchObject({
+        receivedQty: before.receivedQty + added, deliveredQty: before.deliveredQty + added,
+        confirmedQty: before.confirmedQty + added,
+      });
+    }
+    expect(Number(sql(`SELECT count(*) FROM goods_receipts WHERE contribution_id='${id(saved.id)}'`))).toBe(2);
+    expect(Number(sql(`SELECT count(*) FROM delivery_confirmations WHERE delivery_id='${id(delivery.id)}'`))).toBe(1);
+    evidence.push({ scenario: 'f09-partial-receipts-delivery-independent-confirmation', contributionId: saved.id, deliveryId: delivery.id, databaseVerified: true });
+  } finally { await context.close(); }
+});
+
+test('real F05 canonical public audit is anonymous, sanitized and separate from staff audit', async ({ page, browser }) => {
+  const campaignResponse = await page.request.get(`/api/campaigns/${campaign}`);
+  expect(campaignResponse.status()).toBe(200);
+  const current: CampaignResponse = await campaignResponse.json();
+  expect(current.auditUrl).toMatch(/^\/api\/public\/cases\/0x[0-9a-f]{64}\/audit$/);
+  const publicUrl = current.auditUrl!;
+  const publicRef = publicUrl.split('/')[4];
+  const context = await browser.newContext({ baseURL: new URL(page.url()).origin });
+  try {
+    const anonymous = await context.newPage();
+    const publicResponse = await context.request.get(publicUrl + '?page=0&size=20');
+    expect(publicResponse.status()).toBe(200);
+    expect(publicResponse.headers()['cache-control']).toContain('no-store');
+    expect(publicResponse.headers()['x-aidbridge-mock']).toBeUndefined();
+    const publicPage = await publicResponse.json();
+    expect(publicPage.totalElements).toBeGreaterThan(0);
+    const allowed = ['eventId', 'type', 'occurredAt', 'publicActorRole', 'logicalEventId', 'chainSequence', 'blockchain'];
+    for (const event of publicPage.items) {
+      expect(Object.keys(event).sort()).toEqual([...allowed].sort());
+      expect(event.eventId).toMatch(/^audit_[0-9a-f]{64}$/);
+      expect(event.blockchain).not.toHaveProperty('errorCode');
+      expect(['PENDING_ON_CHAIN', 'NOT_APPLICABLE']).toContain(event.blockchain.status);
+      expect(event.blockchain.explorerUrl).toBeNull();
+      expect(event.blockchain.txHash).toBeNull();
+    }
+    expect((await context.request.get(`/api/cases/${caseId}/audit-trail`)).status()).toBe(401);
+    expect((await context.request.get('/api/auth/me')).status()).toBe(401);
+    await anonymous.goto(`/audit/${publicRef}`);
+    const timeline = anonymous.getByRole('region', { name: 'Public audit timeline', exact: true });
+    await expect(timeline.getByText('Awaiting on-chain verification').first()).toBeVisible();
+    await expect(timeline.getByText('Confirmed on Fuji', { exact: true })).toHaveCount(0);
+    await expect(timeline.getByRole('link')).toHaveCount(0);
+    if (publicPage.totalElements > publicPage.size) {
+      const nextPage = anonymous.waitForResponse(response => new URL(response.url()).pathname === publicUrl
+        && new URL(response.url()).searchParams.get('page') === '1');
+      await timeline.getByRole('button', { name: 'Next', exact: true }).click();
+      expect((await nextPage).status()).toBe(200);
+      await expect(timeline.getByText('Page 2', { exact: true })).toBeVisible();
+    }
+    const refreshed = anonymous.waitForResponse(response => new URL(response.url()).pathname === publicUrl);
+    await timeline.getByRole('button', { name: 'Refresh audit', exact: true }).click();
+    expect((await refreshed).status()).toBe(200);
+    await expect(timeline.getByRole('button', { name: 'Refresh audit', exact: true })).toBeEnabled();
+    await page.goto(`/campaigns/${campaign}`);
+    await page.getByText('Public audit trail', { exact: true }).click();
+    await expect(page.getByRole('link', { name: 'Open public audit page', exact: true })).toHaveAttribute('href', `/audit/${publicRef}`);
+    expect(Number(sql(`SELECT count(*) FROM audit_events WHERE aid_case_id='${id(caseId)}'`))).toBeGreaterThanOrEqual(publicPage.totalElements);
+    evidence.push({ scenario: 'f05-anonymous-canonical-audit-no-false-chain-proof', databaseVerified: true });
+  } finally { await context.close(); }
+});
+
+test('real P0 same-case journey: create, verify, publish, pledge, partial receipts, deliver, confirm and audit', async ({ page, browser }) => {
+  test.setTimeout(120_000);
+  const origin = new URL(page.url()).origin;
+  const fieldContext = await browser.newContext({ baseURL: origin });
+  const reviewContext = await browser.newContext({ baseURL: origin });
+  async function signOut(actor: Page) {
+    await actor.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await expect(actor).toHaveURL(/\/login$/);
+  }
+  async function write(actor: Page, path: string, button: ReturnType<Page['getByRole']>, status: number) {
+    const response = actor.waitForResponse(result => new URL(result.url()).pathname === path && result.request().method() === 'POST');
+    await button.click();
+    const saved = await response;
+    expect(saved.status(), path).toBe(status);
+    expect(saved.headers()['x-aidbridge-mock']).toBeUndefined();
+    return saved.json();
+  }
+  try {
+    const field = await fieldContext.newPage();
+    const staff = await reviewContext.newPage();
+    await field.goto('/login');
+    await signInStaff(field, process.env.F07_E2E_VOLUNTEER_EMAIL!);
+    await field.goto('/cases/new');
+    const title = `P0 simulated lifecycle ${Date.now()}`;
+    await field.getByLabel('Fictional beneficiary alias', { exact: true }).fill('Demo Household A');
+    await field.getByLabel('Approximate area', { exact: true }).fill('Fictional demo district');
+    await field.getByLabel('Internal title', { exact: true }).fill(title);
+    for (const [index, name, unit, quantity] of [[1, 'Food', 'PACKAGE', 2], [2, 'Hygiene', 'KIT', 1]] as const) {
+      await field.getByLabel(`Item ${index} name`, { exact: true }).fill(name);
+      await field.getByLabel(`Item ${index} unit`, { exact: true }).fill(unit);
+      await field.getByLabel(`Item ${index} quantity`, { exact: true }).fill(String(quantity));
+    }
+    await field.getByLabel('I confirm this is a simulated consent record for fictional data.', { exact: true }).check();
+    await field.getByLabel('A sanitized public summary is allowed.', { exact: true }).check();
+    await expect(field.locator('input[name="evidenceFixtureKeys"]').first()).toBeVisible();
+    await field.locator('input[name="evidenceFixtureKeys"]').first().check();
+    const created: CaseDetailResponse = await write(field, '/api/cases', field.getByRole('button', { name: 'Submit case', exact: true }), 201);
+    expect(created.status).toBe('SUBMITTED');
+    await expect(field).toHaveURL(new RegExp(`/cases/${id(created.id)}$`));
+
+    await staff.goto('/login');
+    await signInStaff(staff, process.env.F09_E2E_VERIFIER_EMAIL!);
+    const verifierMe = await (await staff.request.get('/api/auth/me')).json();
+    expect(verifierMe.userId).not.toBe(created.creator.id);
+    await staff.goto(`/cases/${created.id}`);
+    await expect(staff.locator('input[name="reviewedEvidenceVersionIds"]').first()).toBeVisible();
+    for (const checkbox of await staff.locator('input[name="reviewedEvidenceVersionIds"]').all()) await checkbox.check();
+    const verified = await write(staff, `/api/cases/${created.id}/verify`, staff.getByRole('button', { name: 'Approve case', exact: true }), 200);
+    expect(verified).toMatchObject({ caseStatus: 'VERIFIED', blockchainStatus: 'PENDING_ON_CHAIN' });
+    await signOut(staff);
+    await signInStaff(staff, process.env.F07_E2E_RECORDER_EMAIL!);
+    await staff.goto(`/cases/${created.id}`);
+    await staff.getByLabel('Campaign title', { exact: true }).fill('Simulated P0 food and hygiene needs');
+    await staff.getByLabel('Campaign public summary', { exact: true }).fill('Fictional goods workflow for the demo.');
+    const draft = await write(staff, '/api/campaigns', staff.getByRole('button', { name: 'Create campaign draft', exact: true }), 201);
+    const published: CampaignResponse = await write(staff, `/api/campaigns/${draft.id}/publish`, staff.getByRole('button', { name: 'Publish campaign', exact: true }), 200);
+    await page.goto(`/campaigns/${published.id}`);
+    await page.getByLabel('Food', { exact: false }).first().check();
+    await page.getByLabel('Quantity (PACKAGE)', { exact: true }).fill('2');
+    await page.getByLabel('Hygiene', { exact: false }).first().check();
+    await page.getByLabel('Quantity (KIT)', { exact: true }).fill('1');
+    const pledged: CommitmentResponse = await write(page, `/api/campaigns/${published.id}/commitments`, page.getByRole('button', { name: 'Pledge goods →', exact: true }), 201);
+    const food = published.items.find(item => item.name === 'Food')!;
+    const foodLine = pledged.items.find(item => item.campaignItemId === food.id)!;
+    const receiptPanel = staff.getByRole('region', { name: 'Goods receipt', exact: true });
+    await staff.reload();
+    await receiptPanel.getByLabel('Outstanding commitment').selectOption(pledged.id);
+    await receiptPanel.getByLabel('Food receipt quantity (PACKAGE)', { exact: true }).fill('1');
+    await receiptPanel.getByLabel('Hygiene receipt quantity (KIT)', { exact: true }).fill('1');
+    await write(staff, `/api/commitments/${pledged.id}/receipts`, receiptPanel.getByRole('button', { name: 'Record receipt', exact: true }), 201);
+    await expect(receiptPanel.getByTestId(`outstanding-${foodLine.id}`)).toHaveText('Outstanding: 1');
+    await receiptPanel.getByLabel('Food receipt quantity (PACKAGE)', { exact: true }).fill('1');
+    await write(staff, `/api/commitments/${pledged.id}/receipts`, receiptPanel.getByRole('button', { name: 'Record receipt', exact: true }), 201);
+    await expect(receiptPanel.getByTestId(`outstanding-${foodLine.id}`)).toHaveCount(0);
+
+    await field.goto(`/cases/${created.id}`);
+    const deliveryPanel = field.getByRole('region', { name: 'Goods delivery', exact: true });
+    await deliveryPanel.getByLabel('Food delivery quantity (PACKAGE)', { exact: true }).fill('2');
+    await deliveryPanel.getByLabel('Hygiene delivery quantity (KIT)', { exact: true }).fill('1');
+    await deliveryPanel.getByRole('checkbox', { name: /Evidence 1 / }).check();
+    const delivery: DeliveryResponse = await write(field, `/api/cases/${created.id}/deliveries`, deliveryPanel.getByRole('button', { name: 'Record delivery', exact: true }), 201);
+    await signOut(staff);
+    await signInStaff(staff, process.env.F09_E2E_CONFIRMER_EMAIL!);
+    await staff.goto(`/cases/${created.id}`);
+    const review = staff.getByRole('region', { name: 'Delivery review', exact: true });
+    await review.getByLabel('Delivery to review', { exact: true }).selectOption(delivery.id);
+    const items = review.getByRole('table', { name: 'Selected delivery items', exact: true });
+    await expect(items.getByRole('row').filter({ hasText: 'Food' }).getByRole('cell')).toHaveText(['PACKAGE', '2']);
+    await expect(items.getByRole('row').filter({ hasText: 'Hygiene' }).getByRole('cell')).toHaveText(['KIT', '1']);
+    await review.getByLabel('I reviewed the delivery evidence').check();
+    const confirmation = await write(staff, `/api/deliveries/${delivery.id}/confirm`, review.getByRole('button', { name: 'Confirm delivery', exact: true }), 200);
+    expect(confirmation.reviewerId).not.toBe(delivery.recorderId);
+    expect(confirmation).toMatchObject({ decision: 'CONFIRMED', blockchainStatus: 'PENDING_ON_CHAIN' });
+    await expect(review.getByText('Decision saved.', { exact: true })).toBeVisible();
+    await signOut(staff);
+    await signInStaff(staff, process.env.F07_E2E_RECORDER_EMAIL!);
+    await staff.goto(`/cases/${created.id}`);
+    await write(staff, `/api/campaigns/${published.id}/close`, review.getByRole('button', { name: 'Close campaign', exact: true }), 200);
+    await expect(staff.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('COMPLETED');
+    await staff.getByText('Case audit trail', { exact: true }).click();
+    const timeline = staff.getByRole('region', { name: 'Case audit timeline', exact: true });
+    await expect(timeline.getByText('CASE COMPLETED', { exact: true })).toBeVisible();
+    await expect(timeline.getByText('Confirmed on Fuji', { exact: true })).toHaveCount(0);
+    expect(sql(`SELECT string_agg(a.event_type,',' ORDER BY j.chain_sequence) FROM blockchain_jobs j JOIN audit_events a ON a.id=j.audit_event_id WHERE a.aid_case_id='${id(created.id)}'`))
+      .toBe('CASE_VERIFIED,AID_PLEDGED,GOODS_RECEIVED,GOODS_RECEIVED,DELIVERY_RECORDED,DELIVERY_CONFIRMED');
+    expect(Number(sql(`SELECT count(*) FROM deliveries WHERE aid_case_id='${id(created.id)}'`))).toBe(1);
+    expect(sql(`SELECT status FROM aid_cases WHERE id='${id(created.id)}'`)).toBe('COMPLETED');
+    evidence.push({ scenario: 'p0-same-case-created-through-full-ui-lifecycle', caseId: created.id, campaignId: published.id, contributionId: pledged.id, deliveryId: delivery.id, databaseVerified: true });
+  } finally { await fieldContext.close(); await reviewContext.close(); }
 });

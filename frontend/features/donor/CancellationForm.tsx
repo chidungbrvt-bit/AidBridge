@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { ApiError, cancellationOutcomeUnknown, validateCancellation } from './model';
+import { shortReference } from '../../src/lib/display';
 import type { CampaignResponse, CancellationRequest, CommitmentResponse, DonorApi, Draft } from './model';
 
 interface Props {
@@ -63,7 +64,7 @@ export function CancellationForm({ api, commitment, campaign, ready, onChanged, 
   const hasOutstanding = commitment.items.some(item => item.outstandingQty > 0);
   return <section className="ab-panel ab-cancellation" aria-label="Cancel unreceived goods">
     <div className="ab-section-title"><h2>Cancel unreceived goods</h2><button disabled={busy || unknown} onClick={onClose}>Close cancellation</button></div>
-    <p className="ab-caption">Commitment: {commitment.id}. Only outstanding goods can be cancelled. Original pledges and receipts remain in history.</p>
+    <p className="ab-caption">Reference: {shortReference(commitment.id)}. Only outstanding goods can be cancelled. Original pledges and receipts remain in history.</p>
     {message && <div ref={summary} tabIndex={-1} role={success ? 'status' : 'alert'} className={success ? 'ab-success' : 'ab-error'}><strong>{message}</strong>{Object.entries(errors).map(([id, error]) => <p key={id}>{id === 'form' ? error : <a href={id === 'reason' ? '#cancel-reason' : `#cancel-quantity-${id}`}>{error}</a>}</p>)}</div>}
     <form noValidate onSubmit={event => { event.preventDefault(); void submit(); }}>
       {commitment.items.map(item => {

@@ -1,0 +1,9 @@
+"kind","k1","k2","k3","k4"
+"flyway","15","-77633396","true","2026-11-16 19:12:48.943646"
+"flyway","16","-569862596","true","2026-11-16 19:12:48.968935"
+"flyway","17","-163799925","true","2026-11-16 19:12:48.98538"
+"flyway","18","-1632700225","true","2026-11-16 19:12:48.995147"
+"jobs","PENDING","43113","5",NULL
+"sessions","pgAdmin 4 - DB:aidbridge_demo_v16","idle","1",NULL
+"advisory_locks",NULL,NULL,"0",NULL
+"read_at","2026-11-18 00:48:49.466779+07","aidbridge_demo_v16",NULL,NULL

@@ -1,5 +1,5 @@
 import type { CreateCampaignRequest } from "./campaign";
-import type { DeliveryRequest, DeliveryResponse, DeliveryWireResponse, ReceiptRequest, ReceiptResponse, StaffCaseDetail } from "./goods";
+import type { ConfirmationRequest, ConfirmationResponse, DeliveryRequest, DeliveryResponse, DeliveryWireResponse, DisputeRequest, DisputeResponse, DisputeReview, ReceiptRequest, ReceiptResponse, ResolveDisputeRequest, StaffCaseDetail } from "./goods";
 import { isPublicCaseAuditUrl, type InternalAuditEvent, type PublicAuditEvent } from "./audit";
 import type { CampaignResponse, CommitmentRequest, CommitmentResponse, CancellationRequest, Page } from "../../features/donor/model";
 import type { BlockchainStatus, CaseDetailResponse, CaseListQuery, CaseSummary, CreateCaseRequest, CsrfResponse, DecisionRequest, DecisionResponse, EvidenceFixture, FieldError, LoginRequest, LoginResponse, MeResponse, Membership, MockControlAction, OrganizationRole, PageResponse, PatchCaseRequest, ProblemDetail, ResubmitCaseRequest, ReviewAction } from "./types";
@@ -55,6 +55,9 @@ export const isVolunteer = (user: MeResponse | null, organizationId: string): bo
 export const canCreateCases = isVolunteer;
 export const canManageCampaigns = (user: MeResponse | null, organizationId: string): boolean => rolesFor(user, organizationId).includes("ORG_ADMIN");
 export const canReviewCases = (user: MeResponse | null, organizationId: string): boolean => rolesFor(user, organizationId).includes("VERIFIER");
+export const canConfirmDelivery = (user: MeResponse | null, organizationId: string): boolean => rolesFor(user, organizationId).includes("DELIVERY_CONFIRMER");
+export const canOpenCaseDispute = (user: MeResponse | null, organizationId: string): boolean =>
+  rolesFor(user, organizationId).some(role => role === "ORG_ADMIN" || role === "VERIFIER" || role === "DELIVERY_CONFIRMER");
 
 export function normalizeBlockchainStatus(value: unknown): BlockchainStatus {
   if (value === "NOT_REQUIRED") return "NOT_APPLICABLE";
@@ -140,7 +143,8 @@ export class ApiClient {
     if (!Array.isArray(value?.outstandingCommitments)) {
       throw new ApiError({ type: "urn:aidbridge:error:invalid-response", status: 502, code: "INVALID_RESPONSE", title: "Invalid staff case response" });
     }
-    return { ...normalizeCaseDetail(value), campaignId: value.campaignId, outstandingCommitments: value.outstandingCommitments };
+    const { goodsTotals, ...caseFields } = value;
+    return { ...caseFields, ...normalizeCaseDetail(caseFields), goodsTotals };
   }
   async recordReceipt(id: string, body: ReceiptRequest, key: string): Promise<ReceiptResponse> {
     return this.mutate(`/api/commitments/${encodeURIComponent(id)}/receipts`, body, key);
@@ -149,6 +153,21 @@ export class ApiClient {
     const saved = await this.mutate<DeliveryWireResponse>(`/api/cases/${encodeURIComponent(id)}/deliveries`, body, key);
     if (saved.outcome === "FAILED") return { ...saved, auditUrl: null };
     return { ...saved, auditUrl: isPublicCaseAuditUrl(saved.auditUrl) ? saved.auditUrl : null };
+  }
+  confirmDelivery(id: string, body: ConfirmationRequest, key: string): Promise<ConfirmationResponse> {
+    return this.mutate(`/api/deliveries/${encodeURIComponent(id)}/confirm`, body, key);
+  }
+  openCaseDispute(id: string, body: DisputeRequest, key: string): Promise<DisputeResponse> {
+    return this.mutate(`/api/cases/${encodeURIComponent(id)}/disputes`, body, key);
+  }
+  getDisputeReview(id: string): Promise<DisputeReview> {
+    return this.request(`/api/disputes/${encodeURIComponent(id)}/review`);
+  }
+  resolveDispute(id: string, body: ResolveDisputeRequest, key: string): Promise<DisputeResponse> {
+    return this.mutate(`/api/disputes/${encodeURIComponent(id)}/resolve`, body, key);
+  }
+  closeCampaign(id: string, key: string): Promise<CampaignResponse> {
+    return this.mutate(`/api/campaigns/${encodeURIComponent(id)}/close`, {}, key);
   }
   getCaseAudit(id: string, page: number): Promise<PageResponse<InternalAuditEvent>> {
     return this.request(`/api/cases/${encodeURIComponent(id)}/audit-trail?page=${page}&size=20`);

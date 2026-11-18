@@ -78,13 +78,13 @@ jobs:
               print(f'{name}: {count} passed, 0 failed, 0 skipped')
           junit = ET.parse('frontend/test-results/f07-real.junit.xml').getroot()
           suites = [junit] if junit.tag == 'testsuite' else list(junit.iter('testsuite'))
-          assert sum(int(s.attrib.get('tests', 0)) for s in suites) == 5
+          assert sum(int(s.attrib.get('tests', 0)) for s in suites) == 11
           for s in suites:
               for key in ('failures', 'errors', 'skipped'):
                   assert int(s.attrib.get(key, 0)) == 0
           evidence = json.loads(pathlib.Path('frontend/test-results/f07-real-evidence.json').read_text())
           assert evidence['mode'] == 'REAL_NEXT_SPRING_POSTGRES'
-          assert evidence['passedScenarios'] == evidence['expectedScenarios'] == 5
+          assert evidence['passedScenarios'] == evidence['expectedScenarios'] == 11
           assert all(s['databaseVerified'] for s in evidence['scenarios'])
       - uses: actions/upload-artifact@v4
         if: always()

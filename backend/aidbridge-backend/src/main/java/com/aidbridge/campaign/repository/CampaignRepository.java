@@ -21,13 +21,6 @@ public interface CampaignRepository extends JpaRepository<Campaign, UUID> {
 
     boolean existsByAidCase_Id(UUID caseId);
 
-    @Query("""
-            SELECT c.id FROM Campaign c
-            WHERE c.aidCase.id = :caseId AND c.organization.id = :orgId AND c.status = :status
-            """)
-    Optional<UUID> findScopedCampaignId(
-            @Param("caseId") UUID caseId, @Param("orgId") UUID orgId, @Param("status") Campaign.Status status);
-
     @EntityGraph(attributePaths = {"organization", "aidCase"})
     Optional<Campaign> findWithDetailsById(UUID id);
 
@@ -90,13 +83,18 @@ public interface CampaignRepository extends JpaRepository<Campaign, UUID> {
             @Param("orgId") UUID orgId
     );
 
+    interface StaffCampaign {
+        UUID getId();
+        Campaign.Status getStatus();
+    }
+
     @Query("""
-        select campaign.id
+        select campaign.id as id, campaign.status as status
         from Campaign campaign
         where campaign.aidCase.id = :caseId
           and campaign.organization.id = :organizationId
         """)
-    Optional<UUID> findIdByCaseAndOrganization(
+    Optional<StaffCampaign> findStaffCampaign(
             @Param("caseId") UUID caseId,
             @Param("organizationId") UUID organizationId
     );

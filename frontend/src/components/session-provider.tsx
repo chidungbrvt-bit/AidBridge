@@ -1,8 +1,8 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { activeMemberships, ApiClient, ApiError, mockTransport, realTransport } from '@/lib/api-client';
-import { createSessionWork } from '@/lib/session-work';
+import { activeMemberships, ApiClient, ApiError, canReadCases, mockTransport, realTransport } from '@/lib/api-client';
+import { createSessionWork, type GoodsReviewAttempt } from '@/lib/session-work';
 import type { LoginRequest, MeResponse } from '@/lib/types';
 
 type SessionContextValue = {
@@ -12,6 +12,9 @@ type SessionContextValue = {
   refreshUser: () => Promise<void>; notice: string; error: string; generation: number;
   work: ReturnType<typeof createSessionWork>; checkingFailed: boolean;
   navigationLocked: boolean; setNavigationLocked: (locked: boolean) => void;
+  goodsReview: GoodsReviewAttempt | null;
+  getGoodsReview: () => GoodsReviewAttempt | null;
+  setGoodsReview: (attempt: GoodsReviewAttempt | null) => void;
 };
 const SessionContext = createContext<SessionContextValue | null>(null);
 
@@ -23,28 +26,50 @@ export function SessionProvider({ children, mode }: { children: React.ReactNode;
   const [error, setError] = useState('');
   const [generation, setGeneration] = useState(0);
   const [navigationLocked, setNavigationLocked] = useState(false);
+  const [pendingReview, setPendingReview] = useState<GoodsReviewAttempt | null>(null);
+  const pendingReviewRef = useRef<GoodsReviewAttempt | null>(null);
+  const getGoodsReview = useCallback(() => pendingReviewRef.current, []);
+  const setGoodsReview = useCallback((attempt: GoodsReviewAttempt | null) => {
+    pendingReviewRef.current = attempt;
+    setPendingReview(attempt);
+  }, []);
   const epoch = useRef(0);
   const activeUserId = useRef<string | null>(null);
   const work = useMemo(createSessionWork, []);
   const [checkingFailed, setCheckingFailed] = useState(false);
-  const clear = useCallback(() => {
+  const clear = useCallback((expired = false) => {
     epoch.current += 1;
-    if (activeUserId.current) setNotice('Your session ended. Sign in again to continue.');
+    if (expired && pendingReviewRef.current) {
+      setNotice('Your session ended. Sign in again with the same account to check the pending decision.');
+    } else {
+      setGoodsReview(null);
+      if (activeUserId.current) setNotice('Your session ended. Sign in again to continue.');
+    }
     activeUserId.current = null;
     work.clear();
     setCheckingFailed(false);
     setUser(null); setOrg(''); setLoading(false); setNavigationLocked(false); setGeneration(value => value + 1);
-  }, [work]);
-  const api = useMemo(() => new ApiClient(mode === 'mock' ? mockTransport : realTransport, clear), [mode, clear]);
+  }, [setGoodsReview, work]);
+  const api = useMemo(() => new ApiClient(mode === 'mock' ? mockTransport : realTransport, () => clear(true)), [mode, clear]);
   const apply = useCallback((next: MeResponse) => {
     if (next.status !== 'ACTIVE') { clear(); return; }
     if (activeUserId.current && activeUserId.current !== next.userId) work.clear();
+    let attempt = pendingReviewRef.current;
+    if (attempt) {
+      const permitted = attempt.organizationId ? canReadCases(next, attempt.organizationId) : next.platformRole === 'PLATFORM_ADMIN';
+      if (attempt.actorId !== next.userId || !permitted) {
+        if (attempt.actorId === next.userId) setNotice('You no longer have access to check the pending decision. Ask an administrator to verify its outcome.');
+        setGoodsReview(null);
+        attempt = null;
+      }
+    }
     activeUserId.current = next.userId;
     setCheckingFailed(false);
     setUser(next); setError('');
     const memberships = activeMemberships(next);
-    setOrg(current => memberships.some(item => item.organizationId === current) ? current : memberships[0]?.organizationId ?? '');
-  }, [clear, work]);
+    setOrg(current => attempt?.organizationId ??
+      (memberships.some(item => item.organizationId === current) ? current : memberships[0]?.organizationId ?? ''));
+  }, [clear, setGoodsReview, work]);
   const refreshUser = useCallback(async () => {
     const started = epoch.current;
     try {
@@ -72,6 +97,17 @@ export function SessionProvider({ children, mode }: { children: React.ReactNode;
     window.addEventListener('focus', focus);
     return () => window.removeEventListener('focus', focus);
   }, [refreshUser]);
+  useEffect(() => {
+    if (!pendingReview) return;
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', beforeUnload);
+    return () => window.removeEventListener('beforeunload', beforeUnload);
+  }, [pendingReview]);
+  const goodsReview = user && pendingReview?.actorId === user.userId ? pendingReview : null;
+  const locked = navigationLocked || Boolean(goodsReview);
   const login = async (request: LoginRequest) => {
     const started = ++epoch.current;
     setError(''); setNotice('');
@@ -79,14 +115,16 @@ export function SessionProvider({ children, mode }: { children: React.ReactNode;
     if (started === epoch.current) { apply(next); setGeneration(value => value + 1); }
   };
   const logout = async () => {
+    if (pendingReviewRef.current) throw new Error('Check the pending decision before signing out.');
     // Keep the UI mounted on an unknown logout outcome so the user can retry.
     await api.logout();
     clear(); setNotice('Signed out. Private workspace data has been cleared.');
   };
   return <SessionContext.Provider value={{ user, api, mode, loading, organizationId,
     setOrganizationId: id => {
-      if (activeMemberships(user).some(item => item.organizationId === id)) setOrg(id);
-    }, login, logout, refreshUser, notice, error, generation, work, checkingFailed, navigationLocked, setNavigationLocked }}>{children}</SessionContext.Provider>;
+      if (!locked && activeMemberships(user).some(item => item.organizationId === id)) setOrg(id);
+    }, login, logout, refreshUser, notice, error, generation, work, checkingFailed,
+    navigationLocked: locked, setNavigationLocked, goodsReview, getGoodsReview, setGoodsReview }}>{children}</SessionContext.Provider>;
 }
 export function useSession() {
   const context = useContext(SessionContext);
