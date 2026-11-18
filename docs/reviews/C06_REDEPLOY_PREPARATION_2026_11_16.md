@@ -274,3 +274,14 @@ Sau actualdeploy, explorerexactmatch: dùng đúng standardJSON/compilerlongvers
 | Cutover / Fuji pilot | NOT RUN | Sauverifieddeployment+setup,Task5plan/readback+approvedcutover; không phải output readiness đã chạy |
 
 **Task4 gói readiness hoàn thành thực chất**, Dũng dùng ngay manifest/candidatepins, entrypoint/runbook, DBbinding/sequence và regressioncriteria để hoàn thiệnTask5. Candidateplan và recordFROZEN/approval chưa được nhóm chốt không làm mất giá trị handoff, nhưng vẫn chặn actualbroadcast. Không sửaworker, DB, queue, signerstate hoặc tạoFuji evidence. KhôngreviewTask3/Task6/Task8 lại.
+
+
+## Current morning status — 18/11/2026
+
+Task4 remains **READY FOR HANDOFF TO TASK5**; release **FREEZE CANDIDATE**, not FROZEN or READY FOR DEPLOY APPROVAL. [Morning status and pilot proposal](C06_MORNING_STATUS_2026_11_18.md) is the current summary and supersedes older runner/evidence counts above.
+
+- Candidate release SHA `58a3ebb5d29e85e6e0ab81ca2b73b806c8b5235d` includes main `fbf8c3e`, remote runner safety fixes `5267e99` and the public exact-byte build archive. Existing compiler rebuilt ABI/creation/runtime identically offline; runner validation **11/11 PASS**, no real RPC/signing. Formal freeze still requires group decision.
+- Dung has now committed the combined PREPARED+wrong-chain regression at `5df5aac`; assertions reviewed for this gate only. Task5 reports 34/0/0/0 WorkerIT and an XML hash, but original XML has not been inspected. This is no longer missing test implementation; request that evidence, not a rerun. Task3 local PASS WITH NOTES is unchanged.
+- Proposed pilot: existing staging org `0x26b3…299f`, case `85e124e4…`, CASE_VERIFIED only; **not approved**. Current candidate plan instead pins historical org `0x2395…0a46`. Org choice must be resolved and any plan change re-hashed/revalidated before freeze. Staging seq5 DELIVERY_CONFIRMED unsupported; goods are local31337-only, so staging five jobs are not full-chain Fuji readiness.
+- Three legacy unprepared PENDING jobs stay parked unchanged, with C03 worker off and historical proofs retained. One relayer must not run concurrently across DBs; do not start the latest backend on legacy V15 without a separate migration decision.
+- Current preflight/rights/gas, deployment approval, actual deploy/readback/explorer/orgsetup, cutover approval and Fuji pilot remain **NOT RUN/PENDING** as appropriate. Deployment and cutover are separate permissions. The linked status has the precise owner/actions and D49 post-pilot API check.
