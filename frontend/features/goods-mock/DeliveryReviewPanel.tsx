@@ -90,14 +90,14 @@ export function DeliveryReviewPanel({ state, snapshot, disabled, onReview }: Pro
 
   return <section className="card stack" aria-labelledby="delivery-review-title">
     <header>
-      <p className="eyebrow">{t("F09 · F02 FIXTURES")}</p>
+      <p className="eyebrow">{t("SIMULATED DATA ONLY")}</p>
       <h2 id="delivery-review-title">{t("Delivery confirmation and disputes")}</h2>
       <p className="muted">{t("Simulated actors use the deliveries recorded above. This preview sends no requests to the backend or Fuji.")}</p>
     </header>
     <div className="actions">
-      <button type="button" className="button secondary" disabled={disabled} aria-pressed={operation === 'D02'} onClick={() => switchOperation('D02')}>{t("D02 Confirm delivery")}</button>
-      <button type="button" className="button secondary" disabled={disabled} aria-pressed={operation === 'S01'} onClick={() => switchOperation('S01')}>{t("S01 Open dispute")}</button>
-      <button type="button" className="button secondary" disabled={disabled} aria-pressed={operation === 'S03'} onClick={() => switchOperation('S03')}>{t("S03 Resolve dispute")}</button>
+      <button type="button" className="button secondary" disabled={disabled} aria-pressed={operation === 'D02'} onClick={() => switchOperation('D02')}>{t("Confirm delivery")}</button>
+      <button type="button" className="button secondary" disabled={disabled} aria-pressed={operation === 'S01'} onClick={() => switchOperation('S01')}>{t("Open dispute")}</button>
+      <button type="button" className="button secondary" disabled={disabled} aria-pressed={operation === 'S03'} onClick={() => switchOperation('S03')}>{t("Resolve dispute")}</button>
     </div>
     <p>{t('Campaign:')} <strong>{status(snapshot.campaign.status)}</strong> · {t('Open disputes:')} <strong>{open.length}</strong></p>
     <p>{t('Completion eligibility:')} <strong>{openDispute ? t('Blocked by open dispute') : canCompleteCampaign(snapshot, state)
@@ -111,7 +111,7 @@ export function DeliveryReviewPanel({ state, snapshot, disabled, onReview }: Pro
         </label>
         {!allowed && <p className="notice error" role="alert">{isSelf ? `403 SELF_CONFIRMATION · ${t('A recorder cannot confirm their own delivery.')}` : `403 FORBIDDEN · ${t('This actor cannot perform this operation.')}`}</p>}
         {operation === 'D02' && openDispute && <p className="notice" role="status">{t("Resolve all open disputes before confirming a delivery.")}</p>}
-        {operation === 'D02' && !selected && <p>{t("Record a successful D01 delivery above to start independent review.")}</p>}
+        {operation === 'D02' && !selected && <p>{t("Record a successful delivery above to start independent review.")}</p>}
         {operation === 'S03' && !dispute && <p>{t("There are no open disputes to resolve.")}</p>}
         <fieldset className="form-fieldset stack" disabled={!canSubmit}>
           {operation !== 'S03' && <label className="field">{t("Delivery for review")}

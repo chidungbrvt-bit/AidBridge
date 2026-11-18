@@ -182,12 +182,17 @@ function StaffDelivery({ caseId, organizationId, actorId, receiptRevision, onRec
         </label>
         {outcome === "DELIVERED" ? <>
           {!canDeliver && <p>{t("Recording a handover requires available campaign stock and case evidence.")}</p>}
-          {context.items.map(item => <label key={item.id} className="field">{t("{item} delivery quantity ({unit})", { item: item.name, unit: item.unit })}
-            <span className="muted">{t("Available: {n}", { n: item.available })}</span>
-            <input aria-label={t("{item} delivery quantity ({unit})", { item: item.name, unit: item.unit })} type="number" min={1} max={Math.min(item.available, 1_000_000)}
-              step={1} disabled={item.available === 0} value={quantities[item.id] ?? ""}
-              onChange={event => setQuantities({ ...quantities, [item.id]: event.target.value })} />
-          </label>)}
+          {context.items.length > 0 && <div className="table-wrap"><table className="data-table goods-entry">
+            <caption className="sr-only">{t("Goods to deliver")}</caption>
+            <thead><tr><th scope="col">{t("Item")}</th><th scope="col">{t("Available")}</th><th scope="col">{t("Quantity delivered")}</th></tr></thead>
+            <tbody>{context.items.map(item => <tr key={item.id}>
+              <th scope="row">{item.name} <span className="muted">({item.unit})</span></th>
+              <td><span className="sr-only">{t("Available:")}</span> {item.available}</td>
+              <td><input aria-label={t("{item} delivery quantity ({unit})", { item: item.name, unit: item.unit })} type="number" min={1} max={Math.min(item.available, 1_000_000)}
+                step={1} disabled={item.available === 0} value={quantities[item.id] ?? ""}
+                onChange={event => setQuantities({ ...quantities, [item.id]: event.target.value })} /></td>
+            </tr>)}</tbody>
+          </table></div>}
           <label className="field">{t("Handed over at (UTC, optional)")}
             <input type="datetime-local" value={handover} onChange={event => setHandover(event.target.value)} />
           </label>

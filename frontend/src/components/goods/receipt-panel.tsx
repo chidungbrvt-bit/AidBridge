@@ -153,15 +153,20 @@ function StaffReceipt({ caseId, organizationId, actorId, onRecorded }: {
             {commitments.map((row, index) => <option key={row.contributionId} value={row.contributionId}>{t("Pledge {n}", { n: index + 1 })} · {formatUtc(row.pledgedAt)} · {status(row.status)}</option>)}
           </select>
         </label>
-        {commitment.items.map(row => {
-          const sentIndex = submittedItems.findIndex(item => item.contributionItemId === row.contributionItemId);
-          return <label key={row.contributionItemId} className="field">{t("{item} quantity ({unit})", { item: row.itemName, unit: row.unit })}
-            <span className="muted" data-testid={`outstanding-${row.contributionItemId}`}>{t("Outstanding: {n}", { n: row.outstandingQty })}</span>
-            <input aria-label={t("{item} receipt quantity ({unit})", { item: row.itemName, unit: row.unit })} type="number" min={1} max={row.outstandingQty} step={1}
-              value={quantities[row.contributionItemId] ?? ""} onChange={event => setQuantities({ ...quantities, [row.contributionItemId]: event.target.value })} />
-            {sentIndex >= 0 && <FieldError name={`items[${sentIndex}].quantity`} issues={fieldErrors} />}
-          </label>;
-        })}
+        <div className="table-wrap"><table className="data-table goods-entry">
+          <caption className="sr-only">{t("Goods received")}</caption>
+          <thead><tr><th scope="col">{t("Item")}</th><th scope="col">{t("Outstanding")}</th><th scope="col">{t("Quantity received")}</th></tr></thead>
+          <tbody>{commitment.items.map(row => {
+            const sentIndex = submittedItems.findIndex(item => item.contributionItemId === row.contributionItemId);
+            return <tr key={row.contributionItemId}>
+              <th scope="row">{row.itemName} <span className="muted">({row.unit})</span></th>
+              <td data-testid={`outstanding-${row.contributionItemId}`}><span className="sr-only">{t("Outstanding:")}</span> {row.outstandingQty}</td>
+              <td><input aria-label={t("{item} receipt quantity ({unit})", { item: row.itemName, unit: row.unit })} type="number" min={1} max={row.outstandingQty} step={1}
+                value={quantities[row.contributionItemId] ?? ""} onChange={event => setQuantities({ ...quantities, [row.contributionItemId]: event.target.value })} />
+                {sentIndex >= 0 && <FieldError name={`items[${sentIndex}].quantity`} issues={fieldErrors} />}</td>
+            </tr>;
+          })}</tbody>
+        </table></div>
         <label className="field">{t("Received at (UTC, defaults to now)")}
           <input type="datetime-local" value={receivedAt} onChange={event => setReceivedAt(event.target.value)} />
           <FieldError name="receivedAt" issues={fieldErrors} />
