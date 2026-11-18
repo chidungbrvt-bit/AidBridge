@@ -20,7 +20,7 @@ function StaffReceipt({ caseId, organizationId, actorId, onRecorded }: {
   caseId: string; organizationId: string; actorId: string; onRecorded: () => void;
 }) {
   const { api, work } = useSession();
-  const { t } = useI18n();
+  const { t, status } = useI18n();
   const scope = `${actorId}:${organizationId}:${caseId}`;
   const [commitments, setCommitments] = useState<OutstandingCommitment[]>([]);
   const [commitmentId, setCommitmentId] = useState("");
@@ -150,7 +150,7 @@ function StaffReceipt({ caseId, organizationId, actorId, onRecorded }: {
       <fieldset className="form-fieldset stack" disabled={locked}>
         <label className="field">{t("Outstanding commitment")}
           <select value={commitment.contributionId} onChange={event => { setCommitmentId(event.target.value); setQuantities({}); setWriteError(null); }}>
-            {commitments.map((row, index) => <option key={row.contributionId} value={row.contributionId}>{t("Pledge {n}", { n: index + 1 })} · {formatUtc(row.pledgedAt)} · {t(row.status.replaceAll("_", " "))}</option>)}
+            {commitments.map((row, index) => <option key={row.contributionId} value={row.contributionId}>{t("Pledge {n}", { n: index + 1 })} · {formatUtc(row.pledgedAt)} · {status(row.status)}</option>)}
           </select>
         </label>
         {commitment.items.map(row => {

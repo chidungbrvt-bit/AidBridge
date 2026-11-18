@@ -84,7 +84,7 @@ test('T02 campaign waits for read success before sharing the timeline and render
   ready = true;
   await trail.getByRole('button', { name: 'Retry audit' }).click();
   await expect(share).toHaveAttribute('href', `/audit/${publicRef}`);
-  await expect(trail.getByText('VERIFIER', { exact: true })).toBeVisible();
+  await expect(trail.getByText('Verifier', { exact: true })).toBeVisible();
   await expect(trail.getByText('PRIVATE ACTOR')).toHaveCount(0);
   await expect(trail.getByText(txHash, { exact: true })).toBeVisible();
   await expect(trail.getByRole('link', { name: 'View confirmed transaction on Fuji' })).toHaveCount(0);

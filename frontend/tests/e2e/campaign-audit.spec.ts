@@ -25,7 +25,7 @@ test('F06 admin drafts, retries lost publish, and opens the same campaign in F07
     await expect(review.locator('input[name="reviewedEvidenceVersionIds"]').first()).toBeVisible();
     for (const checkbox of await review.locator('input[name="reviewedEvidenceVersionIds"]').all()) await checkbox.check();
     await review.getByRole('button', { name: 'Approve case', exact: true }).click();
-    await expect(review.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('VERIFIED');
+    await expect(review.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('Verified');
     await expect(review.getByRole('button', { name: 'Create campaign draft' })).toHaveCount(0);
     const deniedToken = await (await review.request.get('/api/auth/csrf')).json();
     const denied = await review.request.post('/api/campaigns', {
@@ -69,7 +69,7 @@ test('F06 admin drafts, retries lost publish, and opens the same campaign in F07
     await page.getByRole('button', { name: 'Publish campaign' }).click();
     await expect(page.getByText('UNKNOWN_OUTCOME')).toBeVisible();
     await page.getByRole('button', { name: 'Retry same campaign request' }).click();
-    await expect(page.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('IN PROGRESS');
+    await expect(page.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('In progress');
     expect(attempts).toHaveLength(2);
     expect(attempts[0]).toEqual({ key: expect.any(String), body: '{}' });
     expect(attempts[1]).toEqual(attempts[0]);
@@ -102,8 +102,8 @@ test('F05 shows three chain fixtures with separate business and evidence state',
   await expect(timeline.getByRole('listitem')).toHaveCount(3);
   for (const label of ['Pending on chain', 'Failed on chain', 'Confirmed on chain']) {
     const row = timeline.getByRole('listitem').filter({ hasText: label });
-    await expect(row.getByText('VERIFIED', { exact: true })).toBeVisible();
-    await expect(row.getByText('APPROVED', { exact: true })).toBeVisible();
+    await expect(row.getByText('Verified', { exact: true })).toBeVisible();
+    await expect(row.getByText('Approved', { exact: true })).toBeVisible();
   }
   const confirmed = timeline.getByRole('listitem').filter({ hasText: 'Confirmed on chain' });
   await expect(confirmed.getByText('Independent Fuji proof fixture')).toBeVisible();

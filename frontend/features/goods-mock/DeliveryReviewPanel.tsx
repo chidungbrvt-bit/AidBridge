@@ -22,7 +22,7 @@ type Props = {
 };
 
 export function DeliveryReviewPanel({ state, snapshot, disabled, onReview }: Props) {
-  const { t } = useI18n();
+  const { t, status } = useI18n();
   const [operation, setOperation] = useState<ReviewCommand['operation']>('D02');
   const [actor, setActor] = useState<ReviewActor>('independentConfirmer');
   const [deliveryId, setDeliveryId] = useState('');
@@ -99,7 +99,7 @@ export function DeliveryReviewPanel({ state, snapshot, disabled, onReview }: Pro
       <button type="button" className="button secondary" disabled={disabled} aria-pressed={operation === 'S01'} onClick={() => switchOperation('S01')}>{t("S01 Open dispute")}</button>
       <button type="button" className="button secondary" disabled={disabled} aria-pressed={operation === 'S03'} onClick={() => switchOperation('S03')}>{t("S03 Resolve dispute")}</button>
     </div>
-    <p>{t('Campaign:')} <strong>{snapshot.campaign.status}</strong> · {t('Open disputes:')} <strong>{open.length}</strong></p>
+    <p>{t('Campaign:')} <strong>{status(snapshot.campaign.status)}</strong> · {t('Open disputes:')} <strong>{open.length}</strong></p>
     <p>{t('Completion eligibility:')} <strong>{openDispute ? t('Blocked by open dispute') : canCompleteCampaign(snapshot, state)
       ? t('Eligible for admin close') : t('Waiting for confirmed quantities and delivery review')}</strong></p>
     <form onSubmit={submit} className="stack">
@@ -118,7 +118,7 @@ export function DeliveryReviewPanel({ state, snapshot, disabled, onReview }: Pro
             <select aria-label="Delivery for review" value={selected?.id ?? ''} onChange={event => { setDeliveryId(event.target.value); setReviewed([]); }}>
               {operation === 'S01' && <option value="">{t("Case-level dispute")}</option>}
               {(operation === 'D02' ? pending : deliveries).map((delivery, index) =>
-                <option key={delivery.id} value={delivery.id}>{t("Delivery {n}", { n: index + 1 })} · {delivery.status}</option>)}
+                <option key={delivery.id} value={delivery.id}>{t("Delivery {n}", { n: index + 1 })} · {status(delivery.status)}</option>)}
             </select>
           </label>}
           {operation === 'D02' && <label className="field">{t("Confirmation decision")}
@@ -154,17 +154,17 @@ export function DeliveryReviewPanel({ state, snapshot, disabled, onReview }: Pro
     {message && <p ref={feedback} tabIndex={-1} role={message.error ? 'alert' : 'status'} className={message.error ? 'notice error' : 'notice'}>{t(message.text)}</p>}
     {state.deliveries.length > 0 && <div>
       <h3>{t("Delivery records")}</h3>
-      <ul>{state.deliveries.map((delivery, index) => <li key={delivery.id}>{t("Delivery {n}", { n: index + 1 })}: {delivery.outcome} · {delivery.status}</li>)}</ul>
+      <ul>{state.deliveries.map((delivery, index) => <li key={delivery.id}>{t("Delivery {n}", { n: index + 1 })}: {status(delivery.outcome)} · {status(delivery.status)}</li>)}</ul>
     </div>}
     {state.disputes.length > 0 && <div>
       <h3>{t("Dispute records")}</h3>
-      <ul>{state.disputes.map(dispute => <li key={dispute.id}>{dispute.status} · {dispute.reason}
-        {dispute.resolution && <> · {dispute.resolution} · {dispute.resolutionReason}</>}
+      <ul>{state.disputes.map(dispute => <li key={dispute.id}>{status(dispute.status)} · {dispute.reason}
+        {dispute.resolution && <> · {status(dispute.resolution)} · {dispute.resolutionReason}</>}
       </li>)}</ul>
     </div>}
     {state.events.length > 0 && <div>
       <h3>{t("Simulated audit events")}</h3>
-      <ul>{state.events.map(event => <li key={event.id}>{event.label} · {event.blockchainStatus}</li>)}</ul>
+      <ul>{state.events.map(event => <li key={event.id}>{t(event.label)} · {status(event.blockchainStatus)}</li>)}</ul>
     </div>}
   </section>;
 }

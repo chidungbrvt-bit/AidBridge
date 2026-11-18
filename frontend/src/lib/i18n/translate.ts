@@ -1,4 +1,5 @@
 import { vi } from "./vi";
+import { codeLabel } from "./labels";
 
 export type Language = "en" | "vi";
 export type TranslationVars = Record<string, string | number>;
@@ -13,8 +14,8 @@ export function translate(language: Language, text: string, vars?: TranslationVa
   return template.replace(/\{(\w+)\}/g, (match, name: string) => name in vars ? String(vars[name]) : match);
 }
 
-/** Status codes such as IN_PROGRESS keep their code in data, only the label is translated. */
-export function statusLabel(language: Language, status: string): string {
-  const label = status.replaceAll("_", " ");
+/** API codes such as IN_PROGRESS or ORG_ADMIN are shown as readable labels in either language. */
+export function statusLabel(language: Language, code: string): string {
+  const label = codeLabel(code);
   return language === "vi" ? vi[label] ?? label : label;
 }

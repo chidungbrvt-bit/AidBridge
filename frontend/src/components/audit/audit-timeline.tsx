@@ -20,7 +20,7 @@ const statusLabel = {
 };
 
 export function AuditTimeline({ events }: { events: readonly AuditExample[] }) {
-  const { t } = useI18n();
+  const { t, status } = useI18n();
   return <section className="card stack" aria-labelledby="audit-heading">
     <div>
       <h2 id="audit-heading">{t("Audit timeline")}</h2>
@@ -33,9 +33,9 @@ export function AuditTimeline({ events }: { events: readonly AuditExample[] }) {
           <time dateTime={event.occurredAt}>{new Date(event.occurredAt).toISOString().replace('T', ' ').slice(0, 16)} UTC</time>
         </div>
         <dl className="metadata">
-          <div><dt>{t("Business status")}</dt><dd>{t("VERIFIED")}</dd></div>
-          <div><dt>{t("Evidence review")}</dt><dd>{t("APPROVED")}</dd></div>
-          <div><dt>{t("Actor role")}</dt><dd>{t("VERIFIER")}</dd></div>
+          <div><dt>{t("Business status")}</dt><dd>{status("VERIFIED")}</dd></div>
+          <div><dt>{t("Evidence review")}</dt><dd>{status("APPROVED")}</dd></div>
+          <div><dt>{t("Actor role")}</dt><dd>{status("VERIFIER")}</dd></div>
           <div><dt>{t("Blockchain sync")}</dt><dd><span className={`badge audit-badge ${event.blockchainStatus.toLowerCase()}`} title={event.blockchainStatus}>{t(statusLabel[event.blockchainStatus])}</span></dd></div>
         </dl>
         <p>{t(event.explanation)}</p>

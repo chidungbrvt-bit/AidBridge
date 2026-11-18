@@ -29,10 +29,10 @@ test('F08 delivery flows into F09 review and void using the same item totals', a
   await panel.getByRole('button', { name: 'Submit mock confirmation' }).click();
   await expect(page.getByTestId('totals-kg').locator('td')).toHaveText(['14', '7', '5', '4']);
   await expect(page.getByTestId('totals-box').locator('td')).toHaveText(['3', '1', '1', '1']);
-  await expect(panel.getByText('Delivery confirmed · PENDING_ON_CHAIN', { exact: true })).toBeVisible();
+  await expect(panel.getByText('Delivery confirmed · Pending on chain', { exact: true })).toBeVisible();
 
   await panel.getByRole('button', { name: 'S01 Open dispute' }).click();
-  await panel.getByLabel('Delivery for review').selectOption({ label: 'Delivery 1 · CONFIRMED' });
+  await panel.getByLabel('Delivery for review').selectOption({ label: 'Delivery 1 · Confirmed' });
   await panel.getByLabel('Review reason (required)').fill('Review the fictional delivery claim.');
   await panel.getByRole('button', { name: 'Open mock dispute' }).click();
   await expect(page.getByRole('button', { name: 'Record mock delivery' })).toBeDisabled();
@@ -43,7 +43,7 @@ test('F08 delivery flows into F09 review and void using the same item totals', a
   await panel.getByLabel('Resolution', { exact: true }).selectOption('VOID_DELIVERY');
   await panel.getByLabel('Review reason (required)').fill('Exclude the fictional delivery from effective totals.');
   await panel.getByRole('button', { name: 'Resolve mock dispute' }).click();
-  await expect(panel.getByText('Delivery 1: DELIVERED · VOIDED')).toBeVisible();
+  await expect(panel.getByText('Delivery 1: Delivered · Voided')).toBeVisible();
   await expect(page.getByTestId('totals-kg').locator('td')).toHaveText(['14', '7', '1', '0']);
   await expect(page.getByTestId('totals-box').locator('td')).toHaveText(['3', '1', '0', '0']);
   await expect(page.getByRole('button', { name: 'Record mock delivery' })).toBeEnabled();

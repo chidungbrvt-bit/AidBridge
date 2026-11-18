@@ -22,7 +22,7 @@ export function AuditDisclosure({ label, scope, revision }: { label: string; sco
 
 export function AuditFeed({ scope, revision = 0 }: { scope: AuditScope; revision?: number }) {
   const { api } = useSession();
-  const { t } = useI18n();
+  const { t, status } = useI18n();
   const headingId = useId();
   const caseId = "caseId" in scope ? scope.caseId : undefined;
   const publicUrl = "publicUrl" in scope ? scope.publicUrl : undefined;
@@ -63,10 +63,10 @@ export function AuditFeed({ scope, revision = 0 }: { scope: AuditScope; revision
             {result.items.map(event => {
               const chain = auditChainView(event.blockchain);
               const actor = caseId && "actor" in event ? event.actor?.fullName
-                : !caseId && "publicActorRole" in event ? event.publicActorRole : null;
+                : !caseId && "publicActorRole" in event && event.publicActorRole ? status(event.publicActorRole) : null;
               return <li className="audit-event" key={event.eventId}>
                 <div className="toolbar audit-event-header">
-                  <h3>{t(event.type.replaceAll("_", " "))}</h3>
+                  <h3>{status(event.type)}</h3>
                   <time dateTime={event.occurredAt}>{new Date(event.occurredAt).toLocaleString("en-GB", { timeZone: "UTC" })} UTC</time>
                 </div>
                 <dl className="metadata audit-proof">

@@ -10,7 +10,7 @@ import { LanguageToggle, useI18n } from './i18n-provider';
 
 export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const session = useSession();
-  const { t } = useI18n();
+  const { t, status } = useI18n();
   const { user, loading, organizationId, mode, generation, navigationLocked, goodsReview } = session;
   const router = useRouter();
   const pathname = usePathname();
@@ -60,7 +60,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
         {canReviewCases(user, organizationId) && <Link href="/cases?status=SUBMITTED"><span aria-hidden="true">✓</span> {t('Review queue')}</Link>}
       </nav>
       <div className="sidebar-note"><span className="eyebrow">{t("INDEPENDENT REVIEW")}</span><p>{t("Every case starts with a need.")}<br/>{t("Every approval needs a second person.")}</p></div>
-      <div className="profile"><span className="avatar">{user.fullName.slice(0, 1)}</span><div><strong>{user.fullName}</strong><small>{membership?.roles.join(' · ') || (user.donorEnabled ? t("Donor account") : t("No active staff role"))}</small></div></div>
+      <div className="profile"><span className="avatar">{user.fullName.slice(0, 1)}</span><div><strong>{user.fullName}</strong><small>{membership?.roles.map(role => status(role)).join(' · ') || (user.donorEnabled ? t("Donor account") : t("No active staff role"))}</small></div></div>
       <button className="button secondary signout" onClick={signOut} disabled={busy || navigationLocked}>{busy ? t("Signing out…") : t("Sign out")}</button>
     </aside>
     <div className="workspace-main">

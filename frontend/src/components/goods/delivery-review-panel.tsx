@@ -15,7 +15,7 @@ export function DeliveryReviewPanel({ detail, revision, onSaved }: {
   detail: CaseDetailResponse; revision: number; onSaved: () => void;
 }) {
   const { api, user } = useSession();
-  const { t } = useI18n();
+  const { t, status } = useI18n();
   const [staff, setStaff] = useState<StaffCaseDetail>();
   const [readError, setReadError] = useState<ErrorInfo | null>(null);
   const [reload, setReload] = useState(0);
@@ -80,7 +80,7 @@ export function DeliveryReviewPanel({ detail, revision, onSaved }: {
         }}>
           <option value="">{t("Select a delivery")}</option>
           {deliveries.filter(row => row.outcome === "DELIVERED").map((row, index) =>
-            <option key={row.id} value={row.id}>{t("Delivery {n}", { n: index + 1 })} · {formatUtc(row.recordedAt)} · {t(row.reviewStatus.replaceAll("_", " "))}</option>)}
+            <option key={row.id} value={row.id}>{t("Delivery {n}", { n: index + 1 })} · {formatUtc(row.recordedAt)} · {status(row.reviewStatus)}</option>)}
         </select>
       </label>}
       {selected && <>

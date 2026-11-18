@@ -62,7 +62,7 @@ export function FieldError({ name, issues }: { name: string; issues: FieldIssue[
 export function ErrorNotice({ error }: { error: ErrorInfo | null }) {
   const { t } = useI18n();
   if (!error) return null;
-  return <div className="notice error" role="alert" tabIndex={-1}><strong>{t(error.message)}</strong><div className="muted">{error.code}</div></div>;
+  return <div className="notice error" role="alert" tabIndex={-1}><strong>{t(error.message)}</strong><div className="muted">{t("Error code: {code}", { code: error.code })}</div></div>;
 }
 
 export function StatusBadge({ status }: { status: string }) {

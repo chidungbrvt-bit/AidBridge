@@ -16,7 +16,7 @@ export function ReviewPanel({ detail, onDecision, onRefresh, onBusyChange }: {
   onBusyChange: (busy: boolean) => void;
 }) {
   const { api, user, setNavigationLocked } = useSession();
-  const { t } = useI18n();
+  const { t, status } = useI18n();
   const [reviewed, setReviewed] = useState<string[]>([]);
   const [reason, setReason] = useState("");
   const [error, setError] = useState<ErrorInfo | null>(null);
@@ -88,7 +88,7 @@ export function ReviewPanel({ detail, onDecision, onRefresh, onBusyChange }: {
     {success && <div className="notice success" role="status"><strong>{t("Review recorded")}</strong><p>{t("Business status:")} <StatusBadge status={success.caseStatus} /></p><p>{t("Chain status:")} <StatusBadge status={success.blockchainStatus} /></p>{success.caseStatus === "VERIFIED" && <p>{t("Approval is complete in the application. A pending chain record is not a confirmed transaction.")}</p>}</div>}
     {!roleAllowed && <p className="notice">{t("An active VERIFIER membership is required for review.")}</p>}
     {isCreator && <p className="notice">{t("You created this case. Another person must review it, even if you also have the VERIFIER role.")}</p>}
-    {detail.status !== "SUBMITTED" && !success && <p className="notice">{t("This case is {status}. Review actions are available only for submitted cases.", { status: t(detail.status) })}</p>}
+    {detail.status !== "SUBMITTED" && !success && <p className="notice">{t("This case is {status}. Review actions are available only for submitted cases.", { status: status(detail.status) })}</p>}
     <form ref={form} onSubmit={event => event.preventDefault()} className="stack">
       <ErrorNotice error={error} />
       {mustRefresh && <button type="button" className="button secondary" onClick={onRefresh}>{t("Refresh before reviewing again")}</button>}

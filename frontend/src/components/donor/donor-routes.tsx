@@ -32,7 +32,7 @@ export function DonorRoutes() {
 
 function CampaignList() {
   const { api } = useSession();
-  const { t } = useI18n();
+  const { t, status } = useI18n();
   const [page, setPage] = useState(0);
   const [revision, setRevision] = useState(0);
   const [data, setData] = useState<Page<CampaignResponse>>();
@@ -49,7 +49,7 @@ function CampaignList() {
     {loading && <p role="status">{t("Loading campaigns...")}</p>}
     {error && <div role="alert" className="notice error">{error} <button onClick={() => setRevision(x => x + 1)}>{t("Retry campaigns")}</button></div>}
     {data?.items.length === 0 && <p role="status">{t("No public campaigns are available.")}</p>}
-    <div className="stack">{data?.items.map(c => <article className="card" key={c.id}><p className="eyebrow">{t(c.status)} · {c.organization.name}</p><h2>{c.title}</h2><p>{c.publicSummary}</p><p className="muted">{c.approximateArea}</p><Link className="button" href={`/campaigns/${encodeURIComponent(c.id)}`}>{t("View needs and pledge")}</Link></article>)}</div>
+    <div className="stack">{data?.items.map(c => <article className="card" key={c.id}><p className="eyebrow">{status(c.status)} · {c.organization.name}</p><h2>{c.title}</h2><p>{c.publicSummary}</p><p className="muted">{c.approximateArea}</p><Link className="button" href={`/campaigns/${encodeURIComponent(c.id)}`}>{t("View needs and pledge")}</Link></article>)}</div>
     {data && data.totalElements > data.size && <nav className="pagination" aria-label={t("Campaign pages")}><button disabled={page === 0 || loading} onClick={() => setPage(x => x - 1)}>{t("Previous")}</button><span>{t("Page {n}", { n: page + 1 })}</span><button disabled={(page + 1) * data.size >= data.totalElements || loading} onClick={() => setPage(x => x + 1)}>{t("Next")}</button></nav>}
   </section>;
 }

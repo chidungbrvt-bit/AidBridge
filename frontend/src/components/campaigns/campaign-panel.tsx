@@ -25,7 +25,7 @@ function ScopedCampaignPanel({ detail, actorId, onBusyChange, onPublished }: {
   detail: CaseDetailResponse; actorId: string; onBusyChange: (value: boolean) => void; onPublished: () => void;
 }) {
   const { api, work, organizationId, setNavigationLocked } = useSession();
-  const { t } = useI18n();
+  const { t, status } = useI18n();
   const scope = `${actorId}:${organizationId}:${detail.id}`;
   const [entry, setEntry] = useState<CampaignWork>(() => work.campaigns.get(scope) ?? {});
   const [busy, setBusy] = useState(false);
@@ -105,7 +105,7 @@ function ScopedCampaignPanel({ detail, actorId, onBusyChange, onPublished }: {
       {!busy && <button type="button" className="button secondary" onClick={() => void send(pending)}>{t("Retry same campaign request")}</button>}
     </div>}
     {draft ? <>
-      <div><span className="badge">{t(draft.status)}</span><h3>{draft.title}</h3><p>{draft.publicSummary}</p><p className="muted">{draft.approximateArea}</p></div>
+      <div><span className="badge">{status(draft.status)}</span><h3>{draft.title}</h3><p>{draft.publicSummary}</p><p className="muted">{draft.approximateArea}</p></div>
       <GoodsProgressTable items={draft.items} />
       {draft.status === 'DRAFT' ? <>
         <p className="muted">{t("Only administrators of this organization can see the draft. Review the public copy and the approved item targets before publishing.")}</p>

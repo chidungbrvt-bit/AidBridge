@@ -12,7 +12,7 @@ import { apply, contributionId, evidenceIds, GoodsError, initialSnapshot, limits
 
 export function GoodsDemo() {
   const { mode } = useSession();
-  const { t } = useI18n();
+  const { t, status } = useI18n();
   const [snapshot, setSnapshot] = useState(() => initialSnapshot());
   const current = useRef(snapshot);
   const [review, setReview] = useState(emptyReview);
@@ -89,7 +89,7 @@ export function GoodsDemo() {
 
   return <>
     <header className="page-header"><div><p className="eyebrow">{t("F08 · F02 FIXTURES · MOCK DATA ONLY")}</p><h1>{t("Receive and deliver goods")}</h1><p>{t("No B08/B09 requests, database writes or blockchain transactions. Data resets when you leave this page.")}</p></div></header>
-    <section className="card"><h2>{t("Simulated flood relief essentials")}</h2><p>{t('Fictional case')} · IN_PROGRESS · {disputeOpen ? t('Open dispute') : t('No open disputes')}. {t('Campaign totals are a shared pool, not donor-specific delivery provenance.')}</p>
+    <section className="card"><h2>{t("Simulated flood relief essentials")}</h2><p>{t('Fictional case')} · {status('IN_PROGRESS')} · {disputeOpen ? t('Open dispute') : t('No open disputes')}. {t('Campaign totals are a shared pool, not donor-specific delivery provenance.')}</p>
       <div style={{ overflowX: 'auto' }}><table className="data-table"><caption>{t("Mock campaign quantities")}</caption><thead><tr><th>{t("Item")}</th><th>{t("Pledged")}</th><th>{t("Received")}</th><th>{t("Delivered")}</th><th>{t("Confirmed")}</th></tr></thead><tbody>{snapshot.campaign.items.map(item => <tr key={item.id} data-testid={`totals-${item.unit}`}><th>{item.name} ({item.unit})</th><td>{item.pledgedQty}</td><td>{item.receivedQty}</td><td>{item.deliveredQty}</td><td>{item.confirmedQty}</td></tr>)}</tbody></table></div>
     </section>
     <section className="card"><div className="actions"><button className="button secondary" disabled={busy} aria-pressed={action === 'receipt'} onClick={() => {setAction('receipt');setDraft({});setMessage('');}}>{t("R01 Receipt")}</button><button className="button secondary" disabled={busy} aria-pressed={action === 'delivery'} onClick={() => {setAction('delivery');setDraft({});setMessage('');}}>{t("D01 Delivery")}</button></div>
@@ -99,15 +99,15 @@ export function GoodsDemo() {
       {disputeOpen && <p className="notice" role="status">{t("Receipt and delivery are blocked while a dispute is open.")}</p>}
       {!permitted(action, actor) && <p className="notice error" role="alert">403 FORBIDDEN — {t('This simulated actor cannot record {action}. No real permissions are changed.', { action: t(action) })}</p>}
       <p id="goods-feedback" ref={summary} tabIndex={-1} role={error ? 'alert' : 'status'} className={error ? 'notice error' : 'notice'}>{t(message)}</p>
-      {result && <section aria-label="Latest mock result" className="notice"><h3>{t("Latest mock result")} · {result.outcome}</h3>
+      {result && <section aria-label="Latest mock result" className="notice"><h3>{t("Latest mock result")} · {status(result.outcome)}</h3>
         <p>{t("In-memory simulation only; no saved backend record or blockchain transaction.")}</p>
         {result.lines.map(line => <p key={line.name}>{line.name}: {line.quantity} {line.unit}</p>)}
-        {result.delivery && <><p className="mono">Delivery ID: {result.delivery.id}</p><p>{t('Review:')} {result.delivery.reviewStatus} · {t('Blockchain:')} {result.delivery.blockchainStatus}</p>{result.reason && <p>{t('Reason:')} {result.reason}</p>}</>}
+        {result.delivery && <><p className="mono">Delivery ID: {result.delivery.id}</p><p>{t('Review:')} {status(result.delivery.reviewStatus)} · {t('Blockchain:')} {status(result.delivery.blockchainStatus)}</p>{result.reason && <p>{t('Reason:')} {result.reason}</p>}</>}
       </section>}
       {view === 'loading' ? <p role="status">{t("Loading mock context…")}</p> : view === 'error' ? <div role="alert">{t('Mock context could not be loaded.')} <button className="button secondary" onClick={() => setView('ready')}>{t("Retry mock read")}</button></div> : view === 'empty' ? <p>{t("No eligible commitments or available goods in this simulated context.")}</p> : <form noValidate onSubmit={submit}>
         <fieldset disabled={busy || disputeOpen || !permitted(action, actor)} style={{ border: 0, padding: 0, minWidth: 0 }}>
-          {action === 'receipt' && <label className="field">{t("Eligible mock commitment")}<select value={contributionId} onChange={() => {}}><option value={contributionId}>F02 pledge · {snapshot.focalContribution.status}</option></select></label>}
-          {action === 'delivery' && <label className="field">{t("Outcome")}<select value={outcome} onChange={e => {setOutcome(e.target.value as typeof outcome);setDraft({});setEvidence([]);}}><option value="DELIVERED">DELIVERED</option><option value="FAILED">{t("FAILED · no goods effect")}</option></select></label>}
+          {action === 'receipt' && <label className="field">{t("Eligible mock commitment")}<select value={contributionId} onChange={() => {}}><option value={contributionId}>{t('F02 pledge')} · {status(snapshot.focalContribution.status)}</option></select></label>}
+          {action === 'delivery' && <label className="field">{t("Outcome")}<select value={outcome} onChange={e => {setOutcome(e.target.value as typeof outcome);setDraft({});setEvidence([]);}}><option value="DELIVERED">{status("DELIVERED")}</option><option value="FAILED">{t("Failed · no goods effect")}</option></select></label>}
           {!failed && rows.map(row => <div className="field-grid" key={row.id}><label className="checkbox"><input type="checkbox" checked={draft[row.id] !== undefined} onChange={e => setDraft(old => {const next = {...old}; if (e.target.checked) next[row.id] = '1'; else delete next[row.id]; return next;})}/>{row.name} ({row.unit}) · {action === 'receipt' ? t('Unreceived') : t('Available')}: {row.available}</label><label className="field">{t("{item} quantity", { item: row.name })}<input type="number" aria-invalid={lineError === row.id} aria-describedby={lineError === row.id ? "goods-feedback" : undefined} min="1" max={row.available} step="1" disabled={draft[row.id] === undefined} value={draft[row.id] ?? ''} onChange={e => setDraft(old => ({...old, [row.id]: e.target.value}))}/></label></div>)}
           {!failed && <label className="field">{action === 'receipt' ? t('Received at (UTC)') : t('Handed over at (UTC, optional)')}<input type="datetime-local" value={at} onChange={e => setAt(e.target.value)}/></label>}
           {action === 'receipt' && <label className="field">{t("Receipt note (optional)")}<textarea maxLength={500} value={note} onChange={e => setNote(e.target.value)}/></label>}
