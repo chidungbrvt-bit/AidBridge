@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { activeMemberships, canCreateCases, canReadCases, canReviewCases } from '@/lib/api-client';
 import { useSession } from './session-provider';
+import { disputeReturnPath } from '@/lib/login-return';
 
 export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const session = useSession();
@@ -15,7 +16,12 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const platformDispute = mode === "real" && user?.platformRole === "PLATFORM_ADMIN" && pathname.startsWith("/disputes/");
   const [actionError, setActionError] = useState('');
   const [busy, setBusy] = useState(false);
-  useEffect(() => { if (!loading && !user && !session.checkingFailed) router.replace('/login'); }, [loading, user, session.checkingFailed, router]);
+  useEffect(() => {
+    if (!loading && !user && !session.checkingFailed) {
+      const returnTo = disputeReturnPath(pathname);
+      router.replace(returnTo ? `/login?returnTo=${encodeURIComponent(returnTo)}` : '/login');
+    }
+  }, [loading, user, session.checkingFailed, pathname, router]);
   useEffect(() => {
     if (goodsReview && pathname !== goodsReview.route) router.replace(goodsReview.route);
   }, [goodsReview, pathname, router]);

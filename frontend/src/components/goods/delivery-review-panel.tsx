@@ -82,6 +82,17 @@ export function DeliveryReviewPanel({ detail, revision, onSaved }: {
       </label>}
       {selected && <>
         <p>Review status <StatusBadge status={selected.reviewStatus} /></p>
+        <div className="table-wrap"><table className="data-table">
+          <caption>Selected delivery items</caption>
+          <thead><tr><th scope="col">Item</th><th scope="col">Unit</th><th scope="col">Quantity</th></tr></thead>
+          <tbody>{selected.items.map(item => {
+            const metadata = totals.find(total => total.campaignItemId === item.campaignItemId);
+            return <tr key={item.campaignItemId}>
+              <th scope="row">{metadata?.itemName ?? item.campaignItemId}</th>
+              <td>{metadata?.unit ?? "Unavailable"}</td><td>{item.quantity}</td>
+            </tr>;
+          })}</tbody>
+        </table></div>
         <ul>{selected.evidenceVersionIds.map((id, index) => <li key={id}>
           <a href={`/api/evidence-versions/${encodeURIComponent(id)}/content`}>Delivery evidence {index + 1}</a>
         </li>)}</ul>
