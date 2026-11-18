@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSession } from "@/components/session-provider";
 import { canReviewCases } from "@/lib/api-client";
 import type { CaseDetailResponse, DecisionRequest, DecisionResponse, ReviewAction } from "@/lib/types";
+import { useI18n } from "@/components/i18n-provider";
 import { describeError, ErrorNotice, FieldError, focusFirstError, StatusBadge, type ErrorInfo, type FieldIssue } from "./shared";
 
 type ReviewAttempt = { action: ReviewAction; key: string; body: DecisionRequest };
@@ -15,6 +16,7 @@ export function ReviewPanel({ detail, onDecision, onRefresh, onBusyChange }: {
   onBusyChange: (busy: boolean) => void;
 }) {
   const { api, user, setNavigationLocked } = useSession();
+  const { t, status } = useI18n();
   const [reviewed, setReviewed] = useState<string[]>([]);
   const [reason, setReason] = useState("");
   const [error, setError] = useState<ErrorInfo | null>(null);
@@ -81,25 +83,25 @@ export function ReviewPanel({ detail, onDecision, onRefresh, onBusyChange }: {
     void send({ action, key: crypto.randomUUID(), body: { expectedVersion: detail.version, reviewedEvidenceVersionIds: [...reviewed], ...(reason.trim() ? { reason: reason.trim() } : {}) } });
   }
 
-  return <aside className="card stack review-panel" aria-label="Independent review">
-    <div><p className="eyebrow">INDEPENDENT REVIEW</p><h2>A second pair of eyes.</h2><p className="muted">Review case revision <strong>{detail.version}</strong> and its evidence snapshot.</p></div>
-    {success && <div className="notice success" role="status"><strong>Review recorded</strong><p>Business status: <StatusBadge status={success.caseStatus} /></p><p>Chain status: <StatusBadge status={success.blockchainStatus} /></p>{success.caseStatus === "VERIFIED" && <p>Approval is complete in the application. A pending chain record is not a confirmed transaction.</p>}</div>}
-    {!roleAllowed && <p className="notice">An active VERIFIER membership is required for review.</p>}
-    {isCreator && <p className="notice">You created this case. Another person must review it, even if you also have the VERIFIER role.</p>}
-    {detail.status !== "SUBMITTED" && !success && <p className="notice">This case is {detail.status}. Review actions are available only for submitted cases.</p>}
+  return <aside className="card stack review-panel" aria-label={t("Independent review")}>
+    <div><p className="eyebrow">{t("INDEPENDENT REVIEW")}</p><h2>{t("A second pair of eyes.")}</h2><p className="muted">{t("Review case revision {n} and its evidence snapshot.", { n: detail.version })}</p></div>
+    {success && <div className="notice success" role="status"><strong>{t("Review recorded")}</strong><p>{t("Business status:")} <StatusBadge status={success.caseStatus} /></p><p>{t("Chain status:")} <StatusBadge status={success.blockchainStatus} /></p>{success.caseStatus === "VERIFIED" && <p>{t("Approval is complete in the application. A pending chain record is not a confirmed transaction.")}</p>}</div>}
+    {!roleAllowed && <p className="notice">{t("An active VERIFIER membership is required for review.")}</p>}
+    {isCreator && <p className="notice">{t("You created this case. Another person must review it, even if you also have the VERIFIER role.")}</p>}
+    {detail.status !== "SUBMITTED" && !success && <p className="notice">{t("This case is {status}. Review actions are available only for submitted cases.", { status: status(detail.status) })}</p>}
     <form ref={form} onSubmit={event => event.preventDefault()} className="stack">
       <ErrorNotice error={error} />
-      {mustRefresh && <button type="button" className="button secondary" onClick={onRefresh}>Refresh before reviewing again</button>}
-      {uncertain && <div className="notice" role="status"><strong>The review outcome is unknown.</strong><p>The same action, snapshot, reason, and Idempotency-Key will be reused. Retry before leaving this page.</p><button className="button" type="button" disabled={busy} onClick={() => { if (pending.current) void send(pending.current); }}>{busy ? "Resolving review…" : "Retry same request"}</button></div>}
+      {mustRefresh && <button type="button" className="button secondary" onClick={onRefresh}>{t("Refresh before reviewing again")}</button>}
+      {uncertain && <div className="notice" role="status"><strong>{t("The review outcome is unknown.")}</strong><p>{t("The same action, snapshot, reason, and Idempotency-Key will be reused. Retry before leaving this page.")}</p><button className="button" type="button" disabled={busy} onClick={() => { if (pending.current) void send(pending.current); }}>{busy ? t("Resolving review…") : t("Retry same request")}</button></div>}
       <fieldset disabled={locked} className="form-fieldset stack">
-        <legend className="field-legend">Confirm the reviewed evidence</legend>
-        <div className="stack evidence-review">{detail.evidenceVersions.map((item, index) => <label className="checkbox" key={item.id}><input type="checkbox" name="reviewedEvidenceVersionIds" value={item.id} checked={reviewed.includes(item.id)} onChange={event => setReviewed(current => event.target.checked ? [...current, item.id] : current.filter(id => id !== item.id))} aria-describedby="error-reviewedEvidenceVersionIds" /><span><strong>Evidence {index + 1} · version {item.versionNo}</strong></span></label>)}</div>
+        <legend className="field-legend">{t("Confirm the reviewed evidence")}</legend>
+        <div className="stack evidence-review">{detail.evidenceVersions.map((item, index) => <label className="checkbox" key={item.id}><input type="checkbox" name="reviewedEvidenceVersionIds" value={item.id} checked={reviewed.includes(item.id)} onChange={event => setReviewed(current => event.target.checked ? [...current, item.id] : current.filter(id => id !== item.id))} aria-describedby="error-reviewedEvidenceVersionIds" /><span><strong>{t("Evidence {n} · version {v}", { n: index + 1, v: item.versionNo })}</strong></span></label>)}</div>
         <FieldError name="reviewedEvidenceVersionIds" issues={issues} />
         <FieldError name="expectedVersion" issues={issues} />
-        <label className="field"><span>Review reason</span><textarea name="reason" aria-label="Review reason" value={reason} onChange={event => setReason(event.target.value)} rows={4} maxLength={2000} placeholder="Required for rejection or a request for changes" aria-invalid={issues.some(issue => issue.field === "reason")} aria-describedby={issues.some(issue => issue.field === "reason") ? "error-reason" : "reason-help"} /><span id="reason-help" className="muted">Required for reject and request changes; optional for approval.</span><FieldError name="reason" issues={issues} /></label>
-        <div className="stack review-actions"><button type="button" className="button" onClick={() => decide("verify")}>{busy ? "Submitting review…" : "Approve case"}</button><button type="button" className="button secondary" onClick={() => decide("request-changes")}>Request changes</button><button type="button" className="button danger" onClick={() => decide("reject")}>Reject case</button></div>
+        <label className="field"><span>{t("Review reason")}</span><textarea name="reason" aria-label={t("Review reason")} value={reason} onChange={event => setReason(event.target.value)} rows={4} maxLength={2000} placeholder={t("Required for rejection or a request for changes")} aria-invalid={issues.some(issue => issue.field === "reason")} aria-describedby={issues.some(issue => issue.field === "reason") ? "error-reason" : "reason-help"} /><span id="reason-help" className="muted">{t("Required for reject and request changes; optional for approval.")}</span><FieldError name="reason" issues={issues} /></label>
+        <div className="stack review-actions"><button type="button" className="button" onClick={() => decide("verify")}>{busy ? t("Submitting review…") : t("Approve case")}</button><button type="button" className="button secondary" onClick={() => decide("request-changes")}>{t("Request changes")}</button><button type="button" className="button danger" onClick={() => decide("reject")}>{t("Reject case")}</button></div>
       </fieldset>
     </form>
-    <p className="muted footnote">The API checks your identity, role, case revision, and evidence versions again when you submit.</p>
+    <p className="muted footnote">{t("The API checks your identity, role, case revision, and evidence versions again when you submit.")}</p>
   </aside>;
 }

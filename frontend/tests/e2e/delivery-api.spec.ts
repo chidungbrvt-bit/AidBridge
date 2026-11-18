@@ -105,7 +105,7 @@ test('D01 refreshes stock after a conflict and replays a lost success with the s
   await expect(quantity).toBeDisabled();
   await retry.click();
   const success = panel.getByRole('status').filter({ hasText: 'Delivery recorded' });
-  await expect(success).toContainText('PENDING ON CHAIN');
+  await expect(success).toContainText('Pending on chain');
   await expect(success).toContainText(deliveryId);
   await expect(panel.getByText('Available: 0')).toBeVisible();
   expect(state.writes).toHaveLength(3);
@@ -125,7 +125,7 @@ test('D01 FAILED sends a reason and empty arrays and keeps stock unchanged', asy
   await panel.getByLabel('Reason for failed attempt').fill('Road was closed.');
   await panel.getByRole('button', { name: 'Record delivery' }).click();
   const success = panel.getByRole('status').filter({ hasText: 'Failed attempt recorded' });
-  await expect(success.getByText('NOT APPLICABLE', { exact: true })).toHaveCount(2);
+  await expect(success.getByText('Not applicable', { exact: true })).toHaveCount(2);
   expect(state.writes[0].body).toEqual({
     outcome: 'FAILED', items: [], evidenceVersionIds: [], reason: 'Road was closed.',
   });

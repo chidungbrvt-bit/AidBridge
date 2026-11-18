@@ -88,25 +88,25 @@ test('real HTTP: separate A/B sessions, create, denied self-review, revise/resub
     expect(evidence.headers()['cache-control']).toContain('no-store');
     await b.getByLabel('Review reason').fill('Clarify the fictional household quantity.');
     await b.getByRole('button', { name: 'Request changes', exact: true }).click();
-    await expect(b.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('CHANGES REQUESTED');
+    await expect(b.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('Changes requested');
     await a.goto(`/cases/${item.id}/edit`);
     await selectOrganization(a);
     await a.getByLabel('Item 1 quantity', { exact: true }).fill('3');
     await a.getByRole('button', { name: 'Save revision', exact: true }).click();
     await expect(a.getByText(/Revision saved/)).toBeVisible();
     await a.getByRole('button', { name: 'Resubmit for review', exact: true }).click();
-    await expect(a.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('SUBMITTED');
+    await expect(a.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('Submitted');
     await b.reload();
     await selectOrganization(b);
     await acknowledge();
     await b.getByRole('button', { name: 'Approve case', exact: true }).click();
-    await expect(b.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('VERIFIED');
-    await expect(b.locator('.status-card').filter({ hasText: 'BLOCKCHAIN SYNC' })).toContainText('PENDING ON CHAIN');
+    await expect(b.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('Verified');
+    await expect(b.locator('.status-card').filter({ hasText: 'BLOCKCHAIN SYNC' })).toContainText('Pending on chain');
     await b.reload();
     await selectOrganization(b);
-    await expect(b.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('VERIFIED');
+    await expect(b.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('Verified');
     // B04 detail does not project chain state. Do not invent confirmation after refresh.
-    await expect(b.locator('.status-card').filter({ hasText: 'BLOCKCHAIN SYNC' })).toContainText('UNKNOWN');
+    await expect(b.locator('.status-card').filter({ hasText: 'BLOCKCHAIN SYNC' })).toContainText('Unknown');
     expect(await a.evaluate(() => Object.keys(localStorage))).toEqual([]);
   } finally {
     for (const page of [a, b]) {

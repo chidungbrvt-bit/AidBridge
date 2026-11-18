@@ -99,11 +99,11 @@ test("A creates two items; self review denied; B approves with distinct business
   expect((await downloaded).suggestedFilename()).toBe("fictional-evidence.txt");
   await acknowledgeEvidence(page);
   await page.getByRole("button", { name: "Approve case", exact: true }).click();
-  await expect(businessCard(page).getByText("VERIFIED", { exact: true })).toBeVisible();
-  await expect(chainCard(page).getByText("PENDING ON CHAIN", { exact: true })).toBeVisible();
+  await expect(businessCard(page).getByText("Verified", { exact: true })).toBeVisible();
+  await expect(chainCard(page).getByText("Pending on chain", { exact: true })).toBeVisible();
   await page.reload();
-  await expect(businessCard(page).getByText("VERIFIED", { exact: true })).toBeVisible();
-  await expect(chainCard(page).getByText("PENDING ON CHAIN", { exact: true })).toBeVisible();
+  await expect(businessCard(page).getByText("Verified", { exact: true })).toBeVisible();
+  await expect(chainCard(page).getByText("Pending on chain", { exact: true })).toBeVisible();
 });
 
 for (const action of [
@@ -121,7 +121,7 @@ for (const action of [
     await page.locator('textarea[name="reason"]').fill("Fictional assessment requires clearer supporting evidence.");
     await page.getByRole("button", { name: action.button, exact: true }).click();
     await expect(businessCard(page).getByText(action.status, { exact: true })).toBeVisible();
-    await expect(chainCard(page).getByText("NOT APPLICABLE", { exact: true })).toBeVisible();
+    await expect(chainCard(page).getByText("Not applicable", { exact: true })).toBeVisible();
   });
 }
 
@@ -141,7 +141,7 @@ test("a stale revision blocks review until refresh and renewed evidence acknowle
   await expect(page.locator('input[name="reviewedEvidenceVersionIds"]').first()).not.toBeChecked();
   await acknowledgeEvidence(page);
   await page.getByRole("button", { name: "Approve case", exact: true }).click();
-  await expect(businessCard(page).getByText("VERIFIED", { exact: true })).toBeVisible();
+  await expect(businessCard(page).getByText("Verified", { exact: true })).toBeVisible();
 });
 
 test("server validation maps to the duplicate need row and focuses that input", async ({ page }) => {
@@ -157,7 +157,7 @@ test("server validation maps to the duplicate need row and focuses that input", 
   await page.getByLabel("Item 2 name", { exact: true }).fill("Hygiene kit");
   await page.getByLabel("Item 2 unit", { exact: true }).fill("kit");
   await page.getByRole("button", { name: "Submit case", exact: true }).click();
-  await expect(businessCard(page).getByText("SUBMITTED", { exact: true })).toBeVisible();
+  await expect(businessCard(page).getByText("Submitted", { exact: true })).toBeVisible();
 });
 
 test("unknown create outcome survives Back and transient session failure without a second case", async ({ page }) => {
@@ -221,6 +221,6 @@ test("mobile login, list, creation and detail stay within the viewport", async (
   await fillCreateForm(page, "mobile");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
   await page.getByRole("button", { name: "Submit case", exact: true }).click();
-  await expect(businessCard(page).getByText("SUBMITTED", { exact: true })).toBeVisible();
+  await expect(businessCard(page).getByText("Submitted", { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 });

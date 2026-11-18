@@ -20,8 +20,8 @@ test('R01 partial receipt updates immediately; no B08/B09 network writes',async(
   expect(writes).toEqual([]);
 });
 test('D01 delivery keeps confirmed separate; failed attempt zero effect',async({page})=>{
-  await page.getByRole('button',{name:'Load S2 partial receipt fixture',exact:true}).click();
-  await page.getByRole('button',{name:'D01 Delivery',exact:true}).click(); await page.getByLabel('Simulated actor').selectOption('fieldVolunteer');
+  await page.getByRole('button',{name:'Load partial receipt sample',exact:true}).click();
+  await page.getByRole('button',{name:'Deliver goods',exact:true}).click(); await page.getByLabel('Simulated actor').selectOption('fieldVolunteer');
   await goods(page,'4','1'); await page.getByRole('checkbox',{name:'Fictional evidence 1',exact:true}).check();
   await page.getByRole('button',{name:'Record mock delivery',exact:true}).click();
   await expect(page.getByRole('status').filter({hasText:'Awaiting independent confirmation'})).toBeVisible();
@@ -58,8 +58,8 @@ test('mobile form and shell remain usable without page overflow',async({page})=>
 });
 
 test('D01 over-delivery has line feedback and no writes; corrected request succeeds', async ({page}) => {
-  await page.getByRole('button',{name:'Load S2 partial receipt fixture',exact:true}).click();
-  await page.getByRole('button',{name:'D01 Delivery',exact:true}).click();
+  await page.getByRole('button',{name:'Load partial receipt sample',exact:true}).click();
+  await page.getByRole('button',{name:'Deliver goods',exact:true}).click();
   await page.getByLabel('Simulated actor').selectOption('fieldVolunteer');
   await goods(page,'4','2'); await page.getByRole('checkbox',{name:'Fictional evidence 1',exact:true}).check();
   await page.getByRole('button',{name:'Record mock delivery',exact:true}).click();
@@ -70,13 +70,13 @@ test('D01 over-delivery has line feedback and no writes; corrected request succe
   await expect(page.getByRole('region',{name:'Latest mock result',exact:true})).toHaveCount(0);
   await page.getByLabel('Drinking Water quantity').fill('1');
   await page.getByRole('button',{name:'Record mock delivery',exact:true}).click();
-  await expect(page.getByRole('region',{name:'Latest mock result',exact:true})).toContainText('DELIVERED');
+  await expect(page.getByRole('region',{name:'Latest mock result',exact:true})).toContainText('Delivered');
   await expect(page.getByTestId('totals-kg').locator('td')).toHaveText(['14','7','5','0']);
 });
 test('FAILED requires reason and records zero effective goods after partial receipt', async ({page}) => {
   await goods(page,'5','1'); await page.getByRole('button',{name:'Record mock receipt',exact:true}).click();
   await expect(page.getByRole('status').filter({hasText:'Mock receipt recorded'})).toBeVisible();
-  await page.getByRole('button',{name:'D01 Delivery',exact:true}).click();
+  await page.getByRole('button',{name:'Deliver goods',exact:true}).click();
   await page.getByLabel('Simulated actor').selectOption('fieldVolunteer');
   await page.getByRole('combobox',{name:/^Outcome/}).selectOption('FAILED');
   await page.getByRole('button',{name:'Record mock delivery',exact:true}).click();
@@ -84,10 +84,10 @@ test('FAILED requires reason and records zero effective goods after partial rece
   await page.getByLabel('Delivery reason').fill('Fictional road blocked');
   await page.getByRole('button',{name:'Record mock delivery',exact:true}).click();
   const result=page.getByRole('region',{name:'Latest mock result',exact:true});
-  await expect(result).toContainText('FAILED');await expect(result).toContainText('Reason: Fictional road blocked');
-  await expect(result).toContainText('Blockchain: NOT_APPLICABLE');
+  await expect(result).toContainText('Failed');await expect(result).toContainText('Reason: Fictional road blocked');
+  await expect(result).toContainText('Blockchain: Not applicable');
   await expect(page.getByTestId('totals-kg').locator('td')).toHaveText(['14','7','1','0']);
   await expect(page.getByTestId('totals-box').locator('td')).toHaveText(['3','1','0','0']);
-  await page.getByRole('button',{name:'R01 Receipt',exact:true}).click();
+  await page.getByRole('button',{name:'Receive goods',exact:true}).click();
   await expect(page.getByRole('checkbox',{name:/^Rice/})).toHaveAccessibleName(/^Rice \(kg\).*Unreceived: 3$/);
 });

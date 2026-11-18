@@ -4,12 +4,14 @@ import { useState } from "react";
 import { useSession } from "@/components/session-provider";
 import { describeError, ErrorNotice, type ErrorInfo } from "@/components/cases/shared";
 import type { GoodsReviewAction } from "@/lib/goods";
+import { useI18n } from "@/components/i18n-provider";
 import type { GoodsReviewAttempt } from "@/lib/session-work";
 
 export function useGoodsReviewWrite(
   route: string, onSaved: () => void, onConflict?: () => void, organizationId?: string,
 ) {
   const { api, user, goodsReview, getGoodsReview, setGoodsReview, refreshUser } = useSession();
+  const { t } = useI18n();
   const pending = goodsReview?.route === route ? goodsReview : null;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ErrorInfo | null>(null);
@@ -67,9 +69,9 @@ export function useGoodsReviewWrite(
     },
     feedback: <>
       <ErrorNotice error={error} />
-      {pending && !pending.inFlight && <button type="button" className="button secondary" onClick={() => void send(pending)}>Retry same request</button>}
-      {(busy || pending?.inFlight) && <p role="status">Saving decision…</p>}
-      {saved && <p role="status">Decision saved.</p>}
+      {pending && !pending.inFlight && <button type="button" className="button secondary" onClick={() => void send(pending)}>{t("Retry same request")}</button>}
+      {(busy || pending?.inFlight) && <p role="status">{t("Saving decision…")}</p>}
+      {saved && <p role="status">{t("Decision saved.")}</p>}
     </>,
   };
 }
