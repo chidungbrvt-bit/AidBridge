@@ -93,11 +93,24 @@ class DonorUiE2EIT extends AbstractCampaignHttpIT {
         ProcessBuilder builder = new ProcessBuilder(command).directory(cwd.toFile()).redirectErrorStream(true)
                 .redirectOutput(ProcessBuilder.Redirect.appendTo(output.toFile()));
         builder.environment().putAll(env);
-        Process child = builder.start();
-        try {
-            assertThat(child.waitFor(5, TimeUnit.MINUTES)).as("CI child process deadline").isTrue();
-            System.out.println(Files.readString(output).replace(env.get("F07_E2E_DONOR_PASSWORD"), "[REDACTED]"));
-            assertThat(child.exitValue()).as("CI child exit status").isZero();
-        } finally { if (child.isAlive()) child.destroyForcibly(); }
+        for (int attempt = 0; attempt < 2; attempt++) {
+            int priorLength = Files.exists(output) ? Files.readString(output).length() : 0;
+            Process child = builder.start();
+            try {
+                assertThat(child.waitFor(5, TimeUnit.MINUTES)).as("CI child process deadline").isTrue();
+                String latest = Files.readString(output).substring(priorLength);
+                System.out.println(latest.replace(env.get("F07_E2E_DONOR_PASSWORD"), "[REDACTED]"));
+                // Retry only the observed Windows build-directory failure, never a browser/test assertion.
+                if (attempt == 0 && child.exitValue() != 0 && System.getProperty("os.name").startsWith("Windows")
+                        && List.of(command).contains("build")
+                        && latest.contains("Error: EPERM: operation not permitted, mkdir ")
+                        && !latest.contains("Type error:") && !latest.contains("Module not found")) {
+                    System.out.println("Retrying Windows build-directory EPERM once; original output retained.");
+                    continue;
+                }
+                assertThat(child.exitValue()).as("CI child exit status").isZero();
+                return;
+            } finally { if (child.isAlive()) child.destroyForcibly(); }
+        }
     }
 }
