@@ -641,6 +641,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### F09 - Confirmation/dispute/full timeline
 
+- **Minh 18/11, In Review:** Đồng bộ `main@fbf8c3e` và `dung@9f29b76`. D02 hiển thị số lượng từng mặt hàng của delivery đang chọn theo `campaignItemId`; truy cập dispute chưa đăng nhập quay lại đúng `/disputes/{id}` sau login. SHA `667147f` chạy 77 frontend unit, 8 Playwright real (gồm hai ca mới), 9 Java validation và 1 Java browser host: 0 fail/error/skip; typecheck/build PASS. [Bàn giao và JUnit](../handoffs/MINH_F09_2026-11-18.md). Candidate local có API bổ sung PR #31, worker tắt; staging/Fuji chưa chạy. Dũng tiếp tục review quyền evidence và `reviewCampaign`.
+
 - **Minh 17/11, In Review:** Đóng campaign tự cập nhật COMPLETED trên trang đang mở. D02 giữ payload/key qua mất response và 401, chỉ khôi phục với cùng tài khoản. Playwright real 6 pass, 0 fail/skip trên `a2de59e`. [Kết quả review PR #31](../reviews/F10_HOSTING_AUDIT_CHECKLIST_2026_11_15.md#i-sửa-review-pr-31-ngày-17112026).
 
 - **Minh 16/11, In Review:** PR #30 đã merge tại `15bcba4`. Nhánh `minh` đã gộp `main@627be56` và `dung@f85d390`. F09 ghép R01/D01, D02, S01/S03 và P05 với B10. Playwright real 6 pass, 0 fail/skip trên `5815d71`. [Kiểm thử và trạng thái nghiệm thu](../reviews/F10_HOSTING_AUDIT_CHECKLIST_2026_11_15.md#h-f09-sau-khi-pr-30-merge).
