@@ -98,3 +98,11 @@ Xem [bàn giao F05/F09/F10 hiện hành, JUnit và giới hạn](../docs/handoff
 `API_INTERNAL_BASE_URL` được Next ghi vào rewrite của bản build. Đặt đúng origin backend **trước `npm run build`**; chỉ đổi biến lúc `npm start` không đổi đích rewrite đã build. Khi đổi backend origin/port, build lại rồi smoke `/api/auth/csrf`, login, `/me`, T01/T02 trước khi dùng. Không dùng nguyên build trỏ port ngẫu nhiên của E2E cho một backend khác.
 
 F10 local dùng DB giả lập riêng, worker tắt và HTTPS loopback với CA test riêng. Public hosting cần target, phê duyệt, kiểm chi phí, HTTPS/cookie/CSRF, private networking và recovery trên deployment thật. Không xem local PASS là public hosting hoặc Goods Fuji PASS; không rollback sang bản B09 chưa xử lý delivery void.
+
+## Ngôn ngữ EN / VI
+
+- Nút **EN | VI** nằm ở thanh trên cùng của workspace, trang đăng nhập và trang audit công khai. Bấm một lần là đổi toàn bộ giao diện, không tải lại trang.
+- Mặc định là tiếng Anh, nên các test e2e cũ vẫn tìm phần tử theo chữ tiếng Anh. Lựa chọn chỉ được lưu vào `localStorage` (`aidbridge.language`) sau khi người dùng bấm.
+- Câu tiếng Anh là key: `const { t } = useI18n(); t("Sign out")`, có tham số thì `t("Page {n}", { n: 2 })`. Bản dịch nằm ở `src/lib/i18n/vi.ts`; câu nào chưa có bản dịch thì tự hiện tiếng Anh.
+- Không dịch: tên tổ chức, nội dung người dùng nhập, tx hash, địa chỉ registry, mã lỗi (`VERSION_CONFLICT`…) và `detail` do backend trả về.
+- Test: `npx playwright test --project=mock tests/e2e/language-toggle.spec.ts`.

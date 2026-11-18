@@ -7,6 +7,7 @@ import { formatUtc } from "@/lib/display";
 import type { OutstandingCommitment, ReceiptRequest, ReceiptResponse } from "@/lib/goods";
 import type { ReceiptAttempt } from "@/lib/session-work";
 import type { CaseDetailResponse } from "@/lib/types";
+import { useI18n } from "@/components/i18n-provider";
 import { describeError, ErrorNotice, FieldError, StatusBadge, type ErrorInfo } from "@/components/cases/shared";
 
 export function ReceiptPanel({ detail, onRecorded }: { detail: CaseDetailResponse; onRecorded: () => void }) {
@@ -19,6 +20,7 @@ function StaffReceipt({ caseId, organizationId, actorId, onRecorded }: {
   caseId: string; organizationId: string; actorId: string; onRecorded: () => void;
 }) {
   const { api, work } = useSession();
+  const { t } = useI18n();
   const scope = `${actorId}:${organizationId}:${caseId}`;
   const [commitments, setCommitments] = useState<OutstandingCommitment[]>([]);
   const [commitmentId, setCommitmentId] = useState("");
@@ -132,43 +134,43 @@ function StaffReceipt({ caseId, organizationId, actorId, onRecorded }: {
   const locked = busy || loading || !!retry || !!readError;
   const submittedItems = commitment?.items.filter(item => quantities[item.contributionItemId]) ?? [];
 
-  return <section className="card stack" aria-label="Goods receipt">
-    <div><h2>Record goods receipt</h2><p className="muted">Select the commitment and quantities received by your organization.</p></div>
+  return <section className="card stack" aria-label={t("Goods receipt")}>
+    <div><h2>{t("Record goods receipt")}</h2><p className="muted">{t("Select the commitment and quantities received by your organization.")}</p></div>
     {result && <div className="notice success" role="status" data-receipt-id={result.id}>
-      <strong>Receipt recorded</strong>
-      <p>Blockchain sync: <StatusBadge status={result.blockchainStatus} /></p>
+      <strong>{t("Receipt recorded")}</strong>
+      <p>{t("Blockchain sync:")} <StatusBadge status={result.blockchainStatus} /></p>
     </div>}
     <ErrorNotice error={writeError} />
     <ErrorNotice error={readError} />
-    {readError && <button className="button secondary" type="button" disabled={busy || loading} onClick={() => void refresh()}>Reload receipt context</button>}
-    {loading && <p role="status">Loading outstanding commitments…</p>}
-    {retry && <button type="button" className="button secondary" disabled={busy || loading} onClick={() => void send(retry)}>Retry same receipt</button>}
-    {!loading && !readError && !commitment && <p>No commitments have goods outstanding.</p>}
+    {readError && <button className="button secondary" type="button" disabled={busy || loading} onClick={() => void refresh()}>{t("Reload receipt context")}</button>}
+    {loading && <p role="status">{t("Loading outstanding commitments…")}</p>}
+    {retry && <button type="button" className="button secondary" disabled={busy || loading} onClick={() => void send(retry)}>{t("Retry same receipt")}</button>}
+    {!loading && !readError && !commitment && <p>{t("No commitments have goods outstanding.")}</p>}
     {commitment && <form className="stack" onSubmit={submit}>
       <fieldset className="form-fieldset stack" disabled={locked}>
-        <label className="field">Outstanding commitment
+        <label className="field">{t("Outstanding commitment")}
           <select value={commitment.contributionId} onChange={event => { setCommitmentId(event.target.value); setQuantities({}); setWriteError(null); }}>
-            {commitments.map((row, index) => <option key={row.contributionId} value={row.contributionId}>Pledge {index + 1} · {formatUtc(row.pledgedAt)} · {row.status.replaceAll("_", " ")}</option>)}
+            {commitments.map((row, index) => <option key={row.contributionId} value={row.contributionId}>{t("Pledge {n}", { n: index + 1 })} · {formatUtc(row.pledgedAt)} · {t(row.status.replaceAll("_", " "))}</option>)}
           </select>
         </label>
         {commitment.items.map(row => {
           const sentIndex = submittedItems.findIndex(item => item.contributionItemId === row.contributionItemId);
-          return <label key={row.contributionItemId} className="field">{row.itemName} quantity ({row.unit})
-            <span className="muted" data-testid={`outstanding-${row.contributionItemId}`}>Outstanding: {row.outstandingQty}</span>
-            <input aria-label={`${row.itemName} receipt quantity (${row.unit})`} type="number" min={1} max={row.outstandingQty} step={1}
+          return <label key={row.contributionItemId} className="field">{t("{item} quantity ({unit})", { item: row.itemName, unit: row.unit })}
+            <span className="muted" data-testid={`outstanding-${row.contributionItemId}`}>{t("Outstanding: {n}", { n: row.outstandingQty })}</span>
+            <input aria-label={t("{item} receipt quantity ({unit})", { item: row.itemName, unit: row.unit })} type="number" min={1} max={row.outstandingQty} step={1}
               value={quantities[row.contributionItemId] ?? ""} onChange={event => setQuantities({ ...quantities, [row.contributionItemId]: event.target.value })} />
             {sentIndex >= 0 && <FieldError name={`items[${sentIndex}].quantity`} issues={fieldErrors} />}
           </label>;
         })}
-        <label className="field">Received at (UTC, defaults to now)
+        <label className="field">{t("Received at (UTC, defaults to now)")}
           <input type="datetime-local" value={receivedAt} onChange={event => setReceivedAt(event.target.value)} />
           <FieldError name="receivedAt" issues={fieldErrors} />
         </label>
-        <label className="field">Receipt note (optional)
+        <label className="field">{t("Receipt note (optional)")}
           <textarea maxLength={500} value={note} onChange={event => setNote(event.target.value)} />
           <FieldError name="note" issues={fieldErrors} />
         </label>
-        <button className="button" type="submit">Record receipt</button>
+        <button className="button" type="submit">{t("Record receipt")}</button>
       </fieldset>
     </form>}
   </section>;

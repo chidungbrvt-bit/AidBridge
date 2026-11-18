@@ -9,11 +9,13 @@ import type { CaseDetailResponse } from "@/lib/types";
 import type { StaffCaseDetail } from "@/lib/goods";
 import { formatUtc } from "@/lib/display";
 import { useGoodsReviewWrite } from "./goods-review-write";
+import { useI18n } from "@/components/i18n-provider";
 
 export function DeliveryReviewPanel({ detail, revision, onSaved }: {
   detail: CaseDetailResponse; revision: number; onSaved: () => void;
 }) {
   const { api, user } = useSession();
+  const { t } = useI18n();
   const [staff, setStaff] = useState<StaffCaseDetail>();
   const [readError, setReadError] = useState<ErrorInfo | null>(null);
   const [reload, setReload] = useState(0);
@@ -54,72 +56,72 @@ export function DeliveryReviewPanel({ detail, revision, onSaved }: {
   const canDispute = canOpenCaseDispute(user, detail.organizationId) && campaign;
   const reasonReady = reason.trim().length > 0 && !/[<>\x00]/.test(reason);
 
-  return <section className="card stack" aria-label="Delivery review">
-    <div className="toolbar"><h2>Delivery review</h2>
-      <button type="button" className="button secondary" disabled={write.disabled} onClick={refresh}>Refresh delivery review</button>
+  return <section className="card stack" aria-label={t("Delivery review")}>
+    <div className="toolbar"><h2>{t("Delivery review")}</h2>
+      <button type="button" className="button secondary" disabled={write.disabled} onClick={refresh}>{t("Refresh delivery review")}</button>
     </div>
     {write.feedback}
     <ErrorNotice error={readError} />
-    {!staff && !readError && <p role="status">Loading delivery review…</p>}
+    {!staff && !readError && <p role="status">{t("Loading delivery review…")}</p>}
     {staff && (!deliveries || !disputes || !totals || staff.reviewCampaign === undefined) &&
-      <p>Delivery review is unavailable on this API.</p>}
+      <p>{t("Delivery review is unavailable on this API.")}</p>}
     {staff && deliveries && disputes && totals && staff.reviewCampaign !== undefined && <>
-      {campaign && <p>Campaign status <StatusBadge status={campaign.status} /></p>}
-      <p>Open disputes: {openCount}</p>
+      {campaign && <p>{t("Campaign status")} <StatusBadge status={campaign.status} /></p>}
+      <p>{t("Open disputes: {n}", { n: openCount ?? 0 })}</p>
       {!!totals.length && <div className="table-wrap"><table className="data-table">
-        <caption className="sr-only">Delivery totals</caption>
-        <thead><tr><th scope="col">Item</th><th scope="col">Target</th><th scope="col">Received</th><th scope="col">Delivered</th><th scope="col">Confirmed</th></tr></thead>
+        <caption className="sr-only">{t("Delivery totals")}</caption>
+        <thead><tr><th scope="col">{t("Item")}</th><th scope="col">{t("Target")}</th><th scope="col">{t("Received")}</th><th scope="col">{t("Delivered")}</th><th scope="col">{t("Confirmed")}</th></tr></thead>
         <tbody>{totals.map(row => <tr key={row.campaignItemId}><th scope="row">{row.itemName} ({row.unit})</th><td>{row.targetQty}</td><td>{row.receivedQty}</td><td>{row.deliveredQty}</td><td>{row.confirmedQty}</td></tr>)}</tbody>
       </table></div>}
-      {deliveries.length === 0 ? <p>No deliveries recorded.</p> : <label>Delivery
-        <select aria-label="Delivery to review" value={deliveryId} disabled={write.disabled} onChange={event => {
+      {deliveries.length === 0 ? <p>{t("No deliveries recorded.")}</p> : <label>{t("Delivery")}
+        <select aria-label={t("Delivery to review")} value={deliveryId} disabled={write.disabled} onChange={event => {
           setDeliveryId(event.target.value);
           setReviewed(false);
         }}>
-          <option value="">Select a delivery</option>
+          <option value="">{t("Select a delivery")}</option>
           {deliveries.filter(row => row.outcome === "DELIVERED").map((row, index) =>
-            <option key={row.id} value={row.id}>Delivery {index + 1} · {formatUtc(row.recordedAt)} · {row.reviewStatus.replaceAll("_", " ")}</option>)}
+            <option key={row.id} value={row.id}>{t("Delivery {n}", { n: index + 1 })} · {formatUtc(row.recordedAt)} · {t(row.reviewStatus.replaceAll("_", " "))}</option>)}
         </select>
       </label>}
       {selected && <>
-        <p>Review status <StatusBadge status={selected.reviewStatus} /></p>
+        <p>{t("Review status")} <StatusBadge status={selected.reviewStatus} /></p>
         <div className="table-wrap"><table className="data-table">
-          <caption>Selected delivery items</caption>
-          <thead><tr><th scope="col">Item</th><th scope="col">Unit</th><th scope="col">Quantity</th></tr></thead>
+          <caption>{t("Selected delivery items")}</caption>
+          <thead><tr><th scope="col">{t("Item")}</th><th scope="col">{t("Unit")}</th><th scope="col">{t("Quantity")}</th></tr></thead>
           <tbody>{selected.items.map(item => {
             const metadata = totals.find(total => total.campaignItemId === item.campaignItemId);
             return <tr key={item.campaignItemId}>
-              <th scope="row">{metadata?.itemName ?? "Unknown item"}</th>
-              <td>{metadata?.unit ?? "Unavailable"}</td><td>{item.quantity}</td>
+              <th scope="row">{metadata?.itemName ?? t("Unknown item")}</th>
+              <td>{metadata?.unit ?? t("Unavailable")}</td><td>{item.quantity}</td>
             </tr>;
           })}</tbody>
         </table></div>
         <ul>{selected.evidenceVersionIds.map((id, index) => <li key={id}>
-          <a href={`/api/evidence-versions/${encodeURIComponent(id)}/content`}>Delivery evidence {index + 1}</a>
+          <a href={`/api/evidence-versions/${encodeURIComponent(id)}/content`}>{t("Delivery evidence {n}", { n: index + 1 })}</a>
         </li>)}</ul>
-        {selfRecorded && <p>You recorded this delivery. Another account must confirm it.</p>}
+        {selfRecorded && <p>{t("You recorded this delivery. Another account must confirm it.")}</p>}
       </>}
       {canConfirm && <label><input type="checkbox" checked={reviewed} disabled={write.disabled}
-        onChange={event => setReviewed(event.target.checked)} /> I reviewed the delivery evidence</label>}
-      {(canConfirm || canDispute) && <label>Dispute or review reason
+        onChange={event => setReviewed(event.target.checked)} /> {t("I reviewed the delivery evidence")}</label>}
+      {(canConfirm || canDispute) && <label>{t("Dispute or review reason")}
         <textarea value={reason} maxLength={2000} disabled={write.disabled} onChange={event => setReason(event.target.value)} />
       </label>}
       <div className="actions">
         {canConfirm && <>
           <button className="button" type="button" disabled={!reviewed || write.disabled}
-            onClick={() => write.start({ action: "confirm", id: selected.id, body: { decision: "CONFIRMED", reviewedEvidenceVersionIds: selected.evidenceVersionIds } })}>Confirm delivery</button>
+            onClick={() => write.start({ action: "confirm", id: selected.id, body: { decision: "CONFIRMED", reviewedEvidenceVersionIds: selected.evidenceVersionIds } })}>{t("Confirm delivery")}</button>
           <button className="button secondary" type="button" disabled={!reviewed || !reasonReady || write.disabled}
-            onClick={() => write.start({ action: "confirm", id: selected.id, body: { decision: "REQUIRES_REVIEW", reason: reason.trim(), reviewedEvidenceVersionIds: selected.evidenceVersionIds } })}>Request delivery review</button>
+            onClick={() => write.start({ action: "confirm", id: selected.id, body: { decision: "REQUIRES_REVIEW", reason: reason.trim(), reviewedEvidenceVersionIds: selected.evidenceVersionIds } })}>{t("Request delivery review")}</button>
         </>}
         {canDispute && <button className="button secondary" type="button" disabled={!reasonReady || write.disabled}
-          onClick={() => write.start({ action: "dispute", id: detail.id, body: { reason: reason.trim(), ...(selected ? { deliveryId: selected.id } : {}) } })}>Open dispute</button>}
+          onClick={() => write.start({ action: "dispute", id: detail.id, body: { reason: reason.trim(), ...(selected ? { deliveryId: selected.id } : {}) } })}>{t("Open dispute")}</button>}
         {campaign && canManageCampaigns(user, detail.organizationId) && campaign.status !== "CLOSED" &&
           <button className="button secondary" type="button" disabled={write.disabled || campaign.status !== "FULFILLED" || openCount !== 0}
-            onClick={() => write.start({ action: "close", id: campaign.id })}>Close campaign</button>}
+            onClick={() => write.start({ action: "close", id: campaign.id })}>{t("Close campaign")}</button>}
       </div>
       {!!disputes.length && <ul className="evidence-list">{disputes.map((dispute, index) => <li key={dispute.id}>
         <p><StatusBadge status={dispute.status} /> {dispute.reason}</p>
-        {dispute.status === "OPEN" && <Link href={`/disputes/${encodeURIComponent(dispute.id)}`}>Review dispute {index + 1}</Link>}
+        {dispute.status === "OPEN" && <Link href={`/disputes/${encodeURIComponent(dispute.id)}`}>{t("Review dispute {n}", { n: index + 1 })}</Link>}
       </li>)}</ul>}
     </>}
   </section>;

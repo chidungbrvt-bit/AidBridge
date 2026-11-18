@@ -8,6 +8,7 @@ import { canManageCampaigns } from '@/lib/api-client';
 import type { CaseDetailResponse } from '@/lib/types';
 import type { CampaignWork } from '@/lib/session-work';
 import { GoodsProgressTable } from './goods-progress-table';
+import { useI18n } from '@/components/i18n-provider';
 
 type Attempt = NonNullable<CampaignWork['pending']>;
 
@@ -24,6 +25,7 @@ function ScopedCampaignPanel({ detail, actorId, onBusyChange, onPublished }: {
   detail: CaseDetailResponse; actorId: string; onBusyChange: (value: boolean) => void; onPublished: () => void;
 }) {
   const { api, work, organizationId, setNavigationLocked } = useSession();
+  const { t } = useI18n();
   const scope = `${actorId}:${organizationId}:${detail.id}`;
   const [entry, setEntry] = useState<CampaignWork>(() => work.campaigns.get(scope) ?? {});
   const [busy, setBusy] = useState(false);
@@ -94,36 +96,36 @@ function ScopedCampaignPanel({ detail, actorId, onBusyChange, onPublished }: {
   }
 
   return <section className="card stack" aria-labelledby="campaign-panel-title">
-    <h2 id="campaign-panel-title">Aid campaign</h2>
+    <h2 id="campaign-panel-title">{t("Aid campaign")}</h2>
     <ErrorNotice error={error?.code === 'INVALID_STATE' || error?.code === 'VERSION_CONFLICT'
       ? { ...error, message: 'The case or campaign is no longer eligible for this action. Refresh the case and check its current status.' }
       : error} />
     {pending && <div className="notice">
-      <p role="status">{busy ? 'Saving campaign…' : 'The request is unresolved. Retry with the same details and request key.'}</p>
-      {!busy && <button type="button" className="button secondary" onClick={() => void send(pending)}>Retry same campaign request</button>}
+      <p role="status">{busy ? t("Saving campaign…") : t("The request is unresolved. Retry with the same details and request key.")}</p>
+      {!busy && <button type="button" className="button secondary" onClick={() => void send(pending)}>{t("Retry same campaign request")}</button>}
     </div>}
     {draft ? <>
-      <div><span className="badge">{draft.status}</span><h3>{draft.title}</h3><p>{draft.publicSummary}</p><p className="muted">{draft.approximateArea}</p></div>
+      <div><span className="badge">{t(draft.status)}</span><h3>{draft.title}</h3><p>{draft.publicSummary}</p><p className="muted">{draft.approximateArea}</p></div>
       <GoodsProgressTable items={draft.items} />
       {draft.status === 'DRAFT' ? <>
-        <p className="muted">Only administrators of this organization can see the draft. Review the public copy and the approved item targets before publishing.</p>
+        <p className="muted">{t("Only administrators of this organization can see the draft. Review the public copy and the approved item targets before publishing.")}</p>
         <button type="button" className="button" disabled={locked || !canStart} onClick={() => void send({
           action: 'publish', campaignId: draft.id, key: crypto.randomUUID(),
           body: {},
-        })}>Publish campaign</button>
+        })}>{t("Publish campaign")}</button>
       </> : <div className="actions">
-        <Link className="button" href={`/campaigns/${encodeURIComponent(draft.id)}`}>View published campaign</Link>
-        <Link className="button secondary" href="/campaigns">All published campaigns</Link>
+        <Link className="button" href={`/campaigns/${encodeURIComponent(draft.id)}`}>{t("View published campaign")}</Link>
+        <Link className="button secondary" href="/campaigns">{t("All published campaigns")}</Link>
       </div>}
     </> : canStart ? <form className="stack" onSubmit={create}>
       <fieldset className="form-fieldset stack" disabled={locked}>
-        <p className="muted">The campaign uses the approved items above. Public copy should only describe the needs and approximate area.</p>
-        <label className="field"><span>Campaign title</span><input name="title" value={title} onChange={event => setTitle(event.target.value)} required maxLength={160} /><FieldError name="title" issues={error?.fieldErrors ?? []} /></label>
-        <label className="field"><span>Campaign public summary</span><textarea name="publicSummary" value={summary} onChange={event => setSummary(event.target.value)} required maxLength={2000} rows={3} /><FieldError name="publicSummary" issues={error?.fieldErrors ?? []} /></label>
-        <button className="button" type="submit">Create campaign draft</button>
+        <p className="muted">{t("The campaign uses the approved items above. Public copy should only describe the needs and approximate area.")}</p>
+        <label className="field"><span>{t("Campaign title")}</span><input name="title" value={title} onChange={event => setTitle(event.target.value)} required maxLength={160} /><FieldError name="title" issues={error?.fieldErrors ?? []} /></label>
+        <label className="field"><span>{t("Campaign public summary")}</span><textarea name="publicSummary" value={summary} onChange={event => setSummary(event.target.value)} required maxLength={2000} rows={3} /><FieldError name="publicSummary" issues={error?.fieldErrors ?? []} /></label>
+        <button className="button" type="submit">{t("Create campaign draft")}</button>
       </fieldset>
     </form> : detail.status === 'IN_PROGRESS' ?
-      <Link href="/campaigns">Find the published campaign</Link> :
-      <p className="muted">This case does not permit a public summary.</p>}
+      <Link href="/campaigns">{t("Find the published campaign")}</Link> :
+      <p className="muted">{t("This case does not permit a public summary.")}</p>}
   </section>;
 }
