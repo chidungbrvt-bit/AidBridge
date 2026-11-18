@@ -9,6 +9,16 @@ const evidenceId = '30000000-0000-4000-8000-000000000002';
 const deliveryId = '60000000-0000-4000-8000-000000000001';
 const auditUrl = `/api/public/cases/0x${'37'.repeat(32)}/audit`;
 
+function expectDeliveryContextReads(reads: string[], expected: number) {
+  // The B10 review panel also reads C03; each D01 P04 read still needs fresh C03 context.
+  expect(reads.every(read => read === 'case' || read === 'campaign')).toBe(true);
+  const campaignReads = reads.flatMap((read, index) => read === 'campaign' ? [index] : []);
+  expect(campaignReads).toHaveLength(expected);
+  for (let index = 0; index < campaignReads.length; index++) {
+    expect(reads.slice(index === 0 ? 0 : campaignReads[index - 1] + 1, campaignReads[index])).toContain('case');
+  }
+}
+
 // HTTP fixtures exercise the real-mode UI and client.
 async function harness(page: Page, user = volunteer) {
   const state = {
@@ -86,7 +96,7 @@ test('D01 refreshes stock after a conflict and replays a lost success with the s
   await expect(panel.getByRole('alert')).toContainText('QUANTITY_EXCEEDED');
   await expect(panel.getByText('Available: 2')).toBeVisible();
   await expect(quantity).toHaveValue('');
-  expect(state.reads).toEqual(['case', 'campaign', 'case', 'campaign']);
+  expectDeliveryContextReads(state.reads, 2);
   await quantity.fill('2');
   state.loseResponse = true;
   await submit.click();
@@ -104,7 +114,7 @@ test('D01 refreshes stock after a conflict and replays a lost success with the s
   expect(state.writes[1].body).toEqual({
     outcome: 'DELIVERED', items: [{ campaignItemId, quantity: 2 }], evidenceVersionIds: [evidenceId],
   });
-  expect(state.reads).toEqual(['case', 'campaign', 'case', 'campaign', 'case', 'campaign']);
+  expectDeliveryContextReads(state.reads, 3);
   await expect(panel.locator('a')).toHaveCount(0);
 });
 
@@ -131,7 +141,8 @@ for (const [name, index] of [['same-org verifier', 1], ['volunteer from another 
       : page.getByRole('heading', { name: MOCK_CREATE_CASE.internalTitle });
     await expect(result).toBeVisible();
     await expect(panel).toHaveCount(0);
-    expect(state.reads).toEqual([]);
+    // Same-org verifiers may read B10 review context, but cannot read D01 stock or submit a delivery.
+    expect(state.reads).toEqual(index === 3 ? [] : ['case']);
     expect(state.writes).toEqual([]);
   });
 }
