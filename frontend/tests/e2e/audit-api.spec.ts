@@ -89,6 +89,16 @@ test('T02 campaign waits for read success before sharing the timeline and render
   await expect(trail.getByText(txHash, { exact: true })).toBeVisible();
   await expect(trail.getByRole('link', { name: 'View confirmed transaction on Fuji' })).toHaveCount(0);
 
+  ready = false;
+  await trail.getByRole('button', { name: 'Refresh audit', exact: true }).click();
+  await expect(trail.getByRole('alert')).toContainText('RESOURCE_NOT_FOUND');
+  await expect(share).toHaveCount(0);
+  await expect(trail.getByText('Confirmed on Fuji', { exact: true })).toHaveCount(0);
+  await expect(trail.getByText(txHash, { exact: true })).toHaveCount(0);
+  ready = true;
+  await trail.getByRole('button', { name: 'Retry audit', exact: true }).click();
+  await expect(share).toBeVisible();
+
   const anonymous = await browser.newContext({ baseURL });
   try {
     const publicPage = await anonymous.newPage();

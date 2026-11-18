@@ -76,7 +76,7 @@ test.beforeEach(async({page})=>{expect(sql('SELECT current_database()')).toBe('a
 test.afterAll(()=>{
   mkdirSync('test-results',{recursive:true});
   writeFileSync('test-results/f07-real-evidence.json',JSON.stringify({mode:'REAL_NEXT_SPRING_POSTGRES',blockchainEnabled:false,
-    backendFixture:'AbstractCampaignHttpIT',receiptWrite:'B08 R01 via the staff UI',deliveryWrite:'B09 D01 via the volunteer UI',expectedScenarios:8,
+    backendFixture:'AbstractCampaignHttpIT',receiptWrite:'B08 R01 via the staff UI',deliveryWrite:'B09 D01 via the volunteer UI',expectedScenarios:10,
     passedScenarios:evidence.length,scenarios:evidence},null,2));
 });
 
@@ -589,4 +589,141 @@ test('real F09 returns an unauthenticated direct dispute link after login', asyn
   } finally {
     await context.close();
   }
+});
+
+test('real F09 partial receipts feed a multi-item delivery and independent confirmation', async ({ page, browser }) => {
+  const context = await browser.newContext({ baseURL: new URL(page.url()).origin });
+  try {
+    const campaignResponse = await page.request.get(`/api/campaigns/${campaign}`);
+    expect(campaignResponse.status()).toBe(200);
+    const current: CampaignResponse = await campaignResponse.json();
+    const food = current.items.find(item => item.name === 'Food')!;
+    const hygiene = current.items.find(item => item.name === 'Hygiene')!;
+    const saved: CommitmentResponse = await realWrite(page, `/api/campaigns/${campaign}/commitments`, {
+      items: [{ campaignItemId: food.id, quantity: 3 }, { campaignItemId: hygiene.id, quantity: 2 }],
+    }, 201);
+    const foodLine = saved.items.find(item => item.campaignItemId === food.id)!;
+    const hygieneLine = saved.items.find(item => item.campaignItemId === hygiene.id)!;
+    const staff = await context.newPage();
+    await staff.goto('/login');
+    await signInStaff(staff, process.env.F07_E2E_RECORDER_EMAIL!);
+    await staff.goto(`/cases/${caseId}`);
+    const receiptPanel = staff.getByRole('region', { name: 'Goods receipt', exact: true });
+    await receiptPanel.getByLabel('Outstanding commitment').selectOption(saved.id);
+    const receiptIds: string[] = [];
+    for (const [foodQty, hygieneQty] of [[1, 1], [2, 1]]) {
+      await receiptPanel.getByLabel('Food receipt quantity (PACKAGE)', { exact: true }).fill(String(foodQty));
+      await receiptPanel.getByLabel('Hygiene receipt quantity (KIT)', { exact: true }).fill(String(hygieneQty));
+      const received = staff.waitForResponse(response => new URL(response.url()).pathname === `/api/commitments/${saved.id}/receipts`
+        && response.request().method() === 'POST');
+      await receiptPanel.getByRole('button', { name: 'Record receipt', exact: true }).click();
+      const response = await received;
+      expect(response.status()).toBe(201);
+      const receipt = await response.json();
+      receiptIds.push(id(receipt.id));
+      await expect(receiptPanel.getByText(`Receipt ID: ${receipt.id}`, { exact: true })).toBeVisible();
+      if (receiptIds.length === 1) {
+        await expect(receiptPanel.getByTestId(`outstanding-${foodLine.id}`)).toHaveText('Outstanding: 2');
+        await expect(receiptPanel.getByTestId(`outstanding-${hygieneLine.id}`)).toHaveText('Outstanding: 1');
+      }
+    }
+    expect(receiptIds[0]).not.toBe(receiptIds[1]);
+    await expect(receiptPanel.getByTestId(`outstanding-${foodLine.id}`)).toHaveCount(0);
+    await staff.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await expect(staff).toHaveURL(/\/login$/);
+    await signInStaff(staff, process.env.F07_E2E_VOLUNTEER_EMAIL!);
+    await staff.goto(`/cases/${caseId}`);
+    const deliveryPanel = staff.getByRole('region', { name: 'Goods delivery', exact: true });
+    await deliveryPanel.getByLabel('Food delivery quantity (PACKAGE)', { exact: true }).fill('3');
+    await deliveryPanel.getByLabel('Hygiene delivery quantity (KIT)', { exact: true }).fill('2');
+    await deliveryPanel.getByRole('checkbox', { name: /Evidence 1 / }).check();
+    const delivered = staff.waitForResponse(response => new URL(response.url()).pathname === `/api/cases/${caseId}/deliveries`
+      && response.request().method() === 'POST');
+    await deliveryPanel.getByRole('button', { name: 'Record delivery', exact: true }).click();
+    const deliveryResponse = await delivered;
+    expect(deliveryResponse.status()).toBe(201);
+    const delivery: DeliveryResponse = await deliveryResponse.json();
+    expect(delivery).toMatchObject({ reviewStatus: 'PENDING', blockchainStatus: 'PENDING_ON_CHAIN', recorderId: volunteer });
+    await expect(deliveryPanel.getByText(`Delivery ID: ${delivery.id}`, { exact: true })).toBeVisible();
+    await staff.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await expect(staff).toHaveURL(/\/login$/);
+    await signInStaff(staff, process.env.F09_E2E_CONFIRMER_EMAIL!);
+    await staff.goto(`/cases/${caseId}`);
+    const review = staff.getByRole('region', { name: 'Delivery review', exact: true });
+    await review.getByLabel('Delivery to review', { exact: true }).selectOption(delivery.id);
+    await review.getByLabel('I reviewed the delivery evidence').check();
+    const confirmed = staff.waitForResponse(response => new URL(response.url()).pathname === `/api/deliveries/${delivery.id}/confirm`
+      && response.request().method() === 'POST');
+    await review.getByRole('button', { name: 'Confirm delivery', exact: true }).click();
+    const confirmation = await confirmed;
+    expect(confirmation.status()).toBe(200);
+    expect(await confirmation.json()).toMatchObject({ decision: 'CONFIRMED', blockchainStatus: 'PENDING_ON_CHAIN' });
+    await expect(review.getByText('Decision saved.', { exact: true })).toBeVisible();
+    await staff.reload();
+    await review.getByLabel('Delivery to review', { exact: true }).selectOption(delivery.id);
+    await expect(review.getByText('CONFIRMED', { exact: true })).toBeVisible();
+    const fresh = await page.request.get(`/api/campaigns/${campaign}`);
+    expect(fresh.status()).toBe(200);
+    const after: CampaignResponse = await fresh.json();
+    for (const [before, added] of [[food, 3], [hygiene, 2]] as const) {
+      expect(after.items.find(item => item.id === before.id)).toMatchObject({
+        receivedQty: before.receivedQty + added, deliveredQty: before.deliveredQty + added,
+        confirmedQty: before.confirmedQty + added,
+      });
+    }
+    expect(Number(sql(`SELECT count(*) FROM goods_receipts WHERE contribution_id='${id(saved.id)}'`))).toBe(2);
+    expect(Number(sql(`SELECT count(*) FROM delivery_confirmations WHERE delivery_id='${id(delivery.id)}'`))).toBe(1);
+    evidence.push({ scenario: 'f09-partial-receipts-delivery-independent-confirmation', contributionId: saved.id, deliveryId: delivery.id, databaseVerified: true });
+  } finally { await context.close(); }
+});
+
+test('real F05 canonical public audit is anonymous, sanitized and separate from staff audit', async ({ page, browser }) => {
+  const campaignResponse = await page.request.get(`/api/campaigns/${campaign}`);
+  expect(campaignResponse.status()).toBe(200);
+  const current: CampaignResponse = await campaignResponse.json();
+  expect(current.auditUrl).toMatch(/^\/api\/public\/cases\/0x[0-9a-f]{64}\/audit$/);
+  const publicUrl = current.auditUrl!;
+  const publicRef = publicUrl.split('/')[4];
+  const context = await browser.newContext({ baseURL: new URL(page.url()).origin });
+  try {
+    const anonymous = await context.newPage();
+    const publicResponse = await context.request.get(publicUrl + '?page=0&size=20');
+    expect(publicResponse.status()).toBe(200);
+    expect(publicResponse.headers()['cache-control']).toContain('no-store');
+    expect(publicResponse.headers()['x-aidbridge-mock']).toBeUndefined();
+    const publicPage = await publicResponse.json();
+    expect(publicPage.totalElements).toBeGreaterThan(0);
+    const allowed = ['eventId', 'type', 'occurredAt', 'publicActorRole', 'logicalEventId', 'chainSequence', 'blockchain'];
+    for (const event of publicPage.items) {
+      expect(Object.keys(event).sort()).toEqual([...allowed].sort());
+      expect(event.eventId).toMatch(/^audit_[0-9a-f]{64}$/);
+      expect(event.blockchain).not.toHaveProperty('errorCode');
+      expect(['PENDING_ON_CHAIN', 'NOT_APPLICABLE']).toContain(event.blockchain.status);
+      expect(event.blockchain.explorerUrl).toBeNull();
+      expect(event.blockchain.txHash).toBeNull();
+    }
+    expect((await context.request.get(`/api/cases/${caseId}/audit-trail`)).status()).toBe(401);
+    expect((await context.request.get('/api/auth/me')).status()).toBe(401);
+    await anonymous.goto(`/audit/${publicRef}`);
+    const timeline = anonymous.getByRole('region', { name: 'Public audit timeline', exact: true });
+    await expect(timeline.getByText('Awaiting on-chain verification').first()).toBeVisible();
+    await expect(timeline.getByText('Confirmed on Fuji', { exact: true })).toHaveCount(0);
+    await expect(timeline.getByRole('link')).toHaveCount(0);
+    if (publicPage.totalElements > publicPage.size) {
+      const nextPage = anonymous.waitForResponse(response => new URL(response.url()).pathname === publicUrl
+        && new URL(response.url()).searchParams.get('page') === '1');
+      await timeline.getByRole('button', { name: 'Next', exact: true }).click();
+      expect((await nextPage).status()).toBe(200);
+      await expect(timeline.getByText('Page 2', { exact: true })).toBeVisible();
+    }
+    const refreshed = anonymous.waitForResponse(response => new URL(response.url()).pathname === publicUrl);
+    await timeline.getByRole('button', { name: 'Refresh audit', exact: true }).click();
+    expect((await refreshed).status()).toBe(200);
+    await expect(timeline.getByRole('button', { name: 'Refresh audit', exact: true })).toBeEnabled();
+    await page.goto(`/campaigns/${campaign}`);
+    await page.getByText('Public audit trail', { exact: true }).click();
+    await expect(page.getByRole('link', { name: 'Open public audit page', exact: true })).toHaveAttribute('href', `/audit/${publicRef}`);
+    expect(Number(sql(`SELECT count(*) FROM audit_events WHERE aid_case_id='${id(caseId)}'`))).toBeGreaterThanOrEqual(publicPage.totalElements);
+    evidence.push({ scenario: 'f05-anonymous-canonical-audit-no-false-chain-proof', databaseVerified: true });
+  } finally { await context.close(); }
 });
