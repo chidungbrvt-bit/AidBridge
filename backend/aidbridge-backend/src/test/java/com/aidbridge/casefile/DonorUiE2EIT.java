@@ -54,6 +54,7 @@ class DonorUiE2EIT extends AbstractCampaignHttpIT {
                 Map.entry("F07_E2E_RECORDER_ID", orgAdmin.id().toString()),
                 Map.entry("F07_E2E_VOLUNTEER_ID", volunteer.id().toString()),
                 Map.entry("F07_E2E_VOLUNTEER_EMAIL", jdbc.queryForObject("SELECT email FROM users WHERE id = ?", String.class, volunteer.id())),
+                Map.entry("F09_E2E_VERIFIER_EMAIL", jdbc.queryForObject("SELECT email FROM users WHERE id = ?", String.class, verifier.id())),
                 Map.entry("F09_E2E_CONFIRMER_EMAIL", jdbc.queryForObject("SELECT email FROM users WHERE id = ?", String.class, confirmer.id())),
                 Map.entry("F09_E2E_PLATFORM_EMAIL", jdbc.queryForObject("SELECT email FROM users WHERE id = ?", String.class, admin.id())),
                 Map.entry("F09_E2E_CAMPAIGN_ID", reviewCampaign.toString()),
