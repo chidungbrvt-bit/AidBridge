@@ -2,6 +2,14 @@
 
 Ngày tạo:03/11/2026. Cập nhật:04/11/2026. Người duy trì:Minh (F). Các allocation dưới đây là kế hoạch, không actual completion; tiến độ thực tại Task Backlog: B01 In Review, B02/B03 In Progress. [B01 baseline](../architecture/B01_BASELINE.md) đã thống nhất tên gọi và implementation gaps, chưa có cross-owner acceptance. D26/D27 user-confirmed:18/11 đủ P0,20/11 stable demo,22/11 assets ready,25/11 submission limit. Timezone Asia/Bangkok.
 
+## Checkpoint Minh — thực hiện kế hoạch ngày 18/11/2026
+
+Phần allocation/mốc cũ phía dưới là baseline lịch sử. Theo ảnh kế hoạch mới của người dùng: 18/11 chạy một luồng hoàn chỉnh với backend thật và chốt phạm vi proof; 19/11 demo/video/hồ sơ, 20/11 hoàn thành, 21/11 hạn nộp. Không dùng các mốc 22–25/11 lịch sử để mặc định kéo dài lịch hiện hành.
+
+Minh đã fetch/đối chiếu main `fbf8c3e`, dung `9f29b76`, khoa `5267e99`. F09 có số lượng delivery được chọn và return URL dispute sau login; candidate `1578ddf` chạy 11 browser/API/DB real local (0 fail/error/skip), gồm hành trình trên cùng hồ sơ từ tạo đến COMPLETED/audit. 77 frontend unit, typecheck/build và 9 validation pass. [SHA, JUnit, checklist runtime/tài khoản và đề xuất quay demo](../handoffs/MINH_DAY18_P0_E2E.md).
+
+F09/F05 In Review, chờ Dũng review/merge candidate và bàn giao runtime/account demo để kiểm cùng phiên bản. Minh không chờ C06 để test B10. F10 local đã có diễn tập theo evidence riêng, public hosting/smoke chưa chạy khi chưa có target/phê duyệt. Khoa/Dũng chốt C06, cutover và pilot; chưa có Goods Fuji proof mới trong refs đã đọc, không lấy snapshot/Hardhat thay Fuji PASS. ML-4 tiếp tục hoãn. Đây là bàn giao của Minh để Dũng tổng hợp checkpoint P0, không tự nghiệm thu toàn nhóm hoặc đổi owner/estimate.
+
 ## Lịch tăng tốc đề xuất đến hết 15/11/2026
 
 **Phạm vi người dùng xác nhận.** Lịch 09–15/11/2026 theo Asia/Bangkok. Dũng tự làm Backend theo lịch riêng. Trong phần việc chung, Dũng góp Blockchain/Fuji và ML. ML do Dũng và Minh thực hiện. Khoa và Minh bắt đầu song song. Đích của lịch là sáu P0 đã ghép, có bằng chứng Fuji thật và smoke test công khai. Full regression và hồ sơ có mốc riêng. Xem [D47](DECISION_LOG.md#d47--lịch-tăng-tốc-trước-1611).

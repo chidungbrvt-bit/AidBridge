@@ -87,9 +87,11 @@ Dùng candidate đủ `reviewCampaign` và hai route đọc dispute/evidence; st
 
 T01 là `/api/cases/{id}/audit-trail` cho staff đúng tổ chức. T02 canonical là `/api/public/cases/{publicCaseRef}/audit`; `/audit/{publicCaseRef}` là trang công khai không cần đăng nhập. Mở **Public audit trail** ở campaign: link chia sẻ chỉ bật sau khi đọc T02 thành công. **Refresh audit** đọc lại trạng thái mới; lỗi đọc không giữ link/proof cũ. Hash hoặc quyết định CONFIRMED của D02 không tự thành `CONFIRMED_ON_CHAIN`.
 
-Workflow **F07 real backend E2E** hiện yêu cầu 10 ca browser thật, 0 failure/error/skip. Trong `DonorUiE2EIT`, Java host dựng fixture giả lập, build Next và chạy project `donor-real` với PostgreSQL test riêng. Hai ca mới kiểm nhận hai đợt → giao → xác nhận độc lập và public audit anonymous/privacy; các ca retry/self-confirm/dispute/close và login direct dispute vẫn được giữ. HTTP fixtures chỉ kiểm cách hiển thị, không chứng minh Fuji.
+Workflow **F07 real backend E2E** hiện yêu cầu 11 ca browser thật, 0 failure/error/skip. Trong `DonorUiE2EIT`, Java host dựng fixture giả lập, build Next và chạy project `donor-real` với PostgreSQL test riêng. Có một ca đi từ tạo hồ sơ trên UI đến xác minh, publish, cam kết, nhận hai đợt, giao, xác nhận độc lập, đóng và audit trên cùng hồ sơ; các ca retry/self-confirm/dispute/close, số lượng delivery, login direct dispute và public audit vẫn được giữ. HTTP fixtures chỉ kiểm cách hiển thị, không chứng minh Fuji.
 
 Xem [bàn giao F05/F09/F10 hiện hành, JUnit và giới hạn](../docs/handoffs/MINH_F05_F09_F10_2026-11-18.md).
+
+[Bàn giao ngày 18/11: JUnit 11 ca, checklist nhận backend/tài khoản và kịch bản demo](../docs/handoffs/MINH_DAY18_P0_E2E.md). Bộ CI dùng DB test riêng; không trỏ bộ có SQL assertions này vào DB demo. Business E2E không chờ C06; Goods Fuji và public smoke chỉ nghiệm thu khi có đúng deployment/proof/target và được phép.
 
 ## F10 — pin API origin trước production build
 
