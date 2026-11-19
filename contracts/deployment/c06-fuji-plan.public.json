@@ -1,0 +1,13 @@
+{
+  "status": "CANDIDATE_NOT_APPROVED",
+  "chainId": 43113,
+  "rpcUrl": "https://api.avax-test.network/ext/bc/C/rpc",
+  "deployer": "0x131DD6d404f8D0B118D6DB122194bc15b4E4601E",
+  "admin": "0x131DD6d404f8D0B118D6DB122194bc15b4E4601E",
+  "relayer": "0x95a9564899849CF566DE5713205C4B747F361f55",
+  "orgRef": "0x2395bfe7f91467046a39bd8440313164c6442839b2be6698832b7b4941b80a46",
+  "maxGasLimit": "4000000",
+  "maxGasPriceWei": "25000000000",
+  "publicJournal": "deployment/c06-fuji-deployment.public.json",
+  "privateJournal": "deployment/c06-fuji-recovery.private.aes.json"
+}

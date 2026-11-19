@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSession } from '@/components/session-provider';
 import { AuditDisclosure } from '@/components/audit/audit-feed';
 import { isPublicCaseAuditUrl } from '@/lib/audit';
-import { ApiError } from '@/lib/api-client';
 import { useI18n } from '@/components/i18n-provider';
 import { DonorApp } from '../../../features/donor/DonorApp';
 import { createDonorAdapter } from '../../../features/donor/adapter';
@@ -41,7 +40,7 @@ function CampaignList() {
   useEffect(() => {
     let live = true; setLoading(true); setData(undefined); setError('');
     void api.listCampaigns(page).then(value => { if (live) setData(value); })
-      .catch(cause => { if (live) setError(cause instanceof ApiError ? `${cause.status} ${cause.code}: ${cause.message}` : t("Unable to load public campaigns.")); })
+      .catch(cause => { if (live) setError(t("Unable to load public campaigns.")); })
       .finally(() => { if (live) setLoading(false); });
     return () => { live = false; };
   }, [api, page, revision]);

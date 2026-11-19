@@ -21,10 +21,10 @@ test('G03 local invalid quantities focus summary and do not change history',asyn
  await expect(rice(page).getByRole('cell')).toHaveText(['8','0','5','3']);
 });
 test('G03 400, 403 and injected 409 preserve quantities; 409 refreshes state',async({page})=>{
- const panel=await fill(page);for(const fault of ['400','403','409']){await page.getByLabel('Mock response').selectOption(fault);const submit=panel.getByRole('button',{name:'Cancel selected goods',exact:true});await expect(submit).toBeEnabled();await submit.click();await expect(panel.getByRole('alert')).toContainText(fault==='409'?'409 Conflict':fault);await expect(rice(page).getByRole('cell')).toHaveText(['8','0','5','3']);}
+ const panel=await fill(page);for(const fault of ['400','403','409']){await page.getByLabel('Mock response').selectOption(fault);const submit=panel.getByRole('button',{name:'Cancel selected goods',exact:true});await expect(submit).toBeEnabled();await submit.click();await expect(panel.getByRole('alert')).toBeVisible();await expect(panel.getByRole('alert')).not.toContainText(fault);await expect(rice(page).getByRole('cell')).toHaveText(['8','0','5','3']);}
 });
 test('G03 stale receipt conflict does not cancel goods received in the meantime',async({page})=>{
- const panel=await fill(page,'3');await panel.getByRole('button',{name:'Cancel selected goods',exact:true}).click();await page.getByRole('button',{name:'Mock receipt: receive remaining goods'}).click();await expect(panel.getByRole('alert')).toContainText('409 Conflict');
+ const panel=await fill(page,'3');await panel.getByRole('button',{name:'Cancel selected goods',exact:true}).click();await page.getByRole('button',{name:'Mock receipt: receive remaining goods'}).click();await expect(panel.getByRole('alert')).toBeVisible();await expect(panel.getByRole('alert')).not.toContainText('409');
  await expect(rice(page).getByRole('cell')).toHaveText(['8','0','8','0']);await expect(page.locator('article').getByText('RECEIVED',{exact:true})).toBeVisible();await expect(page.locator('article').getByRole('button',{name:'Cancel unreceived goods'})).toBeDisabled();
 });
 test('G03 response loss blocks edits/navigation and safely replays once',async({page})=>{
@@ -78,7 +78,7 @@ for(const receiptDuringRecovery of [false,true])test(`G03 504 after saving 1kg r
  await fixture(page);const panel=await fill(page,'1');
  await page.getByLabel('Mock response').selectOption('timeout-after-save');
  await panel.getByRole('button',{name:'Cancel selected goods',exact:true}).click();
- await expect(panel.getByRole('alert')).toContainText('504 GATEWAY_TIMEOUT');
+ await expect(panel.getByRole('alert')).toContainText('Cancellation outcome is unknown.');
  expect(injected).toBeGreaterThan(0);
  await expect(panel.getByLabel('Cancel quantity (kg)',{exact:true})).toBeDisabled();
  await expect(panel.getByLabel('Cancellation reason')).toBeDisabled();
@@ -86,7 +86,7 @@ for(const receiptDuringRecovery of [false,true])test(`G03 504 after saving 1kg r
  await expect(panel.getByRole('button',{name:'Close cancellation'})).toBeDisabled();
  if(receiptDuringRecovery){await page.getByRole('button',{name:'Mock receipt: receive remaining goods'}).click();await expect(rice(page).getByRole('cell')).toHaveText(['8','1','7','0']);}
  await panel.getByRole('button',{name:'Retry same cancellation'}).click();
- await expect(panel.getByRole('alert')).toContainText('504 GATEWAY_TIMEOUT');
+ await expect(panel.getByRole('alert')).toContainText('Cancellation outcome is unknown.');
  await expect(panel.getByRole('button',{name:'Retry same cancellation'})).toBeEnabled();
  await panel.getByRole('button',{name:'Retry same cancellation'}).click();
  await expect(panel.getByRole('status').filter({hasText:'Cancellation saved'})).toBeVisible();

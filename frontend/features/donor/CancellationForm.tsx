@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { ApiError, cancellationOutcomeUnknown, validateCancellation } from './model';
+import { readableError } from '../../src/lib/error-message';
 import { shortReference } from '../../src/lib/display';
 import { useI18n } from '../../src/components/i18n-provider';
 import type { CampaignResponse, CancellationRequest, CommitmentResponse, DonorApi, Draft } from './model';
@@ -10,7 +11,7 @@ interface Props {
   onChanged: (saved?: CommitmentResponse) => void; onClose: () => void; onLock: (locked: boolean) => void;
 }
 export function CancellationForm({ api, commitment, campaign, ready, onChanged, onClose, onLock }: Props) {
-  const { t } = useI18n();
+  const { t, item: itemName, unit: unitName } = useI18n();
   const [draft, setDraft] = useState<Draft>({});
   const [reason, setReason] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -46,7 +47,7 @@ export function CancellationForm({ api, commitment, campaign, ready, onChanged, 
       if (!alive.current) return;
       if (error instanceof ApiError && error.problem.code !== 'CSRF_INVALID' && !cancellationOutcomeUnknown(error)) {
         pending.current = null; setUnknown(false); onLock(false);
-        setMessage(`${error.problem.status === 409 ? '409 Conflict' : error.problem.status} ${error.problem.code}: ${error.problem.detail}`);
+        setMessage(readableError(error.problem.code, error.problem.detail));
         const fieldErrors: Record<string, string> = {};
         for (const field of error.problem.fieldErrors) {
           const index = /^items\[(\d+)\]\.quantity$/.exec(field.field)?.[1];
@@ -58,7 +59,7 @@ export function CancellationForm({ api, commitment, campaign, ready, onChanged, 
         if (error.problem.status === 409) onChanged();
       } else {
         setUnknown(true);
-        setMessage(error instanceof ApiError && error.problem.code === 'CSRF_INVALID' ? 'The security token expired. Retry the same cancellation with a refreshed token.' : `${error instanceof ApiError ? `${error.problem.status} ${error.problem.code}: ` : ''}${t('Cancellation outcome is unknown. Retry the same cancellation to recover safely.')}`);
+        setMessage(error instanceof ApiError && error.problem.code === 'CSRF_INVALID' ? 'The security token expired. Retry the same cancellation with a refreshed token.' : t('Cancellation outcome is unknown. Retry the same cancellation to recover safely.'));
       }
     } finally { locked.current = false; if (alive.current) setBusy(false); }
   }
@@ -72,8 +73,8 @@ export function CancellationForm({ api, commitment, campaign, ready, onChanged, 
       {commitment.items.map(item => {
         const meta = campaign?.id === commitment.campaignId ? campaign.items.find(x => x.id === item.campaignItemId) : undefined;
         return <div className="ab-item" key={item.id}>
-          <label className="ab-item-check"><input type="checkbox" checked={draft[item.id]?.selected ?? false} disabled={disabled || item.outstandingQty <= 0} onChange={event => update(item.id, { selected: event.target.checked })}/><span>{t('Cancel {item}', { item: meta?.name ?? item.campaignItemId })}<small>{t('{received} received · {cancelled} cancelled · {outstanding} outstanding', { received: item.receivedQty, cancelled: item.cancelledQty, outstanding: item.outstandingQty })} {meta?.unit ?? t('(unit unavailable)')}</small></span></label>
-          <label htmlFor={`cancel-quantity-${item.id}`} className="ab-caption">{t("Cancel quantity ({unit})", { unit: meta?.unit ?? item.campaignItemId })}</label>
+          <label className="ab-item-check"><input type="checkbox" checked={draft[item.id]?.selected ?? false} disabled={disabled || item.outstandingQty <= 0} onChange={event => update(item.id, { selected: event.target.checked })}/><span>{t('Cancel {item}', { item: itemName(meta?.name ?? item.campaignItemId) })}<small>{t('{received} received · {cancelled} cancelled · {outstanding} outstanding', { received: item.receivedQty, cancelled: item.cancelledQty, outstanding: item.outstandingQty })} {unitName(meta?.unit ?? t('(unit unavailable)'))}</small></span></label>
+          <label htmlFor={`cancel-quantity-${item.id}`} className="ab-caption">{t("Cancel quantity ({unit})", { unit: unitName(meta?.unit ?? item.campaignItemId) })}</label>
           <input id={`cancel-quantity-${item.id}`} type="number" min="1" max={Math.min(1_000_000, item.outstandingQty)} step="1" inputMode="numeric" value={draft[item.id]?.quantity ?? ''} disabled={disabled || !draft[item.id]?.selected || item.outstandingQty <= 0} aria-invalid={Boolean(errors[item.id])} aria-describedby={errors[item.id] ? `cancel-error-${item.id}` : undefined} onChange={event => update(item.id, { quantity: event.target.value })}/>
           {errors[item.id] && <p id={`cancel-error-${item.id}`} className="ab-field-error">{t(errors[item.id])}</p>}
         </div>;

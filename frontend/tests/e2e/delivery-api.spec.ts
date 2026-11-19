@@ -93,7 +93,8 @@ test('D01 refreshes stock after a conflict and replays a lost success with the s
   await panel.getByRole('checkbox', { name: 'Evidence 1 · Version 1' }).check();
   state.stale = true;
   await submit.click();
-  await expect(panel.getByRole('alert')).toContainText('QUANTITY_EXCEEDED');
+  await expect(panel.getByRole('alert')).toHaveAttribute('data-error-code', 'QUANTITY_EXCEEDED');
+  await expect(panel.getByRole('alert')).not.toContainText('QUANTITY_EXCEEDED');
   await expect(panel.getByText('Available: 2')).toBeVisible();
   await expect(quantity).toHaveValue('');
   expectDeliveryContextReads(state.reads, 2);
@@ -106,7 +107,7 @@ test('D01 refreshes stock after a conflict and replays a lost success with the s
   await retry.click();
   const success = panel.getByRole('status').filter({ hasText: 'Delivery recorded' });
   await expect(success).toContainText('Pending on chain');
-  await expect(success).toContainText(deliveryId);
+  await expect(success).toHaveAttribute('data-delivery-id', deliveryId);
   await expect(panel.getByText('Available: 0')).toBeVisible();
   expect(state.writes).toHaveLength(3);
   expect(state.writes[1]).toEqual(state.writes[2]);
@@ -137,7 +138,7 @@ test('D01 FAILED sends a reason and empty arrays and keeps stock unchanged', asy
 for (const [name, index] of [['same-org verifier', 1], ['volunteer from another organization', 3]] as const) {
   test(`D01 keeps the form unavailable for a ${name}`, async ({ page }) => {
     const { state, panel } = await harness(page, MOCK_IDENTITIES[index].user);
-    const result = index === 3 ? page.getByRole('alert').filter({ hasText: 'RESOURCE_NOT_FOUND' })
+    const result = index === 3 ? page.locator('[role="alert"][data-error-code="RESOURCE_NOT_FOUND"]')
       : page.getByRole('heading', { name: MOCK_CREATE_CASE.internalTitle });
     await expect(result).toBeVisible();
     await expect(panel).toHaveCount(0);

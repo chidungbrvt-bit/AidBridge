@@ -1,0 +1,63 @@
+{
+  "status": "FREEZE CANDIDATE",
+  "sourceCommit": "6944fffd9858565f36c909ae9e5f83804afbe36f",
+  "sourcePath": "contracts/contracts/AidRegistry.sol",
+  "sourceSha256LF": "c27379bba82dd88897a3fe2bf1b0f5c2ad77e7f29830afef4dde7380ed272153",
+  "artifactPath": "contracts/artifacts/contracts/AidRegistry.sol/AidRegistry.json",
+  "artifactSha256": "976825c365d0dd99c2097e90b0bbced2d36556524fcb785de4ac19367499c592",
+  "abiSha256": "548b46168243852ef455752f09afa6fba7989bb1fcc0b13ac0f6a64f24175eae",
+  "creationKeccak256": "0x9e8943c4e5dc82f7a0e9c60feaa6a2fc28d1b9c2b616aac80e20beccc143258c",
+  "runtimeKeccak256": "0x525314d10311e01e01a61a6f9e75ee432f59ca09ff3aa27445aed3962e09011e",
+  "buildInfoId": "solc-0_8_28-6d69e2cf1ddbaa7f61c90daac742b8efd4cf518a",
+  "compilerVersion": "0.8.28",
+  "compilerLongVersion": "0.8.28+commit.7893614a",
+  "compilationSettings": {
+    "evmVersion": "paris",
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "outputSelection": {
+      "*": {
+        "": [
+          "ast"
+        ],
+        "*": [
+          "abi",
+          "evm.bytecode.linkReferences",
+          "evm.bytecode.object",
+          "evm.bytecode.opcodes",
+          "evm.bytecode.sourceMap",
+          "evm.deployedBytecode.immutableReferences",
+          "evm.deployedBytecode.linkReferences",
+          "evm.deployedBytecode.object",
+          "evm.deployedBytecode.opcodes",
+          "evm.deployedBytecode.sourceMap",
+          "evm.methodIdentifiers"
+        ]
+      }
+    },
+    "remappings": [
+      "project/:@openzeppelin/contracts/=npm/@openzeppelin/contracts@5.6.1/"
+    ]
+  },
+  "standardInputSha256": "905d75015aea92047c4f9d1ae810f9b4b96df0e223f2437078ed9f804519a14e",
+  "buildSourcesSha256": {
+    "npm/@openzeppelin/contracts@5.6.1/access/AccessControl.sol": "97abba9ae4ee97f16f17b7b688d90f6f1195b79edfba344eacc58406e088b51e",
+    "npm/@openzeppelin/contracts@5.6.1/access/IAccessControl.sol": "140304b7e99d517c57a13f391dfd3b550ca633a507f7b2af130f391b6cd89cc5",
+    "npm/@openzeppelin/contracts@5.6.1/utils/Context.sol": "847fda5460fee70f56f4200f59b82ae622bb03c79c77e67af010e31b7e2cc5b6",
+    "npm/@openzeppelin/contracts@5.6.1/utils/introspection/ERC165.sol": "61a2b12c96857aaa35f48aeda67a4281637a42494c0b3795be0ae976aa7b3793",
+    "npm/@openzeppelin/contracts@5.6.1/utils/introspection/IERC165.sol": "9055c2994b37dea1a41b7b7926dcb510f05dbe2540b0aafc5fbee9558fffd0ca",
+    "project/contracts/AidRegistry.sol": "49f2abb6ece62b20d68a2f9909742ad33f4bd4a3424e596373fc33b0c14a6015"
+  },
+  "constructor": {
+    "types": [
+      "address"
+    ],
+    "values": [
+      "0x131DD6d404f8D0B118D6DB122194bc15b4E4601E"
+    ]
+  },
+  "chainId": 43113,
+  "approval": "PENDING_GROUP_FREEZE_AND_DEPLOY_DECISION"
+}

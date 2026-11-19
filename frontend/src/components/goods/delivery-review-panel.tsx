@@ -15,7 +15,7 @@ export function DeliveryReviewPanel({ detail, revision, onSaved }: {
   detail: CaseDetailResponse; revision: number; onSaved: () => void;
 }) {
   const { api, user } = useSession();
-  const { t, status } = useI18n();
+  const { t, status, item: itemName, unit: unitName } = useI18n();
   const [staff, setStaff] = useState<StaffCaseDetail>();
   const [readError, setReadError] = useState<ErrorInfo | null>(null);
   const [reload, setReload] = useState(0);
@@ -71,7 +71,7 @@ export function DeliveryReviewPanel({ detail, revision, onSaved }: {
       {!!totals.length && <div className="table-wrap"><table className="data-table">
         <caption className="sr-only">{t("Delivery totals")}</caption>
         <thead><tr><th scope="col">{t("Item")}</th><th scope="col">{t("Target")}</th><th scope="col">{t("Received")}</th><th scope="col">{t("Delivered")}</th><th scope="col">{t("Confirmed")}</th></tr></thead>
-        <tbody>{totals.map(row => <tr key={row.campaignItemId}><th scope="row">{row.itemName} ({row.unit})</th><td>{row.targetQty}</td><td>{row.receivedQty}</td><td>{row.deliveredQty}</td><td>{row.confirmedQty}</td></tr>)}</tbody>
+        <tbody>{totals.map(row => <tr key={row.campaignItemId}><th scope="row">{itemName(row.itemName)} ({unitName(row.unit)})</th><td>{row.targetQty}</td><td>{row.receivedQty}</td><td>{row.deliveredQty}</td><td>{row.confirmedQty}</td></tr>)}</tbody>
       </table></div>}
       {deliveries.length === 0 ? <p>{t("No deliveries recorded.")}</p> : <label>{t("Delivery")}
         <select aria-label={t("Delivery to review")} value={deliveryId} disabled={write.disabled} onChange={event => {
@@ -91,7 +91,7 @@ export function DeliveryReviewPanel({ detail, revision, onSaved }: {
           <tbody>{selected.items.map(item => {
             const metadata = totals.find(total => total.campaignItemId === item.campaignItemId);
             return <tr key={item.campaignItemId}>
-              <th scope="row">{metadata?.itemName ?? t("Unknown item")}</th>
+              <th scope="row">{metadata ? itemName(metadata.itemName) : t("Unknown item")}</th>
               <td>{metadata?.unit ?? t("Unavailable")}</td><td>{item.quantity}</td>
             </tr>;
           })}</tbody>

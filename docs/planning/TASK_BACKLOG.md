@@ -385,6 +385,12 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### C06 - Full milestone contract
 
+- **Khoa morning18/11 — READY FOR HANDOFF TO TASK5 / FREEZE CANDIDATE:** release `58a3ebb` contains public exact-byte build archive, main34 and runner fixes5267e99; targeted existing-solc rebuild ABI/creation/runtime MATCH,11offline runner tests PASS0F/E/S. No Task3 runtime rerun. Formal freeze/current preflight/deployment/cutover approvals pending; no deployment. Dung combined regression now source-present5df5aac,34IT PASS reported/originalXML not inspected. Staging org differs from current plan; proposed CASE_VERIFIED-only pilot requires group org/scope decision and new plan candidate if selected. Keep3legacyPENDINGparked,one worker per shared relayer; Fuji goods not enabled. [Current status/pins/pilot/post-deploy checklist](../reviews/C06_MORNING_STATUS_2026_11_18.md).
+
+- **Gói readiness Khoa17/11 hoàn thiện:** actual-generated FREEZE CANDIDATE manifest + C06-only CLI prepare/preflight/broadcast/post-deploy, publicplan/journalnamespace riêng và AESrecoveryguards;7offline testsPASS0F/E/S, khôngRPC/sign/broadcastthật. Task4 READY FOR HANDOFF TO TASK5; formalfreeze/combinedregression/currentpreflight/approval vẫnPENDING; actualdeploy/cutover/roles/explorerNOTRUN. [Entry/runbook](../reviews/C06_REDEPLOY_PREPARATION_2026_11_16.md), [manifest](../../contracts/deployment/c06-freeze-candidate.json).
+
+- **Khoa Task4 17/11 — READY FOR HANDOFF TO TASK5 (hiện hành):** Task3local PASS WITH NOTES. Candidate fullC06/hashes/build/ABI/constructor kiểm offline PASS; helper prepare-c06.mjs khôngRPC/sign/write/broadcast, reject--broadcast. Hồ sơreadiness/disposition3C03pending/qualification5stagingpending đã bàn giao. Dũng bắt đầu inventory/plan ngay; không cần migration mới từ Khoa. Chưa READY FOR DEPLOY APPROVAL: formalfreeze/combinedregression/C06executiontooling/currentpreflight/approval cònmở theoowner, deployment vàcutoverriêng. Các nhãnBLOCKED trong snapshotcũ là executionreadiness, không giữ handoffBLOCKED. [Runbook/chốtacceptance](../reviews/C06_REDEPLOY_PREPARATION_2026_11_16.md).
+
 - **Interim16/11:** Khoa review C06/D55 đã có ở C06_PART2_D55_REVIEW.md; các ghi chú “chờ Khoa review/Not Run review” trong evidence11–12/11 bên dưới là lịch sử. Compile/artifact consistency16/11 PASS offline, không thay kết quả runtime Java/VOID hoặc trạng thái chưa redeploy/cutover.
 
 - **Khoa Task8 16/11 — preparation DONE WITH GATES:** compile/full C06 artifact consistency + unsigned constructor encoding PASS offline; khớp hash C10 sau rebuild artifact stale. Chưa deploy/cutover, chưa chạy worker/E2E. Cần Task6/7, runner C06 riêng, freeze/approval và queue reconciliation; không đổi trạng thái runtime. [Runbook](../reviews/C06_REDEPLOY_PREPARATION_2026_11_16.md).
@@ -443,6 +449,8 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 
 ### C09 - Full sanitized audit API
 
+- **Khoa Task8 17/11 — PREPARED:** C09 source main627be56 PASS WITH NOTES (D49/privacy/sequence/proof guards); checklist Fuji đã lập, FUJI PROOF VERIFICATION PENDING vì chưa có C06 pilot bundle nghiệm thu. Không coi pending/local/source là goodsFujiPASS; main writer thiếu context giữ fail-closed, fix writerPR33 chưa nghiệm thu. Không đổi C09 Done hoặc mở scanner/UI. [Review/checklist](../reviews/C09_FUJI_PROOF_ACCEPTANCE_2026_11_17.md).
+
 - **Final high audit15/11:** source integrated PR27 +fixes206d2f4 trên khoa; source/docs review không thấy thêm Critical/High có bằng chứng, không phải runtime PASS. Trước merge cần compile/focused JUnit/Flyway fresh+upgrade/HTTP/proof/privacy/order và frontend integration **NOT RUN — DELEGATED** theo [handoff đủ5 task](../reviews/KHOA_2026_11_15_FINAL_HANDOFF.md). Giữ task In Review cho candidate, không Done/không coi PR27 riêng đã merge.
 
 - **Local fix Khoa sau PR27 review,15/11:** canonical URI/security, causal sequence/opaque public ID và confirmed proof/context guards đã sửa trên khoa; focused tests thêm/cập nhật nhưng Java/DB NOT RUN. Legacy proof thiếu context hiện fail-closed pending; không sửa worker để enrich hoặc giả verified. Chưa merge/push PR27, chưa PASS runtime/Done; [review hiện hành](../reviews/C09_AUDIT_API_READINESS_2026_11_15.md).
@@ -466,6 +474,16 @@ Dependencies là gate cho integrated Done; mock/design/scaffold prework có th�
 - **Status / evidence:** Not Started; actual effort, command/result/build/tx evidence and completion date not yet available.
 
 ### C10 - Goods-to-chain integration
+
+- **Evidence attachment PR34 inspected17/11 — CURRENT:** Task3 LOCAL PASS WITH NOTES, F1/F2 local CLOSED. Đã đọc file7945bytes/SHAa7144671… từ comment6952865519: XML/log excerpts11Worker/3T01/1Hardhat0F/E/S,8rowsCONFIRMED/restartseq4nonce33,declared406d5d8/tree59eb1487 khớp Git. Không phải fullXML/independentRPC. Combined PREPARED+wrong-chain vẫn pre-deploy/cutover gate. Task4 chưa READY do runner/freeze/preflight/approvals;3PENDINGC03jobs cần disposition. Không đánh Fuji/Task6PASS; các notes evidence-not-inspected phía dưới là lịch sử. [Gate](../reviews/C10_LOCAL_GATE_REVIEW_2026_11_17.md).
+
+- **Evidence delta406d5d8 ngày17/11:** Dũng báo WorkerIT11/T013/HardhatC061 PASS0F/0E/0S,8jobs/attemptsCONFIRMED/restartseq4nonce25. REPORTED PASS — EVIDENCE NOT INSPECTED: chưa có XML/log accessible để reviewer bind finaltree. Task3 INSUFFICIENT EVIDENCE, không còn source finding R1; combined PREPARED+wrong-chain là regression gate trước deploy/cutover, không blocker local mới. Task4 chưa READY; freeze/runner/preflight/approval và C03queue readback vẫn mở. Không đánh Fuji/Task6PASS. [Delta review](../reviews/C10_LOCAL_GATE_REVIEW_2026_11_17.md).
+
+- **Khoa handoff PR34 17/11 — hiện hành:** maina870577 đã mergePR33, head406d5d8/tree59eb1487 sửa RPCchain guard CASE_VERIFIED và thêm regression. R1source CLOSED, receipt7context/F1/F2source PASS; local Task3 INSUFFICIENT EVIDENCE vì XML/provenance finalSHA chưa có. Task4 BLOCKED xin deploy: local evidence/freeze/runner riêng/preflight/approval còn mở, cutover queue/readback riêng. Dũng tiếp tục evidence và Task5plan; chưa go-cutover/Task6pilot. Các notes NEEDS FIX/chưapush trước đó là snapshot cũ. [Review34](../reviews/C10_LOCAL_GATE_REVIEW_2026_11_17.md), [readiness](../reviews/C06_REDEPLOY_PREPARATION_2026_11_16.md).
+
+- **Handoff Task3 / readiness Task4 Khoa17/11:** fetch lại PR33 vẫn f85d390, chưa có patch chain-guard/XML mới; giữ local gate NEEDS FIX, F1/F2 runtime acceptance OPEN. Đã ghi bộ evidence tối thiểu cho Dũng và checklist READY FOR DEPLOY APPROVAL; hiện chưa ready, chưa freeze/runner/preflight/approval. Deploy và cutover là hai gate riêng; không nghiệm thu Task5/6/8 ngày17/11. Xem [gate/handoff](../reviews/C10_LOCAL_GATE_REVIEW_2026_11_17.md) và [runbook](../reviews/C06_REDEPLOY_PREPARATION_2026_11_16.md).
+
+- **Khoa Task3 17/11 — local gate NEEDS FIX:** PR33 f85d390 đã có source fix receipt7context và reduction/multi-commitment harness; F1/F2 source addressed nhưng runtime acceptance OPEN. Chain guard CASE_VERIFIED trước ký/rebroadcast còn thiếu trên remote; patch/test Dũng báo chưa commit. Không có XML mới để bind3testsPASS với PRhead; review Task6 cũ PASS source, regression runtime chưa nghiệm thu. Chưa deploy/cutover, không đánh Task7 DONE. [Bằng chứng/findings](../reviews/C10_LOCAL_GATE_REVIEW_2026_11_17.md).
 
 - **Handoff Khoa16/11:** #3 review DONE/PASS WITH NOTES; #4 review DONE, F1/F2 OPEN chờ Dũng Task7; #5 review DONE, D15 PROPOSED; #8 preparation DONE WITH GATES, C06 chưa deploy/cutover. Interim PASS WITH NOTES. Review #6 CHƯA THỰC HIỆN; không đánh Task7 DONE. Xem báo cáo interim và từng task bên dưới.
 
