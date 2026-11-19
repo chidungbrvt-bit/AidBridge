@@ -1,44 +1,78 @@
 .audit-timeline {
   list-style: none;
-  padding-inline-start: 1.25rem;
+  padding-inline-start: 24px;
   margin: 0;
-  border-inline-start: 2px solid #ccd5cc;
+  border-inline-start: 1px solid var(--line);
 }
 
 .audit-event {
-  padding: 1rem 0;
+  padding: 20px 0;
   position: relative;
 }
 
 .audit-event + .audit-event {
-  border-top: 1px solid #dce3df;
+  border-top: 1px solid var(--line-subtle);
 }
 
+/* Marker sits centred on the 1px rail */
 .audit-event::before {
   content: "";
   position: absolute;
-  inset-inline-start: -1.62rem;
-  top: 1.65rem;
-  width: .65rem;
-  height: .65rem;
+  inset-inline-start: -29px;
+  top: 28px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  background: #376355;
+  background: var(--surface-solid);
+  border: 1px solid var(--muted);
 }
 
 .audit-event-header {
   flex-wrap: wrap;
-  margin-bottom: .75rem;
+  margin-bottom: 12px;
+}
+
+.audit-event-header h3 {
+  margin: 0;
 }
 
 .audit-event time {
-  font-size: .85rem;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
 }
 
 .audit-proof {
   overflow-wrap: anywhere;
-  margin-top: .75rem;
+  margin-top: 12px;
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--surface-subtle);
+  font-variant-numeric: tabular-nums;
 }
 
-.audit-badge.pending_on_chain { color: #704310; background: #fff2d5; }
-.audit-badge.failed_on_chain { color: #921e2d; background: #ffe7ea; }
-.audit-badge.confirmed_on_chain { color: #195d44; background: #def7e9; }
+.audit-proof > div {
+  border-bottom-color: var(--line);
+}
+
+/* Chain status reads as a dot and text, like every other status */
+.audit-badge {
+  border: 0;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.audit-badge.pending_on_chain {
+  --dot: var(--amber);
+}
+
+.audit-badge.failed_on_chain {
+  --dot: var(--red);
+}
+
+.audit-badge.confirmed_on_chain {
+  --dot: var(--green-dot);
+}

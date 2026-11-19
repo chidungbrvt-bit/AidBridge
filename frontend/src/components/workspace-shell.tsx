@@ -7,6 +7,8 @@ import { activeMemberships, canCreateCases, canReadCases, canReviewCases } from 
 import { useSession } from './session-provider';
 import { disputeReturnPath } from '@/lib/login-return';
 import { LanguageToggle, useI18n } from './i18n-provider';
+import { ThemeToggle } from './theme-toggle';
+import { BrandMark, Icon, NavTile } from './icons';
 
 export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const session = useSession();
@@ -42,8 +44,8 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
     if (navigationLocked && event.target instanceof Element && event.target.closest('a')) event.preventDefault();
   }}>
     <aside className="sidebar">
-      <Link href={donorPath ? "/campaigns" : "/cases"} className="brand"><span className="brand-icon" aria-hidden="true">a<span>↗</span></span><span>AidBridge<small>{t('CARE, WITH ACCOUNTABILITY')}</small></span></Link>
-      <div className="workspace-label">{donorPath ? t("DONOR WORKSPACE") : t("ORGANIZATION WORKSPACE")}</div>
+      <Link href={donorPath ? "/campaigns" : "/cases"} className="brand"><BrandMark /><span>AidBridge</span></Link>
+      <div className="workspace-label">{donorPath ? t("Donor workspace") : t("Organization workspace")}</div>
       {memberships.length > 0 && <><label className="org-label" htmlFor="organization">{t("Active organization")}</label>
       <select id="organization" value={organizationId} disabled={navigationLocked} onChange={event => session.setOrganizationId(event.target.value)}>
         {memberships.map((item, index) => <option key={item.organizationId} value={item.organizationId}>
@@ -51,20 +53,20 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
         </option>)}
       </select></>}
       <nav aria-label="Workspace navigation">
-        {mode === 'mock' && <Link href="/goods-demo">Goods demo · MOCK</Link>}
-        <Link className={pathname.startsWith('/campaigns') ? 'nav-active' : ''} href="/campaigns">{t("Campaigns")}</Link>
-        {user.donorEnabled && <Link className={pathname === '/me/commitments' ? 'nav-active' : ''} href="/me/commitments">{t("My pledges")}</Link>}
-        {canReadCases(user, organizationId) && <Link className={pathname === '/cases' ? 'nav-active' : ''} href="/cases"><span aria-hidden="true">▦</span> {t('Cases')}</Link>}
-        {canCreateCases(user, organizationId) && <Link className={pathname === '/cases/new' ? 'nav-active' : ''} href="/cases/new"><span aria-hidden="true">＋</span> {t('Create case')}</Link>}
-        {canReadCases(user, organizationId) && <Link className={pathname === '/audit-preview' ? 'nav-active' : ''} href="/audit-preview">{t("Audit preview")}</Link>}
-        {canReviewCases(user, organizationId) && <Link href="/cases?status=SUBMITTED"><span aria-hidden="true">✓</span> {t('Review queue')}</Link>}
+        {mode === 'mock' && <Link className={pathname === '/goods-demo' ? 'nav-active' : ''} href="/goods-demo"><NavTile name="goods" tone="amber" />{t("Goods demo · MOCK")}</Link>}
+        <Link className={pathname.startsWith('/campaigns') ? 'nav-active' : ''} href="/campaigns"><NavTile name="campaigns" tone="amber" />{t("Campaigns")}</Link>
+        {user.donorEnabled && <Link className={pathname === '/me/commitments' ? 'nav-active' : ''} href="/me/commitments"><NavTile name="pledges" tone="clay" />{t("My pledges")}</Link>}
+        {canReadCases(user, organizationId) && <Link className={pathname === '/cases' ? 'nav-active' : ''} href="/cases"><NavTile name="cases" tone="green" />{t('Cases')}</Link>}
+        {canCreateCases(user, organizationId) && <Link className={pathname === '/cases/new' ? 'nav-active' : ''} href="/cases/new"><NavTile name="create" tone="green" />{t('Create case')}</Link>}
+        {canReadCases(user, organizationId) && <Link className={pathname === '/audit-preview' ? 'nav-active' : ''} href="/audit-preview"><NavTile name="audit" tone="sky" />{t("Audit preview")}</Link>}
+        {canReviewCases(user, organizationId) && <Link href="/cases?status=SUBMITTED"><NavTile name="review" tone="mint" />{t('Review queue')}</Link>}
       </nav>
-      <div className="sidebar-note"><span className="eyebrow">{t("INDEPENDENT REVIEW")}</span><p>{t("Every case starts with a need.")}<br/>{t("Every approval needs a second person.")}</p></div>
-      <div className="profile"><span className="avatar">{user.fullName.slice(0, 1)}</span><div><strong>{user.fullName}</strong><small>{membership?.roles.map(role => status(role)).join(' · ') || (user.donorEnabled ? t("Donor account") : t("No active staff role"))}</small></div></div>
-      <button className="button secondary signout" onClick={signOut} disabled={busy || navigationLocked}>{busy ? t("Signing out…") : t("Sign out")}</button>
+      <div className="sidebar-note"><span className="eyebrow"><Icon name="review" />{t("Independent review")}</span><p>{t("Every case starts with a need.")} {t("Every approval needs a second person.")}</p></div>
+      <div className="profile"><span className="avatar" aria-hidden="true">{user.fullName.slice(0, 1)}</span><div><strong>{user.fullName}</strong><small>{membership?.roles.map(role => status(role)).join(' · ') || (user.donorEnabled ? t("Donor account") : t("No active staff role"))}</small></div></div>
+      <button className="button secondary signout" onClick={signOut} disabled={busy || navigationLocked}><Icon name="signout" />{busy ? t("Signing out…") : t("Sign out")}</button>
     </aside>
     <div className="workspace-main">
-      <header className="topbar"><span>{donorPath ? t("Donor / Goods commitments") : t("Organization / Case management")}</span><div className="topbar-actions"><span className={`environment ${mode}`}><span aria-hidden="true">●</span> {mode === 'mock' ? t('MOCK DEMO · FICTIONAL DATA') : t('REAL API')}</span><LanguageToggle /></div></header>
+      <header className="topbar"><span>{donorPath ? t("Donor / Goods commitments") : t("Organization / Case management")}</span><div className="topbar-actions"><span className={`environment ${mode}`}>{mode === 'mock' ? t('Mock demo · fictional data') : t('Real API')}</span><LanguageToggle /><ThemeToggle /></div></header>
       <main className="main-content" key={contextKey}>
         {navigationLocked && <p className="notice" role="status">{t("Resolve the current submission before leaving this page or switching organization.")}</p>}
         {actionError && <p className="notice error" role="alert">{t(actionError)}</p>}

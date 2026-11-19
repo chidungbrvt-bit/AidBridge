@@ -8,7 +8,7 @@ test('F08 delivery flows into F09 review and void using the same item totals', a
   await page.goto('/login');
   await page.getByLabel('Email address').fill('minh.a@example.test');
   await page.getByLabel('Password', { exact: true }).fill('Mock-only-123!');
-  await page.getByRole('button', { name: 'Sign in →', exact: true }).click();
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await page.getByRole('link', { name: 'Goods demo · MOCK' }).click();
   await page.getByRole('button', { name: 'Load partial receipt sample' }).click();
   await page.getByRole('button', { name: 'Deliver goods' }).click();
@@ -22,7 +22,7 @@ test('F08 delivery flows into F09 review and void using the same item totals', a
 
   const panel = page.getByRole('region', { name: 'Delivery confirmation and disputes' });
   await panel.getByLabel('Simulated review actor').selectOption('fieldVolunteer');
-  await expect(panel.getByRole('alert')).toContainText('403 SELF_CONFIRMATION');
+  await expect(panel.getByRole('alert')).toContainText('A recorder cannot confirm their own delivery.');
   await expect(panel.getByRole('button', { name: 'Submit mock confirmation' })).toBeDisabled();
   await panel.getByLabel('Simulated review actor').selectOption('independentConfirmer');
   await panel.getByRole('checkbox', { name: /^Evidence version 1/ }).check();

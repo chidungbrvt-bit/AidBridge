@@ -78,7 +78,7 @@ test('T02 campaign waits for read success before sharing the timeline and render
   await page.goto(`/campaigns/${campaign.id}`);
   await page.getByText('Public audit trail', { exact: true }).click();
   const trail = page.getByRole('region', { name: 'Public audit timeline' });
-  await expect(trail.getByRole('alert')).toContainText('RESOURCE_NOT_FOUND');
+  await expect(trail.getByRole('alert')).toHaveAttribute('data-error-code', 'RESOURCE_NOT_FOUND');
   const share = trail.getByRole('link', { name: 'Open public audit page' });
   await expect(share).toHaveCount(0);
   ready = true;
@@ -91,7 +91,7 @@ test('T02 campaign waits for read success before sharing the timeline and render
 
   ready = false;
   await trail.getByRole('button', { name: 'Refresh audit', exact: true }).click();
-  await expect(trail.getByRole('alert')).toContainText('RESOURCE_NOT_FOUND');
+  await expect(trail.getByRole('alert')).toHaveAttribute('data-error-code', 'RESOURCE_NOT_FOUND');
   await expect(share).toHaveCount(0);
   await expect(trail.getByText('Confirmed on Fuji', { exact: true })).toHaveCount(0);
   await expect(trail.getByText(txHash, { exact: true })).toHaveCount(0);

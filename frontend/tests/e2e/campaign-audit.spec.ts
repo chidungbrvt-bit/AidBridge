@@ -7,7 +7,7 @@ async function signIn(page: Page, email: string) {
   await page.goto('/login');
   await page.getByLabel('Email address').fill(email);
   await page.getByLabel('Password', { exact: true }).fill(password);
-  await page.getByRole('button', { name: 'Sign in →', exact: true }).click();
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Every need starts here.' })).toBeVisible();
 }
 
@@ -88,7 +88,7 @@ test('F06 admin drafts, retries lost publish, and opens the same campaign in F07
     await page.getByRole('link', { name: 'View published campaign' }).click();
     await expect(page.getByRole('heading', { name: title })).toBeVisible();
     await expect(page.locator(`a[href="${published.auditUrl}"]`)).toHaveCount(0);
-    await expect(page.getByRole('table', { name: 'Campaign goods progress' }).getByRole('rowheader')).toContainText(['Hygiene kit', 'Rice']);
+    await expect(page.getByRole('table', { name: 'Campaign goods progress' }).getByRole('rowheader')).toContainText(['Rice', 'Hygiene kit']);
     await expect(page.getByRole('button', { name: 'Pledge goods →' })).toBeDisabled();
   } finally {
     await reviewer.close();

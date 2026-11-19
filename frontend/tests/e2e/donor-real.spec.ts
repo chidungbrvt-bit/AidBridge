@@ -31,7 +31,7 @@ function outbox(contribution:string,event:string){
 async function login(page:Page){
   await page.goto('/login');await page.getByLabel('Email address').fill(process.env.F07_E2E_DONOR_EMAIL!);
   await page.getByLabel('Password',{exact:true}).fill(process.env.F07_E2E_DONOR_PASSWORD!);
-  await page.getByRole('button',{name:'Sign in →',exact:true}).click();await expect(page).toHaveURL(/\/campaigns$/);
+  await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page).toHaveURL(/\/campaigns$/);
   const me=await page.request.get('/api/auth/me');expect(me.status()).toBe(200);expect(me.headers()['x-aidbridge-mock']).toBeUndefined();
   const user=await me.json();expect(user.userId).toBe(donor);expect(user.donorEnabled).toBe(true);expect(user.memberships).toEqual([]);
   expect((await page.context().cookies()).some(c=>c.httpOnly && c.name==='JSESSIONID')).toBe(true);
@@ -102,7 +102,7 @@ test('real R01 receipt feeds D01 delivery and blocks stale donor cancellation',a
     await staff.goto('/login');
     await staff.getByLabel('Email address').fill(process.env.F07_E2E_RECORDER_EMAIL!);
     await staff.getByLabel('Password',{exact:true}).fill(process.env.F07_E2E_DONOR_PASSWORD!);
-    await staff.getByRole('button',{name:'Sign in →',exact:true}).click();
+    await staff.getByRole('button',{name:'Sign in',exact:true}).click();
     await expect(staff).toHaveURL(/\/cases$/);
     const me=await staff.request.get('/api/auth/me');
     expect(me.status()).toBe(200);
@@ -134,7 +134,7 @@ test('real R01 receipt feeds D01 delivery and blocks stale donor cancellation',a
   }
   const rejected=page.waitForResponse(r=>r.url().includes(`/api/commitments/${saved.id}/cancellations`) && r.request().method()==='POST');
   await panel.getByRole('button',{name:'Cancel selected goods',exact:true}).click();expect((await rejected).status()).toBe(409);
-  await expect(panel.getByRole('alert')).toContainText('409 Conflict');
+  await expect(panel.getByRole('alert')).toBeVisible();await expect(panel.getByRole('alert')).not.toContainText('409');
   await expect(card.getByRole('row').filter({hasText:'Food'}).getByRole('cell')).toHaveText(['2','0','2','0']);
   expect(cancelled(line.id)).toBe(0);expect(outbox(saved.id,'COMMITMENT_REDUCED')).toBe(0);
   expect(volunteer).not.toBe(recorder);
@@ -474,7 +474,7 @@ test('real F09: independent confirmation, dispute guard, void, reload and close'
 async function signInStaff(page: Page, email: string) {
   await page.getByLabel('Email address').fill(email);
   await page.getByLabel('Password', { exact: true }).fill(process.env.F07_E2E_DONOR_PASSWORD!);
-  await page.getByRole('button', { name: 'Sign in →', exact: true }).click();
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect.poll(() => new URL(page.url()).pathname).not.toBe('/login');
 }
 
@@ -757,7 +757,8 @@ test('real P0 same-case journey: create, verify, publish, pledge, partial receip
     await field.getByLabel('Approximate area', { exact: true }).fill('Fictional demo district');
     await field.getByLabel('Internal title', { exact: true }).fill(title);
     for (const [index, name, unit, quantity] of [[1, 'Food', 'PACKAGE', 2], [2, 'Hygiene', 'KIT', 1]] as const) {
-      await field.getByLabel(`Item ${index} name`, { exact: true }).fill(name);
+      await field.getByLabel(`Item ${index} name`, { exact: true }).selectOption("other");
+      await field.getByLabel(`Item ${index} other name`, { exact: true }).fill(name);
       await field.getByLabel(`Item ${index} unit`, { exact: true }).fill(unit);
       await field.getByLabel(`Item ${index} quantity`, { exact: true }).fill(String(quantity));
     }

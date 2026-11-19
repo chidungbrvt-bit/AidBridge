@@ -27,10 +27,10 @@ test('real HTTP: separate A/B sessions, create, denied self-review, revise/resub
   };
   const login = async (page: Page, who: 'A' | 'B') => {
     await page.goto('/login');
-    await expect(page.getByText('REAL API', { exact: true })).toBeVisible();
+    await expect(page.getByText('Real API', { exact: true })).toBeVisible();
     await page.getByLabel('Email address').fill(process.env[`REAL_${who}_EMAIL`]!);
     await page.getByLabel('Password', { exact: true }).fill(process.env[`REAL_${who}_PASSWORD`]!);
-    await page.getByRole('button', { name: 'Sign in →', exact: true }).click();
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Every need starts here.' })).toBeVisible();
     await selectOrganization(page);
     const me = await (await page.request.get('/api/auth/me')).json();
@@ -113,7 +113,7 @@ test('real HTTP: separate A/B sessions, create, denied self-review, revise/resub
       const signOut = page.getByRole('button', { name: 'Sign out', exact: true });
       if (await signOut.isVisible()) {
         await signOut.click();
-        await expect(page.getByRole('heading', { name: 'Welcome back', exact: true })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Sign in', exact: true })).toBeVisible();
         expect((await page.request.get('/api/auth/me')).status()).toBe(401);
       }
     }

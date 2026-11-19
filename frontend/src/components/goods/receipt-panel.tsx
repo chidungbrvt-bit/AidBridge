@@ -20,7 +20,7 @@ function StaffReceipt({ caseId, organizationId, actorId, onRecorded }: {
   caseId: string; organizationId: string; actorId: string; onRecorded: () => void;
 }) {
   const { api, work } = useSession();
-  const { t, status } = useI18n();
+  const { t, status, item: itemName, unit: unitName } = useI18n();
   const scope = `${actorId}:${organizationId}:${caseId}`;
   const [commitments, setCommitments] = useState<OutstandingCommitment[]>([]);
   const [commitmentId, setCommitmentId] = useState("");
@@ -159,9 +159,9 @@ function StaffReceipt({ caseId, organizationId, actorId, onRecorded }: {
           <tbody>{commitment.items.map(row => {
             const sentIndex = submittedItems.findIndex(item => item.contributionItemId === row.contributionItemId);
             return <tr key={row.contributionItemId}>
-              <th scope="row">{row.itemName} <span className="muted">({row.unit})</span></th>
+              <th scope="row">{itemName(row.itemName)} <span className="muted">({unitName(row.unit)})</span></th>
               <td data-testid={`outstanding-${row.contributionItemId}`}><span className="sr-only">{t("Outstanding:")}</span> {row.outstandingQty}</td>
-              <td><input aria-label={t("{item} receipt quantity ({unit})", { item: row.itemName, unit: row.unit })} type="number" min={1} max={row.outstandingQty} step={1}
+              <td><input aria-label={t("{item} receipt quantity ({unit})", { item: itemName(row.itemName), unit: unitName(row.unit) })} type="number" min={1} max={row.outstandingQty} step={1}
                 value={quantities[row.contributionItemId] ?? ""} onChange={event => setQuantities({ ...quantities, [row.contributionItemId]: event.target.value })} />
                 {sentIndex >= 0 && <FieldError name={`items[${sentIndex}].quantity`} issues={fieldErrors} />}</td>
             </tr>;
