@@ -24,7 +24,7 @@ test('F06 real P01–P04: staff draft, publish and public read of a test campaig
   const active = page.getByLabel('Active organization');
   await active.selectOption(org);
   await expect(active).toHaveValue(org);
-  await expect(page.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('VERIFIED');
+  await expect(page.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('Verified');
   const me = await (await page.request.get('/api/auth/me')).json();
   expect(me.memberships.find((m: { organizationId: string; status: string }) => m.organizationId === org && m.status === 'ACTIVE')?.roles).toContain('ORG_ADMIN');
 
@@ -48,7 +48,7 @@ test('F06 real P01–P04: staff draft, publish and public read of a test campaig
   const publishing = page.waitForResponse(response => new URL(response.url()).pathname === `/api/campaigns/${draft.id}/publish`);
   await page.getByRole('button', { name: 'Publish campaign' }).click();
   expect((await publishing).status()).toBe(200);
-  await expect(page.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('IN PROGRESS');
+  await expect(page.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('In progress');
   const response = await request.get(`/api/campaigns/${draft.id}`);
   expect(response.status()).toBe(200);
   const published = await response.json();

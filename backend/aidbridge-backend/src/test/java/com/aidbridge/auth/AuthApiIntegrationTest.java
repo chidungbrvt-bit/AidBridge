@@ -177,6 +177,8 @@ class AuthApiIntegrationTest {
         assertThat(body.path("memberships").size()).isEqualTo(1);
         assertThat(body.path("memberships").get(0).path("organizationId").asText())
                 .isEqualTo(organizationId.toString());
+        assertThat(body.path("memberships").get(0).path("organizationName").asText())
+                .isEqualTo("Integration Organization A");
         assertThat(body.path("memberships").get(0).path("roles").get(0).asText())
                 .isEqualTo("VOLUNTEER");
 

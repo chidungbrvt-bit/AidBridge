@@ -122,7 +122,7 @@ test('real R01 receipt feeds D01 delivery and blocks stale donor cancellation',a
     expect(response.headers()['x-aidbridge-mock']).toBeUndefined();
     const receipt=await response.json();
     expect(receipt).toMatchObject({contributionId:saved.id,recorderId:recorder,items:[{contributionItemId:line.id,quantity:2}],blockchainStatus:'PENDING_ON_CHAIN'});
-    await expect(receiptPanel.getByText(`Receipt ID: ${receipt.id}`)).toBeVisible();
+    await expect(receiptPanel.locator(`[data-receipt-id="${receipt.id}"]`)).toBeVisible();
     await expect(receiptPanel.getByLabel('Outstanding commitment')).toHaveValue(saved.id);
     await expect(outstanding).toHaveCount(0);
     expect(Number(sql(`SELECT count(*) FROM goods_receipts r JOIN goods_receipt_items i ON i.goods_receipt_id=r.id
@@ -172,7 +172,7 @@ test('real R01 receipt feeds D01 delivery and blocks stale donor cancellation',a
       items: [{ campaignItemId: before.id, quantity: 1 }],
       evidenceVersionIds: [version.id], blockchainStatus: 'PENDING_ON_CHAIN',
     });
-    await expect(deliveryPanel.getByText(`Delivery ID: ${delivery.id}`)).toBeVisible();
+    await expect(deliveryPanel.locator(`[data-delivery-id="${delivery.id}"]`)).toBeVisible();
     const after = await campaignFood(field);
     expect(after).toMatchObject({
       receivedQty: before.receivedQty, deliveredQty: before.deliveredQty + 1, confirmedQty: before.confirmedQty,
@@ -289,7 +289,8 @@ test('real F09: independent confirmation, dispute guard, void, reload and close'
     const area = reviewPanel(view);
     await expect(area.getByRole('row').filter({ hasText: 'Rice (BAG)' }).getByRole('cell'))
       .toHaveText(['2', String(received), String(delivered), String(confirmed)]);
-    await expect(area.getByText(status, { exact: true })).toBeVisible();
+    const label = ({ PUBLISHED: 'Published', FULFILLED: 'Fulfilled', CLOSED: 'Closed' } as Record<string, string>)[status] ?? status;
+    await expect(area.locator('.status').filter({ hasText: new RegExp(`^${label}$`) }).first()).toBeVisible();
     const response = await view.request.get(p04);
     expect(response.status()).toBe(200);
     const detail: CampaignResponse = await response.json();
@@ -456,11 +457,11 @@ test('real F09: independent confirmation, dispute guard, void, reload and close'
         () => panel.getByRole('button', { name: 'Close campaign' }).click(), 200);
       expect(closed.status).toBe('CLOSED');
       await assertTotals(staff, 2, 2, 2, 'CLOSED');
-      await expect(staff.getByText('COMPLETED', { exact: true })).toBeVisible();
+      await expect(staff.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' }).getByText('Completed', { exact: true })).toBeVisible();
       await staff.getByText('Case audit trail', { exact: true }).click();
       const timeline = staff.getByRole('region', { name: 'Case audit timeline' });
-      await expect(timeline.getByRole('heading', { name: 'CASE COMPLETED', exact: true })).toBeVisible();
-      await expect(timeline.getByRole('heading', { name: 'DELIVERY CONFIRMED', exact: true }).first()).toBeVisible();
+      await expect(timeline.getByRole('heading', { name: 'Case completed', exact: true })).toBeVisible();
+      await expect(timeline.getByRole('heading', { name: 'Delivery confirmed', exact: true }).first()).toBeVisible();
       expect(Number(sql(`SELECT count(*) FROM delivery_voids WHERE delivery_id='${id(delivery.id)}'`))).toBe(1);
       expect(Number(sql(`SELECT count(*) FROM audit_events WHERE aid_case_id='${reviewCase}' AND event_type='CASE_COMPLETED'`))).toBe(1);
     });
@@ -621,7 +622,7 @@ test('real F09 partial receipts feed a multi-item delivery and independent confi
       expect(response.status()).toBe(201);
       const receipt = await response.json();
       receiptIds.push(id(receipt.id));
-      await expect(receiptPanel.getByText(`Receipt ID: ${receipt.id}`, { exact: true })).toBeVisible();
+      await expect(receiptPanel.locator(`[data-receipt-id="${receipt.id}"]`)).toBeVisible();
       if (receiptIds.length === 1) {
         await expect(receiptPanel.getByTestId(`outstanding-${foodLine.id}`)).toHaveText('Outstanding: 2');
         await expect(receiptPanel.getByTestId(`outstanding-${hygieneLine.id}`)).toHaveText('Outstanding: 1');
@@ -644,7 +645,7 @@ test('real F09 partial receipts feed a multi-item delivery and independent confi
     expect(deliveryResponse.status()).toBe(201);
     const delivery: DeliveryResponse = await deliveryResponse.json();
     expect(delivery).toMatchObject({ reviewStatus: 'PENDING', blockchainStatus: 'PENDING_ON_CHAIN', recorderId: volunteer });
-    await expect(deliveryPanel.getByText(`Delivery ID: ${delivery.id}`, { exact: true })).toBeVisible();
+    await expect(deliveryPanel.locator(`[data-delivery-id="${delivery.id}"]`)).toBeVisible();
     await staff.getByRole('button', { name: 'Sign out', exact: true }).click();
     await expect(staff).toHaveURL(/\/login$/);
     await signInStaff(staff, process.env.F09_E2E_CONFIRMER_EMAIL!);
@@ -661,7 +662,7 @@ test('real F09 partial receipts feed a multi-item delivery and independent confi
     await expect(review.getByText('Decision saved.', { exact: true })).toBeVisible();
     await staff.reload();
     await review.getByLabel('Delivery to review', { exact: true }).selectOption(delivery.id);
-    await expect(review.getByText('CONFIRMED', { exact: true })).toBeVisible();
+    await expect(review.locator('.status').filter({ hasText: /^Confirmed$/ }).first()).toBeVisible();
     const fresh = await page.request.get(`/api/campaigns/${campaign}`);
     expect(fresh.status()).toBe(200);
     const after: CampaignResponse = await fresh.json();
@@ -826,10 +827,10 @@ test('real P0 same-case journey: create, verify, publish, pledge, partial receip
     await signInStaff(staff, process.env.F07_E2E_RECORDER_EMAIL!);
     await staff.goto(`/cases/${created.id}`);
     await write(staff, `/api/campaigns/${published.id}/close`, review.getByRole('button', { name: 'Close campaign', exact: true }), 200);
-    await expect(staff.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('COMPLETED');
+    await expect(staff.locator('.status-card').filter({ hasText: 'BUSINESS STATUS' })).toContainText('Completed');
     await staff.getByText('Case audit trail', { exact: true }).click();
     const timeline = staff.getByRole('region', { name: 'Case audit timeline', exact: true });
-    await expect(timeline.getByText('CASE COMPLETED', { exact: true })).toBeVisible();
+    await expect(timeline.getByText('Case completed', { exact: true })).toBeVisible();
     await expect(timeline.getByText('Confirmed on Fuji', { exact: true })).toHaveCount(0);
     expect(sql(`SELECT string_agg(a.event_type,',' ORDER BY j.chain_sequence) FROM blockchain_jobs j JOIN audit_events a ON a.id=j.audit_event_id WHERE a.aid_case_id='${id(created.id)}'`))
       .toBe('CASE_VERIFIED,AID_PLEDGED,GOODS_RECEIVED,GOODS_RECEIVED,DELIVERY_RECORDED,DELIVERY_CONFIRMED');

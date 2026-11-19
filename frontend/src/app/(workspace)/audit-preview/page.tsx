@@ -1,4 +1,5 @@
 import { AuditTimeline, type AuditExample } from '@/components/audit/audit-timeline';
+import { AuditPreviewHeader } from '@/components/audit/audit-preview-header';
 import proof from '../../../../../docs/fixtures/c05/fuji-case-verified.proof.json';
 
 const events: AuditExample[] = [
@@ -28,7 +29,7 @@ const events: AuditExample[] = [
 
 export default function AuditPreviewPage() {
   return <div className="stack">
-    <header className="page-header"><div><p className="eyebrow">FIXTURE PREVIEW</p><h1>Audit status examples</h1></div></header>
+    <AuditPreviewHeader />
     <AuditTimeline events={events} />
   </div>;
 }

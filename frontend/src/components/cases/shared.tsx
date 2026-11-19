@@ -1,6 +1,7 @@
 "use client";
 
 import type { RefObject } from "react";
+import { useI18n } from "@/components/i18n-provider";
 
 export type FieldIssue = { field: string; code: string; message?: string };
 export type ErrorInfo = { status?: number; code: string; message: string; fieldErrors: FieldIssue[]; unknownOutcome: boolean };
@@ -52,20 +53,24 @@ export function focusFirstError(form: RefObject<HTMLFormElement | null>, issues:
 }
 
 export function FieldError({ name, issues }: { name: string; issues: FieldIssue[] }) {
+  const { t } = useI18n();
   const matching = issues.filter(issue => issue.field === name);
   if (!matching.length) return null;
-  return <span className="field-error" id={`error-${name}`}>{matching.map(issue => issue.code.replaceAll("_", " ").toLowerCase()).join("; ")}</span>;
+  return <span className="field-error" id={`error-${name}`}>{matching.map(issue => t(issue.code.replaceAll("_", " ").toLowerCase())).join("; ")}</span>;
 }
 
 export function ErrorNotice({ error }: { error: ErrorInfo | null }) {
+  const { t } = useI18n();
   if (!error) return null;
-  return <div className="notice error" role="alert" tabIndex={-1}><strong>{error.message}</strong><div className="muted">{error.code}</div></div>;
+  return <div className="notice error" role="alert" tabIndex={-1}><strong>{t(error.message)}</strong><div className="muted">{t("Error code: {code}", { code: error.code })}</div></div>;
 }
 
 export function StatusBadge({ status }: { status: string }) {
-  return <span className={`status status-${status.toLowerCase()}`}>{status.replaceAll("_", " ")}</span>;
+  const { status: label } = useI18n();
+  return <span className={`status status-${status.toLowerCase()}`}>{label(status)}</span>;
 }
 
 export function LoadingCard({ label = "Loading cases…" }: { label?: string }) {
-  return <div className="card loading" role="status" aria-live="polite"><span className="loading-dot" />{label}</div>;
+  const { t } = useI18n();
+  return <div className="card loading" role="status" aria-live="polite"><span className="loading-dot" />{t(label)}</div>;
 }

@@ -52,7 +52,7 @@ Implementation B04 hiện trả CaseDetailResponse với current needs/consent/e
 | LoginRequest | email:string<=255, password:string; không log/persist request |
 | UserResponse | id,fullName,email,status:ACTIVE/DISABLED,platformRole:USER/PLATFORM_ADMIN,createdAt; DTO Java đã có, chỉ dùng authorized account responses, không passwordHash |
 | AuthResponse | user:UserResponse; response login dùng session cookie; không accessToken/tokenType/expiresIn hoặc passwordHash; D40 |
-| MeResponse | userId,fullName,status,platformRole,donorEnabled,memberships[{organizationId,roles,status}]; DTO auth đã có; chỉ trả memberships ACTIVE trong org APPROVED; roles ORG_ADMIN/VOLUNTEER/VERIFIER/DELIVERY_CONFIRMER |
+| MeResponse | userId,fullName,status,platformRole,donorEnabled,memberships[{organizationId,organizationName,roles,status}]; DTO auth đã có; chỉ trả memberships ACTIVE trong org APPROVED; roles ORG_ADMIN/VOLUNTEER/VERIFIER/DELIVERY_CONFIRMER |
 | CreateOrganizationRequest | name<=200,description?:<=2000,relayerAddress?:EVM address; server random publicRef; demo admin provisioning only, không public onboarding |
 | OrganizationResponse | id,name,description,status:PENDING/APPROVED/SUSPENDED,rolesOfCurrentUser; relayer/publicRef chỉ khi đã có extension data và authorization, no secrets |
 | NeedInput | name<=120, unit<=40, quantity:int; no duplicate(name,unit); 1..20 need lines/case |

@@ -1,5 +1,5 @@
 export type OrganizationRole = "VOLUNTEER" | "VERIFIER" | "ORG_ADMIN" | "DELIVERY_CONFIRMER";
-export interface Membership { organizationId: string; roles: OrganizationRole[]; status: string }
+export interface Membership { organizationId: string; organizationName?: string | null; roles: OrganizationRole[]; status: string }
 /** B03 MeResponse as present in the supplied Java source. */
 export interface MeResponse {
   userId: string; fullName: string; status: string; platformRole: string;

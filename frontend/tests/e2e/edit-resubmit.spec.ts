@@ -60,7 +60,7 @@ test("two independent browser sessions complete create -> changes -> edit -> res
     await reviewEvidence(reviewer);
     await reviewer.getByLabel("Review reason", { exact: true }).fill("Clarify the quantity of the second item.");
     await reviewer.getByRole("button", { name: "Request changes", exact: true }).click();
-    await expect(business(reviewer).getByText("CHANGES REQUESTED", { exact: true })).toBeVisible();
+    await expect(business(reviewer).getByText("Changes requested", { exact: true })).toBeVisible();
 
     await page.getByRole("button", { name: "Refresh case", exact: true }).click();
     await expect(page.getByText("Clarify the quantity of the second item.", { exact: true })).toBeVisible();
@@ -78,17 +78,17 @@ test("two independent browser sessions complete create -> changes -> edit -> res
     const resubmitResponse = mutation(page, item.id, "POST", "/resubmit");
     await page.getByRole("button", { name: "Resubmit for review", exact: true }).click();
     expect((await resubmitResponse).status()).toBe(200);
-    await expect(business(page).getByText("SUBMITTED", { exact: true })).toBeVisible();
+    await expect(business(page).getByText("Submitted", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Approve case", exact: true })).toBeDisabled();
 
     await reviewer.getByRole("button", { name: "Refresh case", exact: true }).click();
-    await expect(business(reviewer).getByText("SUBMITTED", { exact: true })).toBeVisible();
+    await expect(business(reviewer).getByText("Submitted", { exact: true })).toBeVisible();
     await expect(reviewer.getByRole("table", { name: "Requested goods" }).getByRole("cell", { name: "8", exact: true })).toBeVisible();
     await expect(reviewer.locator('input[name="reviewedEvidenceVersionIds"]').first()).not.toBeChecked();
     await reviewEvidence(reviewer);
     await reviewer.getByRole("button", { name: "Approve case", exact: true }).click();
-    await expect(business(reviewer).getByText("VERIFIED", { exact: true })).toBeVisible();
-    await expect(reviewer.locator(".status-card").filter({ hasText: "BLOCKCHAIN SYNC" }).getByText("PENDING ON CHAIN", { exact: true })).toBeVisible();
+    await expect(business(reviewer).getByText("Verified", { exact: true })).toBeVisible();
+    await expect(reviewer.locator(".status-card").filter({ hasText: "BLOCKCHAIN SYNC" }).getByText("Pending on chain", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Refresh case", exact: true }).click();
     await expect(page.getByRole("link", { name: "Edit case", exact: true })).toHaveCount(0);
   } finally { await reviewerContext.close(); }

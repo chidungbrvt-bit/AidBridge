@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { describeError, ErrorNotice, StatusBadge, type ErrorInfo } from "@/components/cases/shared";
 import { useSession } from "@/components/session-provider";
+import { useI18n } from "@/components/i18n-provider";
 import { isVolunteer } from "@/lib/api-client";
 import type { DeliveryRequest, DeliveryResponse } from "@/lib/goods";
 import type { PendingWrite } from "@/lib/session-work";
@@ -26,6 +27,7 @@ function StaffDelivery({ caseId, organizationId, actorId, receiptRevision, onRec
   caseId: string; organizationId: string; actorId: string; receiptRevision: number; onRecorded: () => void;
 }) {
   const { api, work } = useSession();
+  const { t } = useI18n();
   const scope = `${actorId}:${organizationId}:${caseId}`;
   const [context, setContext] = useState<DeliveryContext | null>(null);
   const [loading, setLoading] = useState(true);
@@ -157,51 +159,55 @@ function StaffDelivery({ caseId, organizationId, actorId, receiptRevision, onRec
   }
 
   const canDeliver = context?.items.some(item => item.available > 0) && context.evidence.length > 0;
-  return <section className="card stack" aria-label="Goods delivery">
-    <h2>Record goods delivery</h2>
-    <button className="button secondary" type="button" disabled={busy || loading || !!pending} onClick={() => void refresh()}>Refresh delivery stock</button>
-    {result && <div className="notice success" role="status">
-      <strong>{result.outcome === "DELIVERED" ? "Delivery recorded" : "Failed attempt recorded"}</strong>
-      <p className="mono">Delivery ID: {result.id}</p>
-      <p>Review: <StatusBadge status={result.reviewStatus} /></p>
-      <p>Blockchain sync: <StatusBadge status={result.blockchainStatus} /></p>
+  return <section className="card stack" aria-label={t("Goods delivery")}>
+    <h2>{t("Record goods delivery")}</h2>
+    <button className="button secondary" type="button" disabled={busy || loading || !!pending} onClick={() => void refresh()}>{t("Refresh delivery stock")}</button>
+    {result && <div className="notice success" role="status" data-delivery-id={result.id}>
+      <strong>{result.outcome === "DELIVERED" ? t("Delivery recorded") : t("Failed attempt recorded")}</strong>
+      <p>{t("Review:")} <StatusBadge status={result.reviewStatus} /></p>
+      <p>{t("Blockchain sync:")} <StatusBadge status={result.blockchainStatus} /></p>
     </div>}
     <ErrorNotice error={readError} />
     <ErrorNotice error={writeError} />
-    {loading && <p role="status">Loading delivery context…</p>}
-    {readError && <button className="button secondary" type="button" disabled={busy || loading} onClick={() => void refresh()}>Reload delivery context</button>}
-    {pending && <button className="button secondary" type="button" disabled={busy} onClick={() => void send(pending)}>Retry same delivery</button>}
+    {loading && <p role="status">{t("Loading delivery context…")}</p>}
+    {readError && <button className="button secondary" type="button" disabled={busy || loading} onClick={() => void refresh()}>{t("Reload delivery context")}</button>}
+    {pending && <button className="button secondary" type="button" disabled={busy} onClick={() => void send(pending)}>{t("Retry same delivery")}</button>}
     {context && <form className="stack" onSubmit={submit}>
       <fieldset className="form-fieldset stack" disabled={busy || loading || !!pending}>
-        <label className="field">Delivery outcome
+        <label className="field">{t("Delivery outcome")}
           <select value={outcome} onChange={event => { setOutcome(event.target.value as DeliveryRequest["outcome"]); setWriteError(null); }}>
-            <option value="DELIVERED">Delivered</option>
-            <option value="FAILED">Failed attempt</option>
+            <option value="DELIVERED">{t("Delivered")}</option>
+            <option value="FAILED">{t("Failed attempt")}</option>
           </select>
         </label>
         {outcome === "DELIVERED" ? <>
-          {!canDeliver && <p>Recording a handover requires available campaign stock and case evidence.</p>}
-          {context.items.map(item => <label key={item.id} className="field">{item.name} delivery quantity ({item.unit})
-            <span className="muted">Available: {item.available}</span>
-            <input aria-label={`${item.name} delivery quantity (${item.unit})`} type="number" min={1} max={Math.min(item.available, 1_000_000)}
-              step={1} disabled={item.available === 0} value={quantities[item.id] ?? ""}
-              onChange={event => setQuantities({ ...quantities, [item.id]: event.target.value })} />
-          </label>)}
-          <label className="field">Handed over at (UTC, optional)
+          {!canDeliver && <p>{t("Recording a handover requires available campaign stock and case evidence.")}</p>}
+          {context.items.length > 0 && <div className="table-wrap"><table className="data-table goods-entry">
+            <caption className="sr-only">{t("Goods to deliver")}</caption>
+            <thead><tr><th scope="col">{t("Item")}</th><th scope="col">{t("Available")}</th><th scope="col">{t("Quantity delivered")}</th></tr></thead>
+            <tbody>{context.items.map(item => <tr key={item.id}>
+              <th scope="row">{item.name} <span className="muted">({item.unit})</span></th>
+              <td><span className="sr-only">{t("Available:")}</span> {item.available}</td>
+              <td><input aria-label={t("{item} delivery quantity ({unit})", { item: item.name, unit: item.unit })} type="number" min={1} max={Math.min(item.available, 1_000_000)}
+                step={1} disabled={item.available === 0} value={quantities[item.id] ?? ""}
+                onChange={event => setQuantities({ ...quantities, [item.id]: event.target.value })} /></td>
+            </tr>)}</tbody>
+          </table></div>}
+          <label className="field">{t("Handed over at (UTC, optional)")}
             <input type="datetime-local" value={handover} onChange={event => setHandover(event.target.value)} />
           </label>
           {context.evidence.length > 0 && <fieldset>
-            <legend>Evidence versions attached to this case</legend>
+            <legend>{t("Evidence versions attached to this case")}</legend>
             {context.evidence.map((version, index) => <label className="checkbox" key={version.id}>
               <input type="checkbox" checked={evidence.includes(version.id)} onChange={event => setEvidence(current =>
                 event.target.checked ? [...current, version.id] : current.filter(id => id !== version.id))} />
-              <span>Evidence {index + 1} · Version {version.versionNo}</span>
+              <span>{t("Evidence {n} · Version {v}", { n: index + 1, v: version.versionNo })}</span>
             </label>)}
           </fieldset>}
-        </> : <label className="field">Reason for failed attempt
+        </> : <label className="field">{t("Reason for failed attempt")}
           <textarea required maxLength={2000} value={reason} onChange={event => setReason(event.target.value)} />
         </label>}
-        <button className="button" type="submit" disabled={outcome === "DELIVERED" && !canDeliver}>Record delivery</button>
+        <button className="button" type="submit" disabled={outcome === "DELIVERED" && !canDeliver}>{t("Record delivery")}</button>
       </fieldset>
     </form>}
   </section>;
