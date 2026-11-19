@@ -71,3 +71,12 @@ Giới hạn: relayer ghi kết quả nghiệp vụ do hệ thống chấp thu�
 4. Source/refs đọc: main `32a0984`, dung `3b219f1`, khoa `2f08279`; PR35 đã MERGED, PR38/40 đã MERGED. Không pull/merge vào khoa trong lượt này. Task5 report/CSV và Minh day18 handoff trên main được đọc trực tiếp bằng Git; local C10 gate không review lại.
 
 Chỉ bổ sung tài liệu và snapshot công khai; không gửi tin nhắn cho thành viên, không push/PR/merge, không tests full suite, deploy/cutover/DB changes hoặc giao dịch blockchain.
+
+
+## Fee clarification — 19/11/2026, PR41
+
+Đã lấy lại receipt chỉ đọc từ Fuji RPC chính thức, đối chiếu PublicNode và Routescan receipt proxy + transaction API. B05 #1 và #2 đều trả **gasUsed `0x3edc1` = 257473**, **effectiveGasPrice `0xc0` = 192 wei = 0.000000192 gwei**. Phép nhân BigInt: **49434816 wei = 0.000000000049434816 AVAX mỗi giao dịch**. Routescan transaction API cũng trả gasPrice192 và burnedFees49434816; transaction gasPrice đọc trước đó cũng là0xc0. Smoke trả `0x3b9aca00` = 1000000000 wei = 1 gwei, phí **0.000257473 AVAX**. Raw hex/các nguồn và phép tính chính xác được bổ sung vào feeVerification của snapshot; proof fields cũ không thay đổi.
+
+Dũng báo Snowtrace hiển thị khoảng **0.0104943 AVAX/B05 tx**. Số này **không khớp receipt và ba nguồn đã đối chiếu**, không được thay vào snapshot như phí đã xác minh. Trang Snowtrace trực tiếp trả HTTP403 nên chưa tái hiện số UI hoặc xác định nguyên nhân hiển thị. Không có bằng chứng nhầm hex/decimal hay wei/gwei trong phép tính: 0xc0 thực sự bằng192; không hardcode thành giá trị UI. Snapshot trước bổ sung này chưa có trường gas/fee; số192 nằm trong báo cáo B05 ngày13/11, và nay được RPC/API tái xác nhận.
+
+**Slide:** nếu cần phí, dùng số receipt chính xác ở trên, hoặc bỏ số phí khỏi pitch trong khi chờ đối chiếu UI. Không xác nhận0.0104943AVAX là phí gas. Dũng cung cấp ảnh/URL đúng tx với nhãn trường/đơn vị đang xem để giải thích chênh lệch UI; không cần chạy lại worker/tests.

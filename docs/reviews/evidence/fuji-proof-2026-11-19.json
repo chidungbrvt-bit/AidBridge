@@ -67,7 +67,26 @@
             "evidenceCommitment": "0x6d48585ce429c7129e2ef8f24ef1bf84fdd440d7123b09f0a31ab907fbb8cac8"
           }
         }
-      ]
+      ],
+      "feeVerification": {
+        "checkedAt": "2026-11-19T15:25:38.306Z",
+        "gasUsedHex": "0x3edc1",
+        "gasUsed": "257473",
+        "effectiveGasPriceHex": "0x3b9aca00",
+        "effectiveGasPriceWei": "1000000000",
+        "effectiveGasPriceGwei": "1.000000000",
+        "feeWei": "257473000000000",
+        "feeAvax": "0.000257473000000000",
+        "calculation": "BigInt(gasUsedHex) * BigInt(effectiveGasPriceHex); 1 AVAX = 10^18 wei",
+        "observations": [
+          {
+            "url": "https://api.avax-test.network/ext/bc/C/rpc",
+            "gasUsedHex": "0x3edc1",
+            "effectiveGasPriceHex": "0x3b9aca00",
+            "blockHash": "0x0674c217754aa707b93250deb1b3daa6b6e09accba5f00483ade77db66d3e421"
+          }
+        ]
+      }
     },
     {
       "hash": "0x465140011495f85743088ada113097204a891e41bc0b985b15e653366cb8566a",
@@ -103,7 +122,46 @@
             "evidenceCommitment": "0xf5dcb21ed670a1cd234303764c55063fef0f5ec5fe1c961397b250391e298f62"
           }
         }
-      ]
+      ],
+      "feeVerification": {
+        "checkedAt": "2026-11-19T15:25:38.393Z",
+        "gasUsedHex": "0x3edc1",
+        "gasUsed": "257473",
+        "effectiveGasPriceHex": "0xc0",
+        "effectiveGasPriceWei": "192",
+        "effectiveGasPriceGwei": "0.000000192",
+        "feeWei": "49434816",
+        "feeAvax": "0.000000000049434816",
+        "calculation": "BigInt(gasUsedHex) * BigInt(effectiveGasPriceHex); 1 AVAX = 10^18 wei",
+        "observations": [
+          {
+            "url": "https://api.avax-test.network/ext/bc/C/rpc",
+            "gasUsedHex": "0x3edc1",
+            "effectiveGasPriceHex": "0xc0",
+            "blockHash": "0x9bc1ba529b0e891e5066d8187c59e0a84f244434859b8fd99a2ef865d8b866d1"
+          },
+          {
+            "url": "https://avalanche-fuji-c-chain-rpc.publicnode.com",
+            "gasUsedHex": "0x3edc1",
+            "effectiveGasPriceHex": "0xc0",
+            "blockHash": "0x9bc1ba529b0e891e5066d8187c59e0a84f244434859b8fd99a2ef865d8b866d1"
+          },
+          {
+            "url": "https://api.routescan.io/v2/network/testnet/evm/43113/etherscan/api?module=proxy&action=eth_getTransactionReceipt&txhash=0x465140011495f85743088ada113097204a891e41bc0b985b15e653366cb8566a",
+            "gasUsedHex": "0x3edc1",
+            "effectiveGasPriceHex": "0xc0",
+            "blockHash": "0x9bc1ba529b0e891e5066d8187c59e0a84f244434859b8fd99a2ef865d8b866d1"
+          },
+          {
+            "url": "https://api.routescan.io/v2/network/testnet/evm/43113/transactions/0x465140011495f85743088ada113097204a891e41bc0b985b15e653366cb8566a",
+            "gasUsedDecimal": "257473",
+            "gasPriceWei": "192",
+            "burnedFeesWei": "49434816"
+          }
+        ],
+        "snowtraceReportedAvax": "approximately 0.0104943 (Dung-reported, not independently reproduced)",
+        "snowtracePageStatus": "HTTP 403; displayed value/cause not independently verified"
+      }
     },
     {
       "hash": "0x97104a33730c05210da67a21c96b271876d744fcb61fbab46a5d87cff925f98e",
@@ -139,7 +197,46 @@
             "evidenceCommitment": "0x93a214c2cd07c01f32c7af1ee88a8ffa33ea6e477c03513347a7bfe37f6390dc"
           }
         }
-      ]
+      ],
+      "feeVerification": {
+        "checkedAt": "2026-11-19T15:25:39.349Z",
+        "gasUsedHex": "0x3edc1",
+        "gasUsed": "257473",
+        "effectiveGasPriceHex": "0xc0",
+        "effectiveGasPriceWei": "192",
+        "effectiveGasPriceGwei": "0.000000192",
+        "feeWei": "49434816",
+        "feeAvax": "0.000000000049434816",
+        "calculation": "BigInt(gasUsedHex) * BigInt(effectiveGasPriceHex); 1 AVAX = 10^18 wei",
+        "observations": [
+          {
+            "url": "https://api.avax-test.network/ext/bc/C/rpc",
+            "gasUsedHex": "0x3edc1",
+            "effectiveGasPriceHex": "0xc0",
+            "blockHash": "0xe4f804369790bae0b7bb2a64976e9cbef5f263a06c8aa7bbdf32df44d3e5b853"
+          },
+          {
+            "url": "https://avalanche-fuji-c-chain-rpc.publicnode.com",
+            "gasUsedHex": "0x3edc1",
+            "effectiveGasPriceHex": "0xc0",
+            "blockHash": "0xe4f804369790bae0b7bb2a64976e9cbef5f263a06c8aa7bbdf32df44d3e5b853"
+          },
+          {
+            "url": "https://api.routescan.io/v2/network/testnet/evm/43113/etherscan/api?module=proxy&action=eth_getTransactionReceipt&txhash=0x97104a33730c05210da67a21c96b271876d744fcb61fbab46a5d87cff925f98e",
+            "gasUsedHex": "0x3edc1",
+            "effectiveGasPriceHex": "0xc0",
+            "blockHash": "0xe4f804369790bae0b7bb2a64976e9cbef5f263a06c8aa7bbdf32df44d3e5b853"
+          },
+          {
+            "url": "https://api.routescan.io/v2/network/testnet/evm/43113/transactions/0x97104a33730c05210da67a21c96b271876d744fcb61fbab46a5d87cff925f98e",
+            "gasUsedDecimal": "257473",
+            "gasPriceWei": "192",
+            "burnedFeesWei": "49434816"
+          }
+        ],
+        "snowtraceReportedAvax": "approximately 0.0104943 (Dung-reported, not independently reproduced)",
+        "snowtracePageStatus": "HTTP 403; displayed value/cause not independently verified"
+      }
     }
   ],
   "sourceVerification": {

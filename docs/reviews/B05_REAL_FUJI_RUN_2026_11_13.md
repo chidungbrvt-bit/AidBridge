@@ -77,3 +77,7 @@ ORDER BY j.created_at, t.prepared_at;
 - **Dũng (B05).** Tìm lại khóa D54 đã lưu để chạy B2. Đính kèm kết quả SQL đã chạy, chỉ rõ tx D1 và bổ sung log restart cho review. Worker C05 chỉ claim CASE_VERIFIED, các job B07 AID_PLEDGED/COMMITMENT_REDUCED vẫn chờ worker hỗ trợ.
 
 Lệnh đã chạy gồm git show để đọc handoff của Khoa, node --check và node chạy verify-relayer-handoff.mjs từ bản trích của ref Khoa, node --input-type=module - gọi collectProof, Invoke-RestMethod đọc Fuji/Routescan, và psql -X -w kiểm tra truy cập aidbridge_demo. psql trả no password supplied. Lượt này dùng readback, không tạo job mới hoặc lặp lại restart.
+
+
+### Fee clarification19/11 (PR41)
+Số192wei và0.000000000049434816AVAX/tx ở báo cáo này đã được kiểm lại bằng receipt chính thức, PublicNode và Routescan (gasUsed0x3edc1/effectiveGasPrice0xc0). Đây không phải1gwei như giao dịch smoke. Snowtrace UI được Dũng báo khoảng0.0104943AVAX nhưng chưa tái hiện được (HTTP403); không thay số receipt bằng số UI chưa giải thích. Xem [bàn giao19/11, mục Fee clarification](BLOCKCHAIN_DEMO_HANDOFF_2026_11_19.md) và snapshot feeVerification cho raw hex, nguồn và BigInt calculation.
