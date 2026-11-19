@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useSession } from "@/components/session-provider";
 import { canCreateCases } from "@/lib/api-client";
-import type { CaseDetailResponse, NeedInput, PatchCaseRequest } from "@/lib/types";
+import type { CaseDetailResponse, PatchCaseRequest } from "@/lib/types";
 import { useI18n } from "@/components/i18n-provider";
 import { describeError, ErrorNotice, FieldError, focusFirstError, LoadingCard, StatusBadge, type ErrorInfo, type FieldIssue } from "./shared";
 
-type NeedRow = NeedInput & { rowKey: string };
+import { duplicateNeedIssues, NeedFields, type NeedRow } from "./need-fields";
 type Attempt = { action: "save"; key: string; body: PatchCaseRequest } | { action: "resubmit"; key: string; body: { expectedVersion: number } };
 
 export function EditCase({ id }: { id: string }) {
@@ -77,7 +77,7 @@ function CaseRevisionForm({ initial, onRefresh }: { initial: CaseDetailResponse;
     return () => window.removeEventListener("beforeunload", warn);
   }, [uncertain]);
   const dirty = () => { setChanged(true); setSaved(false); };
-  const updateNeed = (index: number, patch: Partial<NeedInput>) => { dirty(); setNeeds(current => current.map((need, i) => i === index ? { ...need, ...patch } : need)); };
+  const updateNeed = (index: number, patch: Partial<NeedRow>) => { dirty(); setNeeds(current => current.map((need, i) => i === index ? { ...need, ...patch } : need)); };
   const invalid = (name: string) => issues.some(issue => issue.field === name);
   const description = (name: string) => invalid(name) ? `error-${name}` : undefined;
 
@@ -108,6 +108,13 @@ function CaseRevisionForm({ initial, onRefresh }: { initial: CaseDetailResponse;
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (locked || inFlight.current || !changed) return;
+    const localIssues = duplicateNeedIssues(needs);
+    if (localIssues.length) {
+      setIssues(localIssues);
+      setError({ code: "VALIDATION_ERROR", message: "Check the highlighted fields and try again.", fieldErrors: localIssues, unknownOutcome: false });
+      focusFirstError(form, localIssues);
+      return;
+    }
     const body: PatchCaseRequest = { expectedVersion: detail.version, internalTitle: title.trim(), approximateArea: area.trim(), priority,
       publicTitle: publicTitle.trim(), publicSummary: publicSummary.trim(),
       needs: needs.map(({ name, unit, quantity }) => ({ name: name.trim(), unit: unit.trim(), quantity })) };
@@ -117,7 +124,7 @@ function CaseRevisionForm({ initial, onRefresh }: { initial: CaseDetailResponse;
   if (!allowed) return <section className="card"><h1>{t("Editing unavailable")}</h1><p className="muted">{t("Only the creator with an active VOLUNTEER membership can edit a submitted case or a case with requested changes.")}</p><Link className="button secondary" href={`/cases/${detail.id}`}>{t("Back to case")}</Link></section>;
 
   return <div className="stack">
-    <header className="page-header"><div>{!uncertain && <Link className="back-link" href={`/cases/${detail.id}`}>{t("← Case details")}</Link>}<p className="eyebrow">{t("CASE · REVISION {n}", { n: detail.version })}</p><h1>{t("Edit case")}</h1><p className="muted">{detail.beneficiaryAlias} · {t("Save a new revision before requesting another independent review.")}</p></div><StatusBadge status={detail.status} /></header>
+    <header className="page-header"><div>{!uncertain && <Link className="back-link" href={`/cases/${detail.id}`}>{t("← Case details")}</Link>}<p className="eyebrow">{t("Case · revision {n}", { n: detail.version })}</p><h1>{t("Edit case")}</h1><p className="muted">{detail.beneficiaryAlias} · {t("Save a new revision before requesting another independent review.")}</p></div><StatusBadge status={detail.status} /></header>
     {detail.status === "CHANGES_REQUESTED" && <section className="notice"><strong>{t("Changes requested")}</strong><p>{latestChange?.reason || t("Review feedback is not included in this API projection. Check the reviewer’s feedback before revising the case.")}</p>{historyUnavailable && <p>{t("This API does not expose review history. If a revision was already saved, you may resubmit it; the server checks whether the required changes have been saved.")}</p>}</section>}
     <form className="stack" ref={form} onSubmit={save}>
       <ErrorNotice error={error} />
@@ -133,10 +140,8 @@ function CaseRevisionForm({ initial, onRefresh }: { initial: CaseDetailResponse;
         </section>
         <section className="card stack"><div className="toolbar"><h2>{t("Requested goods")}</h2><button type="button" className="button secondary" disabled={needs.length >= 20} onClick={() => { dirty(); setNeeds(current => [...current, { rowKey: crypto.randomUUID(), name: "", unit: "", quantity: 1 }]); }}>{t("+ Add item")}</button></div><FieldError name="needs" issues={issues} />
           {needs.map((need, index) => <div className="need-row" key={need.rowKey}><span className="item-number">{index + 1}</span>
-            <label className="field"><span>{t('Item {n} name', { n: index + 1 })}</span><input name={`needs[${index}].name`} aria-label={t('Item {n} name', { n: index + 1 })} value={need.name} onChange={event => updateNeed(index, { name: event.target.value })} required maxLength={120} aria-invalid={invalid(`needs[${index}].name`)} aria-describedby={description(`needs[${index}].name`)} /><FieldError name={`needs[${index}].name`} issues={issues} /></label>
-            <label className="field"><span>{t("Unit")}</span><input name={`needs[${index}].unit`} aria-label={t('Item {n} unit', { n: index + 1 })} value={need.unit} onChange={event => updateNeed(index, { unit: event.target.value })} required maxLength={40} aria-invalid={invalid(`needs[${index}].unit`)} aria-describedby={description(`needs[${index}].unit`)} /><FieldError name={`needs[${index}].unit`} issues={issues} /></label>
-            <label className="field"><span>{t("Quantity")}</span><input type="number" name={`needs[${index}].quantity`} aria-label={t('Item {n} quantity', { n: index + 1 })} value={Number.isNaN(need.quantity) ? "" : need.quantity} onChange={event => updateNeed(index, { quantity: event.target.valueAsNumber })} required min={1} max={1000000} step={1} aria-invalid={invalid(`needs[${index}].quantity`)} aria-describedby={description(`needs[${index}].quantity`)} /><FieldError name={`needs[${index}].quantity`} issues={issues} /></label>
-            <button className="button secondary remove-item" type="button" aria-label={t('Remove item {n}', { n: index + 1 })} disabled={needs.length <= 1} onClick={() => { dirty(); setNeeds(current => current.filter((_, i) => i !== index)); setIssues([]); }}>{t("Remove")}</button>
+            <NeedFields need={need} index={index} issues={issues} onChange={patch => updateNeed(index, patch)} />
+            <button className="button secondary remove-item" type="button" aria-label={`Remove item ${index + 1}`} disabled={needs.length <= 1} onClick={() => { dirty(); setNeeds(current => current.filter((_, i) => i !== index)); setIssues([]); }}>{t("Remove")}</button>
           </div>)}
         </section>
         <div className="form-footer actions"><button className="button" type="submit" disabled={!changed}>{busy ? t("Saving…") : t("Save revision")}</button>

@@ -3,6 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { statusLabel, translate, type Language, type TranslationVars } from "../lib/i18n/translate";
 
+import { itemLabel, unitLabel } from "../lib/item-catalog";
+
 const STORAGE_KEY = "aidbridge.language";
 
 type I18nValue = {
@@ -10,10 +12,13 @@ type I18nValue = {
   setLanguage: (language: Language) => void;
   t: (text: string, vars?: TranslationVars) => string;
   status: (code: string) => string;
+  item: (name: string) => string;
+  unit: (code: string) => string;
 };
 
 // Components rendered outside the provider (dev harnesses) keep English.
 const english: I18nValue = {
+  item: name => itemLabel(name, "en"), unit: code => unitLabel(code, "en"),
   language: "en", setLanguage: () => {},
   t: (text, vars) => translate("en", text, vars), status: code => statusLabel("en", code),
 };
@@ -34,6 +39,8 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     language, setLanguage,
     t: (text, vars) => translate(language, text, vars),
     status: code => statusLabel(language, code),
+    item: name => itemLabel(name, language),
+    unit: code => unitLabel(code, language),
   }), [language, setLanguage]);
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }

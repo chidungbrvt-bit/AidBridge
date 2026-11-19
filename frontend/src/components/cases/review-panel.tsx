@@ -84,7 +84,7 @@ export function ReviewPanel({ detail, onDecision, onRefresh, onBusyChange }: {
   }
 
   return <aside className="card stack review-panel" aria-label={t("Independent review")}>
-    <div><p className="eyebrow">{t("INDEPENDENT REVIEW")}</p><h2>{t("A second pair of eyes.")}</h2><p className="muted">{t("Review case revision {n} and its evidence snapshot.", { n: detail.version })}</p></div>
+    <div><p className="eyebrow">{t("Independent review")}</p><h2>{t("A second pair of eyes.")}</h2><p className="muted">{t("Review case revision {n} and its evidence snapshot.", { n: detail.version })}</p></div>
     {success && <div className="notice success" role="status"><strong>{t("Review recorded")}</strong><p>{t("Business status:")} <StatusBadge status={success.caseStatus} /></p><p>{t("Chain status:")} <StatusBadge status={success.blockchainStatus} /></p>{success.caseStatus === "VERIFIED" && <p>{t("Approval is complete in the application. A pending chain record is not a confirmed transaction.")}</p>}</div>}
     {!roleAllowed && <p className="notice">{t("An active VERIFIER membership is required for review.")}</p>}
     {isCreator && <p className="notice">{t("You created this case. Another person must review it, even if you also have the VERIFIER role.")}</p>}

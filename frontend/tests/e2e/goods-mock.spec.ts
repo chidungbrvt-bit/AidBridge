@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 test.beforeEach(async ({page}) => {
   await page.goto('/login'); await page.getByLabel('Email address').fill('minh.a@example.test');
   await page.getByLabel('Password',{exact:true}).fill('Mock-only-123!');
-  await page.getByRole('button',{name:'Sign in →',exact:true}).click();
+  await page.getByRole('button',{name:'Sign in',exact:true}).click();
   await page.getByRole('link',{name:'Goods demo · MOCK'}).click();
   await expect(page.getByRole('heading',{name:'Receive and deliver goods'})).toBeVisible();
 });
@@ -32,13 +32,13 @@ test('D01 delivery keeps confirmed separate; failed attempt zero effect',async({
 });
 test('403 and 409 do not mutate stock, including over-receive',async({page})=>{
   await page.getByLabel('Simulated actor').selectOption('donor'); await expect(page.getByRole('button',{name:'Record mock receipt',exact:true})).toBeDisabled();
-  await expect(page.getByRole('alert').filter({hasText:'403 FORBIDDEN'})).toBeVisible();
+  await expect(page.getByRole('alert').filter({hasText:'This simulated actor cannot record'})).toBeVisible();
   await page.getByLabel('Simulated actor').selectOption('organizationAdmin'); await goods(page,'5','1');
   await page.getByRole('checkbox',{name:/Reject next write/}).check(); await page.getByRole('button',{name:'Record mock receipt',exact:true}).click();
-  await expect(page.getByRole('alert').filter({hasText:'409 QUANTITY_EXCEEDED'})).toBeVisible();
+  await expect(page.getByRole('alert').filter({hasText:'The quantity exceeds the current availability'})).toBeVisible();
   await expect(page.getByTestId('totals-kg').locator('td')).toHaveText(['14','2','1','0']);
   await page.getByRole('checkbox',{name:/Reject next write/}).uncheck(); await page.getByLabel('Drinking Water quantity').fill('3');
-  await page.getByRole('button',{name:'Record mock receipt',exact:true}).click(); await expect(page.getByRole('alert').filter({hasText:'409'})).toBeVisible();
+  await page.getByRole('button',{name:'Record mock receipt',exact:true}).click(); await expect(page.getByRole('alert').filter({hasText:'remain unreceived'})).toBeVisible();
   await expect(page.getByTestId('totals-kg').locator('td')).toHaveText(['14','2','1','0']);
 });
 test('loading/empty/error recovery and keyboard submit',async({page})=>{
@@ -63,7 +63,7 @@ test('D01 over-delivery has line feedback and no writes; corrected request succe
   await page.getByLabel('Simulated actor').selectOption('fieldVolunteer');
   await goods(page,'4','2'); await page.getByRole('checkbox',{name:'Fictional evidence 1',exact:true}).check();
   await page.getByRole('button',{name:'Record mock delivery',exact:true}).click();
-  await expect(page.getByRole('alert').filter({hasText:'409 QUANTITY_EXCEEDED'})).toContainText('Drinking Water: only 1 box');
+  await expect(page.getByRole('alert').filter({hasText:'Drinking Water: only 1 box'})).not.toContainText('QUANTITY_EXCEEDED');
   await expect(page.getByLabel('Drinking Water quantity')).toHaveAttribute('aria-invalid','true');
   await expect(page.getByTestId('totals-kg').locator('td')).toHaveText(['14','7','1','0']);
   await expect(page.getByTestId('totals-box').locator('td')).toHaveText(['3','1','0','0']);
@@ -80,7 +80,7 @@ test('FAILED requires reason and records zero effective goods after partial rece
   await page.getByLabel('Simulated actor').selectOption('fieldVolunteer');
   await page.getByRole('combobox',{name:/^Outcome/}).selectOption('FAILED');
   await page.getByRole('button',{name:'Record mock delivery',exact:true}).click();
-  await expect(page.getByRole('alert').filter({hasText:'400 VALIDATION_ERROR'})).toBeVisible();
+  await expect(page.getByRole('alert').filter({hasText:'Check the highlighted fields and try again.'})).toBeVisible();
   await page.getByLabel('Delivery reason').fill('Fictional road blocked');
   await page.getByRole('button',{name:'Record mock delivery',exact:true}).click();
   const result=page.getByRole('region',{name:'Latest mock result',exact:true});

@@ -12,7 +12,7 @@ async function login(page: Page, who: keyof typeof userEmail) {
   await page.goto("/login");
   await page.getByLabel("Email address").fill(userEmail[who]);
   await page.getByLabel("Password", { exact: true }).fill(password);
-  await page.getByRole("button", { name: "Sign in →", exact: true }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Every need starts here." })).toBeVisible();
 }
 
@@ -48,7 +48,7 @@ async function create(page: Page, suffix: string): Promise<Created> {
 
 async function becomeReviewer(page: Page, item: Created) {
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Welcome back", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in", exact: true })).toBeVisible();
   await expect(page.getByText(item.title, { exact: true })).toHaveCount(0);
   await login(page, "B");
   await expect(page.getByRole("navigation", { name: "Workspace navigation" }).getByRole("link", { name: "Create case", exact: true })).toHaveCount(0);
@@ -69,7 +69,7 @@ test("wrong password stays on login; session data never enters localStorage", as
   await page.goto("/login");
   await page.getByLabel("Email address").fill(userEmail.A);
   await page.getByLabel("Password", { exact: true }).fill("wrong-password");
-  await page.getByRole("button", { name: "Sign in →", exact: true }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.locator('.notice[role="alert"]')).toHaveText("Email or password is incorrect.");
   await expect(page.getByLabel("Password", { exact: true })).toHaveValue("");
   await login(page, "A");
@@ -107,8 +107,8 @@ test("A creates two items; self review denied; B approves with distinct business
 });
 
 for (const action of [
-  { button: "Request changes", status: "CHANGES REQUESTED", suffix: "changes" },
-  { button: "Reject case", status: "REJECTED", suffix: "reject" },
+  { button: "Request changes", status: "Changes requested", suffix: "changes" },
+  { button: "Reject case", status: "Rejected", suffix: "reject" },
 ]) {
   test(`${action.button} requires a reason and preserves a separate local chain state`, async ({ page }) => {
     await login(page, "A");
@@ -134,28 +134,28 @@ test("a stale revision blocks review until refresh and renewed evidence acknowle
   await page.getByRole("button", { name: "Simulate a stale revision", exact: true }).click();
   await expect(page.getByText(/The mock server revision changed/)).toBeVisible();
   await page.getByRole("button", { name: "Approve case", exact: true }).click();
-  await expect(page.locator('.notice[role="alert"]')).toContainText("VERSION_CONFLICT");
+  await expect(page.locator('.notice[role="alert"]')).toHaveAttribute("data-error-code", "VERSION_CONFLICT");
   await expect(page.getByRole("button", { name: "Approve case", exact: true })).toBeDisabled();
   await page.getByRole("button", { name: "Refresh before reviewing again", exact: true }).click();
-  await expect(page.getByText(`CASE · REVISION ${item.version + 1}`, { exact: true })).toBeVisible();
+  await expect(page.getByText(`Case · revision ${item.version + 1}`, { exact: true })).toBeVisible();
   await expect(page.locator('input[name="reviewedEvidenceVersionIds"]').first()).not.toBeChecked();
   await acknowledgeEvidence(page);
   await page.getByRole("button", { name: "Approve case", exact: true }).click();
   await expect(businessCard(page).getByText("Verified", { exact: true })).toBeVisible();
 });
 
-test("server validation maps to the duplicate need row and focuses that input", async ({ page }) => {
+test("duplicate selection focuses the item row before submitting", async ({ page }) => {
   await login(page, "A");
   await fillCreateForm(page, "validation-row");
-  await page.getByLabel("Item 2 name", { exact: true }).fill("Rice");
-  await page.getByLabel("Item 2 unit", { exact: true }).fill("bag");
-  const responsePromise = page.waitForResponse(response => new URL(response.url()).pathname === "/api/cases" && response.request().method() === "POST");
+  await page.getByLabel("Item 2 name", { exact: true }).selectOption("Rice");
+  const writes: string[] = [];
+  page.on("request", request => { if (request.method() === "POST" && new URL(request.url()).pathname === "/api/cases") writes.push(request.url()); });
   await page.getByRole("button", { name: "Submit case", exact: true }).click();
-  expect((await responsePromise).status()).toBe(400);
+
   await expect(page.getByLabel("Item 2 name", { exact: true })).toBeFocused();
   await expect(page.locator('[id="error-needs[1].name"]')).toHaveText("duplicate need");
-  await page.getByLabel("Item 2 name", { exact: true }).fill("Hygiene kit");
-  await page.getByLabel("Item 2 unit", { exact: true }).fill("kit");
+  expect(writes).toEqual([]);
+  await page.getByLabel("Item 2 name", { exact: true }).selectOption("Hygiene kit");
   await page.getByRole("button", { name: "Submit case", exact: true }).click();
   await expect(businessCard(page).getByText("Submitted", { exact: true })).toBeVisible();
 });
@@ -201,11 +201,11 @@ test("empty/error list states recover, then expired session removes private stat
   await page.locator(".demo-tools summary").click();
   await page.getByRole("button", { name: "Fail next read", exact: true }).click();
   await page.getByRole("button", { name: "Refresh", exact: true }).click();
-  await expect(page.locator(".main-content").getByRole("alert").last()).toContainText("DEPENDENCY_UNAVAILABLE");
+  await expect(page.locator(".main-content").getByRole("alert").last()).toHaveAttribute("data-error-code", "DEPENDENCY_UNAVAILABLE");
   await page.getByRole("button", { name: "Refresh", exact: true }).click();
   await expect(page.getByRole("heading", { name: "No cases with this status", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Expire session", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Welcome back", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Organization cases", exact: true })).toHaveCount(0);
   await page.goto("/cases");
   await expect(page).toHaveURL(/\/login$/);

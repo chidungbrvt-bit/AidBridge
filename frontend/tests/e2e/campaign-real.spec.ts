@@ -15,10 +15,10 @@ test('F06 real P01–P04: staff draft, publish and public read of a test campaig
   expect(preflight.status()).toBe(200);
   expect(preflight.headers()['x-aidbridge-mock']).toBeUndefined();
   await page.goto('/login');
-  await expect(page.getByText('REAL API', { exact: true })).toBeVisible();
+  await expect(page.getByText('Real API', { exact: true })).toBeVisible();
   await page.getByLabel('Email address').fill(email);
   await page.getByLabel('Password', { exact: true }).fill(password);
-  await page.getByRole('button', { name: 'Sign in →', exact: true }).click();
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
   await page.goto(`/cases/${encodeURIComponent(caseId)}`);
   const active = page.getByLabel('Active organization');

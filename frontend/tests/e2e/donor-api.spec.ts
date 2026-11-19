@@ -113,7 +113,7 @@ test('G03 committed 1kg then repeated 504 retries without cancelling 2kg',async(
 test('G03 receipt races stale form: HTTP409 refreshes outstanding and never cancels received goods',async({page})=>{
   const h=await harness(page,true);const panel=await cancellation(page);h.state.receiveOnCancel=true;
   await panel.getByRole('button',{name:'Cancel selected goods',exact:true}).click();
-  await expect(panel.getByRole('alert')).toContainText('409 Conflict');
+  await expect(panel.getByRole('alert')).toBeVisible();await expect(panel.getByRole('alert')).not.toContainText('409');
   await expect(rice(page).getByRole('cell')).toHaveText(['8','0','8','0']);
   await expect(panel.getByRole('button',{name:'Cancel selected goods',exact:true})).toBeDisabled();
 });
@@ -126,7 +126,7 @@ for(const fault of ['400','403','409'] as const)test(`G01 HTTP${fault} is visibl
 
 test('history error/empty and disabled donor capability do not fabricate records',async({page})=>{
   const h=await harness(page);h.state.historyError=true;await page.goto('/me/commitments');
-  await expect(page.getByRole('alert').filter({hasText:'503'})).toContainText('503');h.state.historyError=false;
+  await expect(page.getByRole('alert').filter({hasText:'Unable to load your pledge history.'})).not.toContainText('503');h.state.historyError=false;
   await page.getByRole('button',{name:'Retry history loading'}).click();await expect(page.getByRole('heading',{name:'No pledges yet'})).toBeVisible();
   h.state.enabled=false;h.state.reads=[];await page.reload();await expect(page.getByRole('heading',{name:'Donor access is not enabled'})).toBeVisible();
   expect(h.state.reads.filter(x=>x.includes('/api/me/commitments'))).toEqual([]);await expect(page.locator('article')).toHaveCount(0);
@@ -160,7 +160,7 @@ test('G02 HTTP401 clears private UI through the shared session handler',async({p
  await harness(page,true);
  await page.route('**/api/me/commitments?*',route=>route.fulfill({status:401,contentType:'application/json',body:JSON.stringify({status:401,code:'UNAUTHENTICATED',title:'Session ended'})}));
  await page.goto('/me/commitments');await expect(page).toHaveURL(/login/);
- await expect(page.getByRole('heading',{name:'Welcome back'})).toBeVisible();await expect(page.locator('article')).toHaveCount(0);
+ await expect(page.getByRole('heading',{name:'Sign in'})).toBeVisible();await expect(page.locator('article')).toHaveCount(0);
 });
 
 
@@ -188,7 +188,7 @@ test('campaign discovery handles loading/error/empty and keyboard navigation int
    await route.fulfill({status:responseMode==='error'?503:200,contentType:'application/json',body:JSON.stringify(body)});
  });
  await page.goto('/campaigns');await expect(page.getByRole('status').filter({hasText:'Loading campaigns'})).toBeVisible();
- await expect(page.getByRole('alert').filter({hasText:'503'})).toBeVisible();responseMode='empty';
+ await expect(page.getByRole('alert').filter({hasText:'Unable to load public campaigns.'})).toBeVisible();responseMode='empty';
  await page.getByRole('button',{name:'Retry campaigns'}).click();await expect(page.getByText('No public campaigns are available.')).toBeVisible();
  responseMode='full';await page.reload();const link=page.getByRole('link',{name:'View needs and pledge'});await expect(link).toBeVisible();
  await link.focus();await page.keyboard.press('Enter');await expect(page).toHaveURL(new RegExp(DEMO_CAMPAIGN_ID));

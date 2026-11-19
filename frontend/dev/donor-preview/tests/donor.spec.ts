@@ -11,8 +11,8 @@ test('multi-item pledge to own history, separate totals, mobile layout',async({p
 });
 test('local validation and server 400/409 never create successful history',async({page})=>{
  await page.getByRole('button',{name:'Pledge goods →',exact:true}).click();await expect(page.getByRole('alert')).toContainText('Select at least one item');
- await fill(page);await page.getByLabel('Mock response').selectOption('400');await page.getByRole('button',{name:'Pledge goods →',exact:true}).click();await expect(page.getByRole('alert')).toContainText('400 VALIDATION_ERROR');await expect(page.getByRole('alert')).toBeFocused();
- await page.getByLabel('Mock response').selectOption('409');await page.getByRole('button',{name:'Pledge goods →',exact:true}).click();await expect(page.getByRole('alert')).toContainText('409 QUANTITY_EXCEEDED');
+ await fill(page);await page.getByLabel('Mock response').selectOption('400');await page.getByRole('button',{name:'Pledge goods →',exact:true}).click();await expect(page.getByRole('alert')).toBeVisible();await expect(page.getByRole('alert')).not.toContainText('VALIDATION_ERROR');await expect(page.getByRole('alert')).toBeFocused();
+ await page.getByLabel('Mock response').selectOption('409');await page.getByRole('button',{name:'Pledge goods →',exact:true}).click();await expect(page.getByRole('alert')).toBeVisible();await expect(page.getByRole('alert')).not.toContainText('QUANTITY_EXCEEDED');
  await page.getByRole('button',{name:'My pledges',exact:true}).click();await expect(page.getByRole('heading',{name:'No pledges yet'})).toBeVisible();
 });
 test('history empty/error/loading and campaign read error',async({page})=>{
@@ -31,7 +31,7 @@ test('desktop screenshot and real mode fail closed',async({page})=>{
 });
 
 test('mobile pledge and 403 permission rejection',async({page})=>{
- await page.setViewportSize({width:390,height:844});await fill(page);await page.getByLabel('Mock response').selectOption('403');await page.getByRole('button',{name:'Pledge goods →',exact:true}).click();await expect(page.getByRole('alert')).toContainText('403 FORBIDDEN');
+ await page.setViewportSize({width:390,height:844});await fill(page);await page.getByLabel('Mock response').selectOption('403');await page.getByRole('button',{name:'Pledge goods →',exact:true}).click();await expect(page.getByRole('alert')).toBeVisible();await expect(page.getByRole('alert')).not.toContainText('FORBIDDEN');
  await page.getByLabel('Mock response').selectOption('none');await page.getByRole('button',{name:'Pledge goods →',exact:true}).click();await expect(page.getByText('Goods pledged. Pending on-chain.',{exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBeTruthy();
 });
 test('keyboard error summary targets invalid quantity; no backend requests',async({page})=>{

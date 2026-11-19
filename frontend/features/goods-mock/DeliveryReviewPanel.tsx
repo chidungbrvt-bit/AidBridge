@@ -83,14 +83,14 @@ export function DeliveryReviewPanel({ state, snapshot, disabled, onReview }: Pro
       const detail = operation === 'D02' && cause instanceof GoodsError && cause.status === 400
         ? ' Review every evidence version and provide a reason when requesting review.'
         : '';
-      setMessage({ text: (cause instanceof GoodsError ? cause.message : 'Mock action failed.') + detail, error: true });
+      setMessage({ text: (cause instanceof GoodsError ? t(cause.userMessage) : 'Mock action failed.') + detail, error: true });
     }
     requestAnimationFrame(() => feedback.current?.focus());
   }
 
   return <section className="card stack" aria-labelledby="delivery-review-title">
     <header>
-      <p className="eyebrow">{t("SIMULATED DATA ONLY")}</p>
+      <p className="eyebrow">{t("Simulated data only")}</p>
       <h2 id="delivery-review-title">{t("Delivery confirmation and disputes")}</h2>
       <p className="muted">{t("Simulated actors use the deliveries recorded above. This preview sends no requests to the backend or Fuji.")}</p>
     </header>
@@ -109,7 +109,7 @@ export function DeliveryReviewPanel({ state, snapshot, disabled, onReview }: Pro
             {Object.entries(actorLabels).map(([value, label]) => <option value={value} key={value}>{t(label)}</option>)}
           </select>
         </label>
-        {!allowed && <p className="notice error" role="alert">{isSelf ? `403 SELF_CONFIRMATION · ${t('A recorder cannot confirm their own delivery.')}` : `403 FORBIDDEN · ${t('This actor cannot perform this operation.')}`}</p>}
+        {!allowed && <p className="notice error" role="alert">{isSelf ? t('A recorder cannot confirm their own delivery.') : t('This actor cannot perform this operation.')}</p>}
         {operation === 'D02' && openDispute && <p className="notice" role="status">{t("Resolve all open disputes before confirming a delivery.")}</p>}
         {operation === 'D02' && !selected && <p>{t("Record a successful delivery above to start independent review.")}</p>}
         {operation === 'S03' && !dispute && <p>{t("There are no open disputes to resolve.")}</p>}

@@ -27,7 +27,7 @@ function StaffDelivery({ caseId, organizationId, actorId, receiptRevision, onRec
   caseId: string; organizationId: string; actorId: string; receiptRevision: number; onRecorded: () => void;
 }) {
   const { api, work } = useSession();
-  const { t } = useI18n();
+  const { t, item: itemName, unit: unitName } = useI18n();
   const scope = `${actorId}:${organizationId}:${caseId}`;
   const [context, setContext] = useState<DeliveryContext | null>(null);
   const [loading, setLoading] = useState(true);
@@ -186,9 +186,9 @@ function StaffDelivery({ caseId, organizationId, actorId, receiptRevision, onRec
             <caption className="sr-only">{t("Goods to deliver")}</caption>
             <thead><tr><th scope="col">{t("Item")}</th><th scope="col">{t("Available")}</th><th scope="col">{t("Quantity delivered")}</th></tr></thead>
             <tbody>{context.items.map(item => <tr key={item.id}>
-              <th scope="row">{item.name} <span className="muted">({item.unit})</span></th>
+              <th scope="row">{itemName(item.name)} <span className="muted">({unitName(item.unit)})</span></th>
               <td><span className="sr-only">{t("Available:")}</span> {item.available}</td>
-              <td><input aria-label={t("{item} delivery quantity ({unit})", { item: item.name, unit: item.unit })} type="number" min={1} max={Math.min(item.available, 1_000_000)}
+              <td><input aria-label={t("{item} delivery quantity ({unit})", { item: itemName(item.name), unit: unitName(item.unit) })} type="number" min={1} max={Math.min(item.available, 1_000_000)}
                 step={1} disabled={item.available === 0} value={quantities[item.id] ?? ""}
                 onChange={event => setQuantities({ ...quantities, [item.id]: event.target.value })} /></td>
             </tr>)}</tbody>

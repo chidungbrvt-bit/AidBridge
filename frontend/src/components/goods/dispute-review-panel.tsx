@@ -9,7 +9,7 @@ import { useI18n } from "@/components/i18n-provider";
 
 export function DisputeReviewPanel({ id }: { id: string }) {
   const { api, mode, user } = useSession();
-  const { t } = useI18n();
+  const { t, item: itemName, unit: unitName } = useI18n();
   const authorized = mode === "real" && user?.status === "ACTIVE" && user.platformRole === "PLATFORM_ADMIN";
   const [detail, setDetail] = useState<DisputeReview>();
   const [error, setError] = useState<ErrorInfo | null>(null);
@@ -39,7 +39,7 @@ export function DisputeReviewPanel({ id }: { id: string }) {
       <p>{detail.reason}</p>
       {detail.delivery && <>
         <h2>{t("Delivery snapshot")}</h2>
-        <ul>{detail.delivery.items.map(item => <li key={item.campaignItemId}>{item.itemName}: {item.quantity} {item.unit}</li>)}</ul>
+        <ul>{detail.delivery.items.map(item => <li key={item.campaignItemId}>{itemName(item.itemName)}: {item.quantity} {unitName(item.unit)}</li>)}</ul>
         {detail.delivery.evidenceVersionIds.map((versionId, index) => <div key={versionId}>
           <a href={`/api/disputes/${encodeURIComponent(id)}/review/evidence-versions/${encodeURIComponent(versionId)}/content`}>{t("Download snapshot evidence {n}", { n: index + 1 })}</a>
           <label><input type="checkbox" disabled={write.disabled} checked={reviewed.includes(versionId)}

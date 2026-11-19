@@ -1,4 +1,5 @@
 import fixture from './f02-snapshot.json';
+import { readableError } from '../../src/lib/error-message';
 
 // F02 snapshots are private simulated read models, never production API responses.
 export type Snapshot = typeof fixture.states.S1;
@@ -6,8 +7,12 @@ export type Action = 'receipt' | 'delivery';
 export type Actor = 'organizationAdmin' | 'fieldVolunteer' | 'caseVerifier' | 'donor';
 export type Line = { id: string; quantity: number };
 export class GoodsError extends Error {
+  /** What the screen shows: the specific detail, or a plain explanation of the code. */
+  readonly userMessage: string;
   constructor(public status: number, public code: string, public lineId?: string, detail?: string) {
+    // The status/code prefix stays in `message` for logs and tests, never in the UI.
     super(`${status} ${code}${detail ? ' — ' + detail : ''}`);
+    this.userMessage = readableError(code, detail);
   }
 }
 export const evidenceIds = fixture.evidenceIds;

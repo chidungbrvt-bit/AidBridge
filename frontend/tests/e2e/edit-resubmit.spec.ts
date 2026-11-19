@@ -8,7 +8,7 @@ async function login(page: Page, identity: keyof typeof accounts) {
   await page.goto("/login");
   await page.getByLabel("Email address").fill(accounts[identity]);
   await page.getByLabel("Password", { exact: true }).fill("Mock-only-123!");
-  await page.getByRole("button", { name: "Sign in →", exact: true }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Every need starts here." })).toBeVisible();
 }
 
@@ -98,22 +98,22 @@ test("edit validation identifies the duplicate item row without saving a partial
   await login(page, "A");
   const item = await create(page);
   await edit(page);
-  await page.getByLabel("Item 2 name", { exact: true }).fill("Rice");
-  await page.getByLabel("Item 2 unit", { exact: true }).fill("bag");
-  const invalid = mutation(page, item.id);
+  await page.getByLabel("Item 2 name", { exact: true }).selectOption("Rice");
+  const writes: string[] = [];
+  page.on("request", request => { if (request.method() === "PATCH") writes.push(request.url()); });
   await page.getByRole("button", { name: "Save revision", exact: true }).click();
-  expect((await invalid).status()).toBe(400);
+
   await expect(page.getByLabel("Item 2 name", { exact: true })).toBeFocused();
   await expect(page.locator('[id="error-needs[1].name"]')).toHaveText("duplicate need");
+  expect(writes).toEqual([]);
   const unchanged = await (await page.request.get(`/api/cases/${item.id}`)).json();
   expect(unchanged.version).toBe(item.version);
   expect(unchanged.needs).toEqual(item.needs);
-  await page.getByLabel("Item 2 name", { exact: true }).fill("Hygiene kit");
-  await page.getByLabel("Item 2 unit", { exact: true }).fill("kit");
+  await page.getByLabel("Item 2 name", { exact: true }).selectOption("Hygiene kit");
   await page.getByLabel("Item 2 quantity", { exact: true }).fill("5");
   await page.getByRole("button", { name: "Save revision", exact: true }).click();
   await expect(page.getByText(/Revision saved\./)).toBeVisible();
-  await expect(page.getByText(`CASE · REVISION ${item.version + 1}`, { exact: true })).toBeVisible();
+  await expect(page.getByText(`Case · revision ${item.version + 1}`, { exact: true })).toBeVisible();
 });
 
 test("stale PATCH locks the form until refresh and a new version is used", async ({ page }) => {
@@ -127,10 +127,10 @@ test("stale PATCH locks the form until refresh and a new version is used", async
   const stale = mutation(page, item.id);
   await page.getByRole("button", { name: "Save revision", exact: true }).click();
   expect((await stale).status()).toBe(409);
-  await expect(page.getByRole("alert").filter({ hasText: "VERSION_CONFLICT" })).toBeVisible();
+  await expect(page.locator('[role="alert"][data-error-code="VERSION_CONFLICT"]')).toBeVisible();
   await expect(page.getByLabel("Approximate area", { exact: true })).toBeDisabled();
   await page.getByRole("button", { name: "Refresh before editing again", exact: true }).click();
-  await expect(page.getByText(`CASE · REVISION ${item.version + 1}`, { exact: true })).toBeVisible();
+  await expect(page.getByText(`Case · revision ${item.version + 1}`, { exact: true })).toBeVisible();
   await expect(page.getByLabel("Approximate area", { exact: true })).toHaveValue("Fictional North district");
   await page.getByLabel("Approximate area", { exact: true }).fill("Fresh fictional area");
   const fresh = mutation(page, item.id);
@@ -138,7 +138,7 @@ test("stale PATCH locks the form until refresh and a new version is used", async
   const saved = await fresh;
   expect(saved.status()).toBe(200);
   expect(saved.request().postDataJSON().expectedVersion).toBe(item.version + 1);
-  await expect(page.getByText(`CASE · REVISION ${item.version + 2}`, { exact: true })).toBeVisible();
+  await expect(page.getByText(`Case · revision ${item.version + 2}`, { exact: true })).toBeVisible();
 });
 
 test("unknown PATCH outcome blocks navigation and preserves the request through a CSRF retry", async ({ page }) => {
@@ -176,7 +176,7 @@ test("unknown PATCH outcome blocks navigation and preserves the request through 
   const rejectedRetry = await staleToken;
   expect(rejectedRetry.status()).toBe(403);
   expect((await rejectedRetry.json()).code).toBe("CSRF_INVALID");
-  await expect(page.getByRole("alert").filter({ hasText: "CSRF_INVALID" })).toBeVisible();
+  await expect(page.locator('[role="alert"][data-error-code="CSRF_INVALID"]')).toBeVisible();
   await expect(page.getByText("The outcome is unknown.", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Item 2 quantity", { exact: true })).toBeDisabled();
   await expect(page.getByRole("combobox", { name: "Active organization", exact: true })).toBeDisabled();
