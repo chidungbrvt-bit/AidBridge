@@ -1,0 +1,163 @@
+{
+  "checkedAt": "2026-11-19T08:25:28.088Z",
+  "rpc": "https://api.avax-test.network/ext/bc/C/rpc",
+  "chainId": 43113,
+  "address": "0x015D941c679b0c402c8262BE237adAD36cEf6726",
+  "runtimeKeccak256": "0x4c778ba83052da23d357828dca603bddb14c6e26a0fdbda94143cafb2a39e7ad",
+  "transactions": [
+    {
+      "hash": "0xf5a11026f7bea424b6ce538ab74f7618e619264e2be86d5a7407e92505b49d24",
+      "chainId": 43113,
+      "from": "0x131dd6d404f8d0b118d6db122194bc15b4e4601e",
+      "to": null,
+      "nonce": 0,
+      "status": 1,
+      "contractAddress": "0x015d941c679b0c402c8262be237adad36cef6726",
+      "blockNumber": 60885528,
+      "blockHash": "0x9285f4771e9a25c074326ab4cf2c69e719fddba20dc295e56ac4fb1d88d73db2",
+      "canonical": true,
+      "logs": [
+        {
+          "logIndex": 0,
+          "transactionHash": "0xf5a11026f7bea424b6ce538ab74f7618e619264e2be86d5a7407e92505b49d24",
+          "blockHash": "0x9285f4771e9a25c074326ab4cf2c69e719fddba20dc295e56ac4fb1d88d73db2",
+          "removed": false,
+          "topics": [
+            "0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x000000000000000000000000131dd6d404f8d0b118d6db122194bc15b4e4601e",
+            "0x000000000000000000000000131dd6d404f8d0b118d6db122194bc15b4e4601e"
+          ],
+          "data": "0x",
+          "event": null
+        }
+      ]
+    },
+    {
+      "hash": "0xc3b02934afb1f29816836fb22146dbc350202d3b2a9e8dbbb19c2fd2e7e8c00f",
+      "chainId": 43113,
+      "from": "0x559994839f19f40ac704918c3ff1a913ac02dc01",
+      "to": "0x015d941c679b0c402c8262be237adad36cef6726",
+      "nonce": 0,
+      "status": 1,
+      "contractAddress": null,
+      "blockNumber": 60893112,
+      "blockHash": "0x0674c217754aa707b93250deb1b3daa6b6e09accba5f00483ade77db66d3e421",
+      "canonical": true,
+      "logs": [
+        {
+          "logIndex": 0,
+          "transactionHash": "0xc3b02934afb1f29816836fb22146dbc350202d3b2a9e8dbbb19c2fd2e7e8c00f",
+          "blockHash": "0x0674c217754aa707b93250deb1b3daa6b6e09accba5f00483ade77db66d3e421",
+          "removed": false,
+          "topics": [
+            "0xc52bfb1c97b1de28337fe01b8bf6dce1267ee4b6f337c271935032cdf0629ea2",
+            "0x2395bfe7f91467046a39bd8440313164c6442839b2be6698832b7b4941b80a46",
+            "0x9667486a2b4613986fab8955798abe2ac28f337549e622c29d2058d4c6b64494",
+            "0x13c87e35c29891a05f4daf06fca618b2647cb486fe4edc7a7ec336f6d84addc9"
+          ],
+          "data": "0x00000000000000000000000000000000000000000000000000000000000000016d48585ce429c7129e2ef8f24ef1bf84fdd440d7123b09f0a31ab907fbb8cac80000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000006af46c98",
+          "event": {
+            "name": "CaseVerified",
+            "orgRef": "0x2395bfe7f91467046a39bd8440313164c6442839b2be6698832b7b4941b80a46",
+            "caseRef": "0x9667486a2b4613986fab8955798abe2ac28f337549e622c29d2058d4c6b64494",
+            "eventId": "0x13c87e35c29891a05f4daf06fca618b2647cb486fe4edc7a7ec336f6d84addc9",
+            "sequence": "1",
+            "schemaVersion": "1",
+            "evidenceCommitment": "0x6d48585ce429c7129e2ef8f24ef1bf84fdd440d7123b09f0a31ab907fbb8cac8"
+          }
+        }
+      ]
+    },
+    {
+      "hash": "0x465140011495f85743088ada113097204a891e41bc0b985b15e653366cb8566a",
+      "chainId": 43113,
+      "from": "0x95a9564899849cf566de5713205c4b747f361f55",
+      "to": "0x015d941c679b0c402c8262be237adad36cef6726",
+      "nonce": 0,
+      "status": 1,
+      "contractAddress": null,
+      "blockNumber": 60959263,
+      "blockHash": "0x9bc1ba529b0e891e5066d8187c59e0a84f244434859b8fd99a2ef865d8b866d1",
+      "canonical": true,
+      "logs": [
+        {
+          "logIndex": 0,
+          "transactionHash": "0x465140011495f85743088ada113097204a891e41bc0b985b15e653366cb8566a",
+          "blockHash": "0x9bc1ba529b0e891e5066d8187c59e0a84f244434859b8fd99a2ef865d8b866d1",
+          "removed": false,
+          "topics": [
+            "0xc52bfb1c97b1de28337fe01b8bf6dce1267ee4b6f337c271935032cdf0629ea2",
+            "0x2395bfe7f91467046a39bd8440313164c6442839b2be6698832b7b4941b80a46",
+            "0x8d5c62bea7acd49a2e54e29efadc01b56f39fa0e55a40d6c9d33217c2b3dd9d6",
+            "0xb015509dd7c0f529e05293bc96fc263115a1b524a139a5ddf70e7d0ffe389a78"
+          ],
+          "data": "0x0000000000000000000000000000000000000000000000000000000000000001f5dcb21ed670a1cd234303764c55063fef0f5ec5fe1c961397b250391e298f620000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000006af5fe89",
+          "event": {
+            "name": "CaseVerified",
+            "orgRef": "0x2395bfe7f91467046a39bd8440313164c6442839b2be6698832b7b4941b80a46",
+            "caseRef": "0x8d5c62bea7acd49a2e54e29efadc01b56f39fa0e55a40d6c9d33217c2b3dd9d6",
+            "eventId": "0xb015509dd7c0f529e05293bc96fc263115a1b524a139a5ddf70e7d0ffe389a78",
+            "sequence": "1",
+            "schemaVersion": "1",
+            "evidenceCommitment": "0xf5dcb21ed670a1cd234303764c55063fef0f5ec5fe1c961397b250391e298f62"
+          }
+        }
+      ]
+    },
+    {
+      "hash": "0x97104a33730c05210da67a21c96b271876d744fcb61fbab46a5d87cff925f98e",
+      "chainId": 43113,
+      "from": "0x95a9564899849cf566de5713205c4b747f361f55",
+      "to": "0x015d941c679b0c402c8262be237adad36cef6726",
+      "nonce": 1,
+      "status": 1,
+      "contractAddress": null,
+      "blockNumber": 60959653,
+      "blockHash": "0xe4f804369790bae0b7bb2a64976e9cbef5f263a06c8aa7bbdf32df44d3e5b853",
+      "canonical": true,
+      "logs": [
+        {
+          "logIndex": 0,
+          "transactionHash": "0x97104a33730c05210da67a21c96b271876d744fcb61fbab46a5d87cff925f98e",
+          "blockHash": "0xe4f804369790bae0b7bb2a64976e9cbef5f263a06c8aa7bbdf32df44d3e5b853",
+          "removed": false,
+          "topics": [
+            "0xc52bfb1c97b1de28337fe01b8bf6dce1267ee4b6f337c271935032cdf0629ea2",
+            "0x2395bfe7f91467046a39bd8440313164c6442839b2be6698832b7b4941b80a46",
+            "0x3429fa203bf357eb91aba6f367e70180da2563ab9e564c9d5ee345461ae7929c",
+            "0x72c71be20cc1f8f0120839dff5fd781b8ce6d1cd7f761520b1afe0ace0adb91f"
+          ],
+          "data": "0x000000000000000000000000000000000000000000000000000000000000000193a214c2cd07c01f32c7af1ee88a8ffa33ea6e477c03513347a7bfe37f6390dc0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000006af600d9",
+          "event": {
+            "name": "CaseVerified",
+            "orgRef": "0x2395bfe7f91467046a39bd8440313164c6442839b2be6698832b7b4941b80a46",
+            "caseRef": "0x3429fa203bf357eb91aba6f367e70180da2563ab9e564c9d5ee345461ae7929c",
+            "eventId": "0x72c71be20cc1f8f0120839dff5fd781b8ce6d1cd7f761520b1afe0ace0adb91f",
+            "sequence": "1",
+            "schemaVersion": "1",
+            "evidenceCommitment": "0x93a214c2cd07c01f32c7af1ee88a8ffa33ea6e477c03513347a7bfe37f6390dc"
+          }
+        }
+      ]
+    }
+  ],
+  "sourceVerification": {
+    "url": "https://api.routescan.io/v2/network/testnet/evm/43113/etherscan/api?module=contract&action=getsourcecode&address=0x015D941c679b0c402c8262BE237adAD36cEf6726",
+    "apiStatus": "1",
+    "contractName": "AidRegistry",
+    "compilerVersion": "v0.8.28+commit.7893614a",
+    "sourcePresent": true,
+    "sourceSha256": "7f1b12a4b33837bc7ab18e6ba3de1f938a37a589678766fb9335060bc3442a91",
+    "abiPresent": true,
+    "proxy": "0",
+    "status": "EXPLORER_VERIFIED_SOURCE_PRESENT",
+    "limitation": "Explorer API metadata and published source inspected; no independent compiler rebuild this session."
+  },
+  "provenance": {
+    "main": "32a0984",
+    "dung": "3b219f1",
+    "khoa": "2f08279",
+    "method": "Read-only Fuji JSON-RPC; Routescan source metadata; no wallet or transaction submission."
+  }
+}
